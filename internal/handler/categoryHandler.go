@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"github.com/sankangkin/di-rest-api/internal/service"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func NewCategoryHandler(srv service.CategoryService) *categoryHandler{
 	return &categoryHandler{srv: srv}
 }
 
-func(h *categoryHandler) CreateCategoryHandler(c *fiber.Ctx) error{
+func(h *categoryHandler) CreateCategory(c *fiber.Ctx) error{
 	newCategory := new(models.Category)
 	if err := c.BodyParser(newCategory); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -33,7 +33,7 @@ func(h *categoryHandler) CreateCategoryHandler(c *fiber.Ctx) error{
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 
-	if err := h.srv.CreateCategory(newCategory); err != nil {
+	if _, err := h.srv.CreateCategory(newCategory); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
@@ -44,8 +44,8 @@ func(h *categoryHandler) CreateCategoryHandler(c *fiber.Ctx) error{
 		})
 }
 
-func(h *categoryHandler) GetAllCategoriesHandler(c *fiber.Ctx) error{
-	categories, err := h.srv.GetCategories() 
+func(h *categoryHandler) GetAllCategorie(c *fiber.Ctx) error{
+	categories, err := h.srv.GetAllCategories() 
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

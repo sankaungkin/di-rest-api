@@ -1,29 +1,44 @@
 package database
 
 import (
+	"fmt"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type Database interface {
-	GetDB() *gorm.DB
+	NewDB() (*gorm.DB, error)
 }
 
+func NewDB() (*gorm.DB, error) {
 
-type PostgresDB struct {
-	db *gorm.DB
-}
+	log.Println("Starting NewDB .......")
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 
-func NewPostgresDB(dsn string) (*PostgresDB, error) {
+	Host := os.Getenv("DB_HOST")
+	Port := os.Getenv("POSTGRES_PORT")
+	Password := os.Getenv("POSTGRES_PASSWORD")
+	User := os.Getenv("POSTGRES_USER")
+	DBName := os.Getenv("POSTGRES_DB")
+	SSLMode := os.Getenv("SSLMODE")
+
+	var dsn = fmt.Sprintf(
+		"host=%s port=%s password=%s user=%s dbname=%s sslmode=%s",
+		Host, Port, Password, User, DBName, SSLMode)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
 	if err != nil {
 		return nil, err
 	}
-
+	log.Println("Migration start.....")
 	err = db.AutoMigrate(
 		&models.Category{},
 		&models.Customer{},
@@ -35,16 +50,12 @@ func NewPostgresDB(dsn string) (*PostgresDB, error) {
 		&models.Purchase{},
 		&models.PurchaseDetail{},
 		&models.ItemTransaction{},
-		&models.User{},
-	)
+		&models.User{})
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err)
 	}
-
-	return &PostgresDB{db: db}, nil
-	
+	log.Println("Migration done.....")
+    return db, nil
 }
 
-func (db *PostgresDB)GetDB() *gorm.DB{
-	return db.db
-} 
+

@@ -8,7 +8,7 @@ import (
 
 type CategoryRepository interface {
 	CreateCategory(category *models.Category) (*models.Category, error)
-	GetCategories() ([]*models.Category, error)
+	GetAllCategories() ([]models.Category, error)
 	GetCategoryById(id uint) (*models.Category, error)
 	UpdateCategory(category *models.Category) (*models.Category, error)
 	DeleteCategory(id uint) error
@@ -35,8 +35,8 @@ func (r *categoryRepository)CreateCategory(category *models.Category) (*models.C
 	return newCategory, nil
 }
 
-func (r *categoryRepository)GetCategories() ([]*models.Category, error){
-	var categories []*models.Category
+func (r *categoryRepository)GetAllCategories() ([]models.Category, error){
+	var categories []models.Category
 	err := r.db.Find(&categories)
 	if err != nil {
 		return nil, err.Error

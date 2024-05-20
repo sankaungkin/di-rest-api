@@ -6,8 +6,8 @@ import (
 )
 
 type CategoryService interface {
-	CreateCategory(category *models.Category) error
-	GetCategories() ([]*models.Category, error)
+	CreateCategory(category *models.Category) (*models.Category, error)
+	GetAllCategories() ([]models.Category, error)
 	GetCategoryById(id uint) (*models.Category, error)
 	UpdateCategory(category *models.Category) (*models.Category, error)
 	DeleteCategory(id uint) error
@@ -25,8 +25,8 @@ func(s *categoryService)CreateCategory(category *models.Category) (*models.Categ
 	return s.repo.CreateCategory(category)
 }
 
-func(s *categoryService) GetCategories() ([]*models.Category, error) {
-	return s.repo.GetCategories()
+func(s *categoryService) GetAllCategories() ([]models.Category, error) {
+	return s.repo.GetAllCategories()
 }
 
 func(s *categoryService) GetCategoryById(id uint) (*models.Category, error) {
