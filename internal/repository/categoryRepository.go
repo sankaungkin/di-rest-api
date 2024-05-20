@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type CategoryRepository interface {
+type CategoryRepositoryInterface interface {
 	CreateCategory(category *models.Category) (*models.Category, error)
 	GetAllCategories() ([]models.Category, error)
 	GetCategoryById(id uint) (*models.Category, error)

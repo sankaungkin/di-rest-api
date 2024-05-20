@@ -18,9 +18,9 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 
-	repo := repository.NewCategoryRepository(DB)
-	srv := service.NewCategoryService(repo)
-	hdl := handler.NewCategoryHandler(srv)
+	categoryRepo := repository.NewCategoryRepository(DB)
+	categorySrv := service.NewCategoryService(categoryRepo)
+	categoryHdl := handler.NewCategoryHandler(categorySrv)
 
 	api := app.Group("/api")
 	api.Get("/", func(c *fiber.Ctx) error {
@@ -29,6 +29,6 @@ func Initialize(app *fiber.App) {
 
 	// category
 	categories := api.Group("/category")
-	categories.Get("/",hdl.GetAllCategorie)
-	categories.Get("/:id", hdl.GetCategoryById)
+	categories.Get("/",categoryHdl.GetAllCategorie)
+	categories.Get("/:id", categoryHdl.GetCategoryById)
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/sankangkin/di-rest-api/internal/repository"
 )
 
-type CategoryService interface {
+type CategoryServiceInterface interface {
 	CreateCategory(category *models.Category) (*models.Category, error)
 	GetAllCategories() ([]models.Category, error)
 	GetCategoryById(id uint) (*models.Category, error)
@@ -16,10 +16,10 @@ type CategoryService interface {
 }
 
 type categoryService struct {
-	repo repository.CategoryRepository
+	repo repository.CategoryRepositoryInterface
 }
 
-func NewCategoryService(repo repository.CategoryRepository) *categoryService{
+func NewCategoryService(repo repository.CategoryRepositoryInterface) *categoryService{
 	return &categoryService{repo: repo}
 }
 

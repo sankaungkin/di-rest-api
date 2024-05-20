@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type Database interface {
+type DatabaseInterface interface {
 	NewDB() (*gorm.DB, error)
 }
 

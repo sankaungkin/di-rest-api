@@ -11,15 +11,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type categoryHandler struct {
-	srv service.CategoryService
+type CategoryHandler struct {
+	srv service.CategoryServiceInterface
 }
 
-func NewCategoryHandler(srv service.CategoryService) *categoryHandler{
-	return &categoryHandler{srv: srv}
+func NewCategoryHandler(srv service.CategoryServiceInterface) *CategoryHandler{
+	return &CategoryHandler{srv: srv}
 }
 
-func(h *categoryHandler) CreateCategory(c *fiber.Ctx) error{
+func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
 	newCategory := new(models.Category)
 	if err := c.BodyParser(newCategory); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -44,7 +44,7 @@ func(h *categoryHandler) CreateCategory(c *fiber.Ctx) error{
 		})
 }
 
-func(h *categoryHandler) GetAllCategorie(c *fiber.Ctx) error{
+func(h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error{
 	log.Println("Invoking handler layer....")
 	categories, err := h.srv.GetAllCategories() 
 	if err != nil {
@@ -58,7 +58,7 @@ func(h *categoryHandler) GetAllCategorie(c *fiber.Ctx) error{
 		})
 }
 
-func(h *categoryHandler) GetCategoryById(c *fiber.Ctx) error {
+func(h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10,32)
 	if err != nil {
 		log.Fatal(err)
@@ -83,7 +83,7 @@ func(h *categoryHandler) GetCategoryById(c *fiber.Ctx) error {
 	})
 }
 
-func(h *categoryHandler) UpdateCatagory(c *fiber.Ctx) error {
+func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10,32)
 	if err != nil {
 		log.Fatal(err)
@@ -108,7 +108,7 @@ func(h *categoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 	
 }
 
-func(h *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
+func(h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10,32)
 	if err != nil {
 		log.Fatal(err)
