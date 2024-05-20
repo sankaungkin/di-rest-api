@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"errors"
+	"log"
+
 	"github.com/sankangkin/di-rest-api/internal/dto"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
@@ -36,22 +39,26 @@ func (r *categoryRepository)CreateCategory(category *models.Category) (*models.C
 }
 
 func (r *categoryRepository)GetAllCategories() ([]models.Category, error){
-	var categories []models.Category
-	err := r.db.Find(&categories)
-	if err != nil {
-		return nil, err.Error
+
+	log.Println("Invoking repository layer .....")
+	categories := []models.Category{}
+	r.db.Model(&models.Category{}).Order("ID asc").Limit(100).Find(&categories)
+	if len(categories) == 0 {
+		return nil, errors.New("no record found")
 	}
 	return categories, nil
 
 }
 
 func (r *categoryRepository) GetCategoryById(id uint) (*models.Category, error){
-	var category *models.Category
-	err := r.db.Find(&category, "id = ?", category.ID)
-	if err != nil {
-		return nil, err.Error
+	var category models.Category
+	result := r.db.First(&category, "id = ?", id)
+	if err := result.Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, err
+		}
 	}
-	return category, nil
+	return &category, nil
 }
 
 func (r *categoryRepository) UpdateCategory(category *models.Category) (*models.Category, error) {

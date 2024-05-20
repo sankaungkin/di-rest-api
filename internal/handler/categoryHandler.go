@@ -45,6 +45,7 @@ func(h *categoryHandler) CreateCategory(c *fiber.Ctx) error{
 }
 
 func(h *categoryHandler) GetAllCategorie(c *fiber.Ctx) error{
+	log.Println("Invoking handler layer....")
 	categories, err := h.srv.GetAllCategories() 
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -52,7 +53,7 @@ func(h *categoryHandler) GetAllCategorie(c *fiber.Ctx) error{
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
-			"message": len(categories),
+			"message": strconv.Itoa(len(categories)) + " records found",
 			"data":    categories,
 		})
 }

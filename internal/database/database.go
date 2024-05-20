@@ -33,7 +33,7 @@ func NewDB() (*gorm.DB, error) {
 	var dsn = fmt.Sprintf(
 		"host=%s port=%s password=%s user=%s dbname=%s sslmode=%s",
 		Host, Port, Password, User, DBName, SSLMode)
-
+	
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err

@@ -30,4 +30,5 @@ func Initialize(app *fiber.App) {
 	// category
 	categories := api.Group("/category")
 	categories.Get("/",hdl.GetAllCategorie)
+	categories.Get("/:id", hdl.GetCategoryById)
 }
