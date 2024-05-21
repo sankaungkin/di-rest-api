@@ -17,15 +17,16 @@ type CategoryRepositoryInterface interface {
 	DeleteCategory(id uint) error
 }
 
-type categoryRepository struct{
+type CategoryRepository struct{
 	db *gorm.DB
 }
 
-func NewCategoryRepository(db *gorm.DB) *categoryRepository {
-	return &categoryRepository{db: db}
+//! constructor must be return the Interface, NOT struct, if not, google wire generate fail
+func NewCategoryRepository(db *gorm.DB) CategoryRepositoryInterface {
+	return &CategoryRepository{db: db}
 }
 
-func (r *categoryRepository)CreateCategory(category *models.Category) (*models.Category, error) {
+func (r *CategoryRepository)CreateCategory(category *models.Category) (*models.Category, error) {
 
 	input := new(dto.CreateCategoryRequestDTO)
 	newCategory := &models.Category{
@@ -38,7 +39,7 @@ func (r *categoryRepository)CreateCategory(category *models.Category) (*models.C
 	return newCategory, nil
 }
 
-func (r *categoryRepository)GetAllCategories() ([]models.Category, error){
+func (r *CategoryRepository)GetAllCategories() ([]models.Category, error){
 
 	log.Println("Invoking repository layer .....")
 	categories := []models.Category{}
@@ -50,7 +51,7 @@ func (r *categoryRepository)GetAllCategories() ([]models.Category, error){
 
 }
 
-func (r *categoryRepository) GetCategoryById(id uint) (*models.Category, error){
+func (r *CategoryRepository) GetCategoryById(id uint) (*models.Category, error){
 	var category models.Category
 	result := r.db.First(&category, "id = ?", id)
 	if err := result.Error; err != nil {
@@ -61,7 +62,7 @@ func (r *categoryRepository) GetCategoryById(id uint) (*models.Category, error){
 	return &category, nil
 }
 
-func (r *categoryRepository) UpdateCategory(category *models.Category) (*models.Category, error) {
+func (r *CategoryRepository) UpdateCategory(category *models.Category) (*models.Category, error) {
 	var updateCategory *models.Category
 	err := r.db.Find(&updateCategory, "id = ?", category.ID)
 	if err != nil {
@@ -71,7 +72,7 @@ func (r *categoryRepository) UpdateCategory(category *models.Category) (*models.
 	return updateCategory, nil
 }
 
-func (r *categoryRepository) DeleteCategory(id uint) error {
+func (r *CategoryRepository) DeleteCategory(id uint) error {
 	var deletedCategory *models.Category
 	err := r.db.Find(&deletedCategory, "id = ?", id)
 	if err != nil {
