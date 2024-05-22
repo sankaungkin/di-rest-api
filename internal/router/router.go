@@ -4,7 +4,8 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sankangkin/di-rest-api/internal/di"
+	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
+	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
 )
 
 func Initialize(app *fiber.App) {
@@ -14,13 +15,24 @@ func Initialize(app *fiber.App) {
 		return c.Status(200).SendString("---->  Hello from stt api using go fiber framework <-- ")
 	})
 
-	catService, err := di.InitCategory()
+	// category di
+	catService, err := categoryDi.InitCategory()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
-	// route
+	// category route
 	categories := api.Group("/category")
 	categories.Get("/",catService.GetAllCategorie)
 	categories.Get("/:id", catService.GetCategoryById)
+
+	// product di
+	productService, err := productDi.InitProductDI()
+	if err != nil {
+		log.Fatalf(err.Error())
+	} 
+	// product route
+	products := api.Group("/product")
+	products.Get("/", productService.GetAllProducts)
+	products.Get("/:id", productService.GetProductById)
+
 }
