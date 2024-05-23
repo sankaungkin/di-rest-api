@@ -74,7 +74,7 @@ func (r *ProductRepository)GetProductById(id string)(*models.Product, error){
 func (r *ProductRepository)UpdateProduct(product *models.Product) (*models.Product, error){
 
 	var updateProduct *models.Product
-	err := r.db.Find(&updateProduct, "id = ?", strings.ToUpper(product.ID))
+	err := r.db.First(&updateProduct, "id = ?", strings.ToUpper(product.ID))
 	if err != nil {
 		return nil, err.Error
 	}

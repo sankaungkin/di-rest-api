@@ -9,8 +9,6 @@ import (
 	"github.com/sankangkin/di-rest-api/internal/domain/category"
 )
 
-//TODO : cannot generate the code from wire
-
 var CategoryWireSet = wire.NewSet(
 	database.NewDB, 	
 	category.NewCategoryRepository, 

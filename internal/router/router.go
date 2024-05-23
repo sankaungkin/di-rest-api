@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
+	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
 )
 
@@ -34,5 +35,15 @@ func Initialize(app *fiber.App) {
 	products := api.Group("/product")
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/:id", productService.GetProductById)
+
+	// customer di
+	customerService, err := customerDi.InitCustomer()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	// customer route
+	customer := api.Group("/customer")
+	customer.Get("/", customerService.GetAllCustomers)
+	customer.Get("/:id", customerService.GetCustomerById)
 
 }

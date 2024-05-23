@@ -1,8 +1,6 @@
 package category
 
 import (
-	"log"
-
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -28,7 +26,6 @@ func(s *CategoryService)CreateCategory(category *models.Category) (*models.Categ
 }
 
 func(s *CategoryService) GetAllCategories() ([]models.Category, error) {
-	log.Println("Invoking categoryService layer.....")
 	return s.repo.GetAllCategories()
 }
 
