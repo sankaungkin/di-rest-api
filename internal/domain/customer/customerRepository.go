@@ -2,6 +2,8 @@ package customer
 
 import (
 	"errors"
+	"log"
+	"sync"
 
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
@@ -19,8 +21,25 @@ type CustomerRepository struct {
 	db *gorm.DB
 }
 
+
+var(
+	repoInstance *CustomerRepository
+	repoOnce sync.Once
+	Reset = "\033[0m" 
+	Magenta = "\033[35m"
+)
+
+// func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface{
+// 	return &CustomerRepository{db: db}
+// }
+
 func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface{
-	return &CustomerRepository{db: db}
+	log.Println(Magenta + "CustomerRepository constructor is called" +Reset)
+	repoOnce.Do(func(){
+		repoInstance = &CustomerRepository{db: db}
+	})
+	return repoInstance
+	// return &CustomerRepository{db: db}
 }
 
 func(r *CustomerRepository)CreateCustomer(customer *models.Customer) (*models.Customer, error){

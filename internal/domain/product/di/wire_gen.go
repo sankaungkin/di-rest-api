@@ -20,7 +20,8 @@ func InitProductDI() (*product.ProductHandler, error) {
 		return nil, err
 	}
 	productRepositoryInterface := product.NewProductRepository(db)
-	productHandler := product.NewProductHandler(productRepositoryInterface)
+	productServiceInterface := product.NewProductService(productRepositoryInterface)
+	productHandler := product.NewProductHandler(productServiceInterface)
 	return productHandler, nil
 }
 

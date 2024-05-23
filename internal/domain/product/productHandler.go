@@ -1,8 +1,10 @@
 package product
 
 import (
+	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -10,11 +12,24 @@ import (
 )
 
 type ProductHandler struct {
-	srv ProductRepositoryInterface
+	svc ProductRepositoryInterface
 }
+//! singleton pattern
+var(
+	hdlInstance *ProductHandler
+	hdlOnce sync.Once
+)
 
-func NewProductHandler(srv ProductRepositoryInterface) *ProductHandler{
-	return &ProductHandler{srv:srv}
+// func NewProductHandler(srv ProductRepositoryInterface) *ProductHandler{
+// 	return &ProductHandler{srv:srv}
+// }
+
+func NewProductHandler(svc ProductServiceInterface) *ProductHandler{
+	log.Println(Yellow + "ProductHandler constructor is called" + Reset)
+	hdlOnce.Do(func() {
+		hdlInstance = &ProductHandler{svc: svc}
+	})
+	return hdlInstance
 }
 
 func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
@@ -30,7 +45,7 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 
-	if _, err := h.srv.CreateProduct(newProduct); err != nil {
+	if _, err := h.svc.CreateProduct(newProduct); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error" : err.Error(),
 		})
@@ -45,7 +60,7 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 }
 
 func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
-	products, err := h.srv.GetAllProducts()
+	products, err := h.svc.GetAllProducts()
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -61,7 +76,7 @@ func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	
 
-	product, err := h.srv.GetProductById(c.Params("id"))
+	product, err := h.svc.GetProductById(c.Params("id"))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -82,7 +97,7 @@ func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 
 func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
-	product, err := h.srv.GetProductById(c.Params("id"))
+	product, err := h.svc.GetProductById(c.Params("id"))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -94,7 +109,7 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.srv.UpdateProduct(product)
+	h.svc.UpdateProduct(product)
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Update successfully",
@@ -102,7 +117,7 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 }
 
 func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
-	product, err := h.srv.GetProductById(c.Params("id"))
+	product, err := h.svc.GetProductById(c.Params("id"))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -114,7 +129,7 @@ func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.srv.DeleteProduct(product.ID)
+	h.svc.DeleteProduct(product.ID)
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Delete successfully",

@@ -24,8 +24,12 @@ func Initialize(app *fiber.App) {
 	}
 	// category route
 	categories := api.Group("/category")
+	categories.Post("/", catService.CreateCategory)
 	categories.Get("/",catService.GetAllCategorie)
 	categories.Get("/:id", catService.GetCategoryById)
+	categories.Put("/:id", catService.UpdateCatagory)
+	categories.Delete("/:id", catService.DeleteCategory)
+
 
 	// product di
 	productService, err := productDi.InitProductDI()

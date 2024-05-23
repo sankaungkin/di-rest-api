@@ -1,6 +1,11 @@
 package product
 
-import "github.com/sankangkin/di-rest-api/internal/models"
+import (
+	"log"
+	"sync"
+
+	"github.com/sankangkin/di-rest-api/internal/models"
+)
 
 type ProductServiceInterface interface {
 	CreateProduct(product *models.Product) (*models.Product, error)
@@ -13,9 +18,25 @@ type ProductServiceInterface interface {
 type ProductService struct {
 	repo ProductRepositoryInterface
 }
+//! singleton pattern
+var (
+	svcInstance *ProductService
+	svcOnce sync.Once
+)
+
+// func NewProductService(repo ProductRepositoryInterface) ProductServiceInterface{
+// 	return &ProductService{repo: repo}
+// }
+//! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 
 func NewProductService(repo ProductRepositoryInterface) ProductServiceInterface{
-	return &ProductService{repo: repo}
+	
+	log.Println(Yellow + "ProductService constructor is called"+ Reset) 
+	
+	svcOnce.Do(func() {
+		svcInstance = &ProductService{repo: repo}
+	})
+	return svcInstance
 }
 
 func (s *ProductService)CreateProduct(product *models.Product) (*models.Product, error){

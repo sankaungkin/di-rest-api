@@ -2,6 +2,8 @@ package category
 
 import (
 	"errors"
+	"log"
+	"sync"
 
 	"github.com/sankangkin/di-rest-api/internal/dto"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -20,14 +22,24 @@ type CategoryRepository struct{
 	db *gorm.DB
 }
 
+var (
+	repoInstance *CategoryRepository
+	repoOnce sync.Once
+)
+
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCategoryRepository(db *gorm.DB) CategoryRepositoryInterface {
-	return &CategoryRepository{db: db}
+	log.Println(Red+"CategoryRepository constructor is called"+Reset)
+	repoOnce.Do(func(){
+		repoInstance = &CategoryRepository{db: db}
+	})
+	return repoInstance
 }
 
 func (r *CategoryRepository)CreateCategory(category *models.Category) (*models.Category, error) {
 
 	input := new(dto.CreateCategoryRequestDTO)
+	log.Println("input:", input)
 	newCategory := &models.Category{
 		CategoryName: input.CategoryName,
 	}

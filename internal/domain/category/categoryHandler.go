@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -11,11 +12,24 @@ import (
 )
 
 type CategoryHandler struct {
-	srv CategoryServiceInterface
+	svc CategoryServiceInterface
 }
-
-func NewCategoryHandler(srv CategoryServiceInterface) *CategoryHandler{
-	return &CategoryHandler{srv: srv}
+//! singleton pattern
+var (
+	hdlInstance *CategoryHandler
+	hdlOnce sync.Once
+	Red = "\033[31m" 
+	Reset = "\033[0m" 
+)
+// constructor 
+func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler{
+	
+	log.Println(Red + "CategoryHandler constructor is called"+ Reset)
+	hdlOnce.Do(func() {
+		hdlInstance = &CategoryHandler{svc: svc}
+	})
+	return hdlInstance
+	// return &CategoryHandler{svc: svc}
 }
 
 func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
@@ -32,7 +46,7 @@ func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 
-	if _, err := h.srv.CreateCategory(newCategory); err != nil {
+	if _, err := h.svc.CreateCategory(newCategory); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
@@ -44,7 +58,7 @@ func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
 }
 
 func(h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error{
-	categories, err := h.srv.GetAllCategories() 
+	categories, err := h.svc.GetAllCategories() 
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -62,7 +76,7 @@ func(h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
 		log.Fatal(err)
 	}
 
-	category, err := h.srv.GetCategoryById(uint(id))
+	category, err := h.svc.GetCategoryById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -86,7 +100,7 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	category, err := h.srv.GetCategoryById(uint(id))
+	category, err := h.svc.GetCategoryById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -98,7 +112,7 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.srv.UpdateCategory(category)
+	h.svc.UpdateCategory(category)
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Update successfully",
@@ -111,7 +125,7 @@ func(h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	category, err := h.srv.GetCategoryById(uint(id))
+	category, err := h.svc.GetCategoryById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -123,7 +137,7 @@ func(h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.srv.DeleteCategory(uint(category.ID))
+	h.svc.DeleteCategory(uint(category.ID))
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Delete successfully",

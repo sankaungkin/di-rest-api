@@ -1,6 +1,9 @@
 package category
 
 import (
+	"log"
+	"sync"
+
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -15,10 +18,21 @@ type CategoryServiceInterface interface {
 type CategoryService struct {
 	repo CategoryRepositoryInterface
 }
+//! singleton pattern
+var (
+	svcInstance *CategoryService
+	svcOnce sync.Once
+)
 
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCategoryService(repo CategoryRepositoryInterface) CategoryServiceInterface{
-	return &CategoryService{repo: repo}
+
+	log.Println(Red + "CategoryService constructor is called" + Reset)
+
+	svcOnce.Do(func() {
+		svcInstance = &CategoryService{repo: repo}
+	})
+	return svcInstance
 }
 
 func(s *CategoryService)CreateCategory(category *models.Category) (*models.Category, error) {

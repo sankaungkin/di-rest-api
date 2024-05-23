@@ -1,6 +1,11 @@
 package customer
 
-import "github.com/sankangkin/di-rest-api/internal/models"
+import (
+	"log"
+	"sync"
+
+	"github.com/sankangkin/di-rest-api/internal/models"
+)
 
 type CustomerServiceInterface interface {
 	CreateCustomer(customer *models.Customer) (*models.Customer, error)
@@ -14,8 +19,23 @@ type CustomerService struct {
 	repo CustomerRepositoryInterface
 }
 
-func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterface{
-	return &CustomerService{repo:repo}
+//! for singletone pattern
+var (
+	svcInstance *CustomerService
+	svcOnce sync.Once
+)
+
+// func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterface{
+// 	return &CustomerService{repo:repo}
+// }
+
+//! constructor must be return the Interface, NOT struct, if not, google wire generate fail
+func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterface {
+	log.Println(Magenta + "CustomerService constructor is called " + Reset)
+	svcOnce.Do(func() {
+		svcInstance = &CustomerService{repo: repo}
+	})
+	return svcInstance
 }
 
 func (s *CustomerService)CreateCustomer(customer *models.Customer) (*models.Customer, error){

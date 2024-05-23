@@ -2,7 +2,9 @@ package product
 
 import (
 	"errors"
+	"log"
 	"strings"
+	"sync"
 
 	"github.com/sankangkin/di-rest-api/internal/dto"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -21,9 +23,29 @@ type ProductRepository struct{
 	db *gorm.DB
 }
 
-func NewProductRepository(db *gorm.DB) ProductRepositoryInterface {
-	return &ProductRepository{db: db}
+//! singleton pattern
+var (
+	repoInstance *ProductRepository
+	repoOnce sync.Once
+	Reset = "\033[0m" 
+	Yellow = "\033[33m"
+)
+
+// func NewProductRepository(db *gorm.DB) ProductRepositoryInterface {
+// 	return &ProductRepository{db: db}
+// }
+
+//! constructor must be return the Interface, NOT struct, if not, google wire generate fail
+
+// constructor
+func NewProductRepository(db *gorm.DB) ProductRepositoryInterface{
+	log.Println(Yellow + "ProductRepository constructor is called " + Reset)
+	repoOnce.Do(func() {
+		repoInstance = &ProductRepository{db: db}
+	})
+	return repoInstance
 }
+
 
 func (r *ProductRepository)CreateProduct(product *models.Product) (*models.Product, error){
 
