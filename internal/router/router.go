@@ -7,6 +7,7 @@ import (
 	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
 	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
+	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
 )
 
 func Initialize(app *fiber.App) {
@@ -45,5 +46,15 @@ func Initialize(app *fiber.App) {
 	customer := api.Group("/customer")
 	customer.Get("/", customerService.GetAllCustomers)
 	customer.Get("/:id", customerService.GetCustomerById)
+
+	// supplier di
+	supplierService, err := supplierDi.InitSupplier()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	// supplier route
+	supplier := api.Group("/supplier")
+	supplier.Get("/", supplierService.GetAllSuppliers)
+	supplier.Get("/:id", supplierService.GetSupplierById)
 
 }

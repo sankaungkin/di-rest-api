@@ -10,6 +10,9 @@ product:
 customer:
 	@wire ./internal/domain/customer/di/wire.go
 
+supplier:
+	@wire ./internal/domain/supplier/di/wire.go
+
 category:
 	@wire ./internal/domain/category/di/wire.go
 	
