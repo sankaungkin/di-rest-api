@@ -43,19 +43,22 @@ func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface{
 }
 
 func(r *CustomerRepository)CreateCustomer(customer *models.Customer) (*models.Customer, error){
-	input := new(CreateCustomerRequestDTO)
-	newCustomer := &models.Customer{
-		Name: input.Name,
-		Address: input.Address,
-		Phone: input.Phone,
-	}
 
-	err := r.db.Create(newCustomer)
-	if err != nil {
-		return nil, err.Error
-	}
+	err := r.db.Create(&customer).Error
+	return customer, err
+	// input := new(CreateCustomerRequestDTO)
+	// newCustomer := &models.Customer{
+	// 	Name: input.Name,
+	// 	Address: input.Address,
+	// 	Phone: input.Phone,
+	// }
 
-	return newCustomer, nil
+	// err := r.db.Create(newCustomer)
+	// if err != nil {
+	// 	return nil, err.Error
+	// }
+
+	// return newCustomer, nil
 }
 
 	func(r *CustomerRepository)GetAllCustomers() ([]models.Customer, error){
@@ -79,22 +82,37 @@ func(r *CustomerRepository)CreateCustomer(customer *models.Customer) (*models.Cu
 	}
 
 
-	func(r *CustomerRepository)UpdateCustomer(customer *models.Customer) (*models.Customer, error){
-		var updateCustomer *models.Customer
-		err := r.db.First(&updateCustomer,"id = ?",customer.ID)
+	func(r *CustomerRepository)UpdateCustomer(input *models.Customer) (*models.Customer, error){
+		
+		var existingCustomer *models.Customer
+		err := r.db.Where("id = ?", input.ID).First(&existingCustomer).Error
 		if err != nil {
-			return nil, err.Error
+			// Handle error if customer not found or other issue
+			return nil, err
 		}
-		r.db.Save(&updateCustomer)
-		return updateCustomer, nil
+
+		log.Println("input: ", input)
+		if input.Address == "" || input.Name == "" || input.Phone =="" {
+			return nil, err
+		}
+		// Update relevant fields from input data
+		existingCustomer.Name = input.Name  // Update other fields as needed
+		existingCustomer.Address = input.Address
+		existingCustomer.Phone =input.Phone
+
+		// Save the updated customer data
+		log.Println("existingCustomer: ", existingCustomer)
+		err = r.db.Updates(&existingCustomer).Error
+		if err != nil {
+			// Handle error if update fails
+			return nil, err
+		}
+
+		// Return the updated customer object
+		return existingCustomer, nil
 	}
 
 	func(r *CustomerRepository)DeleteCustomer(id uint) error {
-		var deleteCustomer *models.Customer
-		err := r.db.First(&deleteCustomer, "id = ?", id)
-		if err != nil {
-			return err.Error
-		}
-		r.db.Delete(&deleteCustomer)
-		return nil
+		// return r.db.Delete(&User{}, id).Error
+		return r.db.Delete(&models.Customer{}, id).Error
 	}

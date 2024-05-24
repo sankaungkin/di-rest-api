@@ -50,6 +50,9 @@ func Initialize(app *fiber.App) {
 	customer := api.Group("/customer")
 	customer.Get("/", customerService.GetAllCustomers)
 	customer.Get("/:id", customerService.GetCustomerById)
+	customer.Post("/", customerService.CreateCustomer)
+	customer.Put("/:id", customerService.UpdateCustomer)
+	customer.Delete("/:id", customerService.DeleteCustomer)
 
 	// supplier di
 	supplierService, err := supplierDi.InitSupplier()

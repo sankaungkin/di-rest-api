@@ -55,9 +55,9 @@ type User struct {
 type Customer struct {
 	gorm.Model
 	ID        uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	Name      string `json:"name"`
-	Address   string `json:"address"`
-	Phone     string `json:"phone"`
+	Name      string `json:"name" validate:"required,min=3"`
+	Address   string `json:"address" validate:"required,min=3"`
+	Phone     string `json:"phone" validate:"required,min=3"`
 	Sales     []Sale `gorm:"foreignKey:CustomerId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
@@ -66,9 +66,9 @@ type Customer struct {
 type Supplier struct {
 	gorm.Model
 	ID        uint       `gorm:"primaryKey:autoIncrement" json:"id"`
-	Name      string     `json:"name"`
-	Address   string     `json:"address"`
-	Phone     string     `json:"phone"`
+	Name      string 	`json:"name" validate:"required,min=3"`
+	Address   string 	`json:"address" validate:"required,min=3"`
+	Phone     string 	`json:"phone" validate:"required,min=3"`
 	Purchases []Purchase `gorm:"foreignKey:SupplierId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	CreatedAt int64      `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64      `gorm:"autoUpdateTime:milli" json:"-"`
