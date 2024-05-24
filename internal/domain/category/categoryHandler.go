@@ -100,22 +100,48 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	category, err := h.svc.GetCategoryById(uint(id))
+	
+	foundCategory, err := h.svc.GetCategoryById(uint(id))
+	log.Println("foundCategory: ", foundCategory)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"status":  "FAIL",
-				"message": "Record not found",
+				"message": "ရှာမတွေ့ပါ။",
 			})
 		}
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.svc.UpdateCategory(category)
-	return c.JSON(fiber.Map{
-		"code":    200,
-		"message": "Update successfully",
+
+	input := new(UpdateCategoryRequestDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	updateCategory := models.Category{
+		ID: foundCategory.ID,
+		CategoryName: foundCategory.CategoryName,
+	}
+
+	if err := c.BodyParser(&updateCategory); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}	
+	result, err :=	h.svc.UpdateCategory(&updateCategory)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
 	})
 	
 }
@@ -137,7 +163,13 @@ func(h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.svc.DeleteCategory(uint(category.ID))
+	err = h.svc.DeleteCategory(uint(category.ID))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status" : "FAIL",
+			"message" : "Internal server error",
+		})
+	}
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Delete successfully",
