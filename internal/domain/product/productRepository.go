@@ -106,9 +106,17 @@ func (r *ProductRepository)Update(input *models.Product) (*models.Product, error
 		// Return the updated customer object
 		return existingProduct, nil
 }
-
+//TODO ERROR: column "p005" does not exist (SQLSTATE 42703)
 func(r *ProductRepository)Delete(id string) error {
 	// return r.db.Delete(&User{}, id).Error
-	log.Println("id: ", id)
-	return r.db.Delete(&models.Product{}, id).Error
+
+	var product models.Product
+	result := r.db.First(&product, "id = ?", id)
+
+	if err := result.Error; err != nil {
+		return err
+	}
+
+	return  r.db.Delete(&product).Error
+	
 }

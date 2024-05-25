@@ -29,9 +29,9 @@ type Product struct {
 	SaleDetail      []SaleDetail     `gorm:"foreignKey:ProductId;" json:"-"`
 	PurchaseDetail  []PurchaseDetail `gorm:"foreignKey:ProductId;" json:"-"`
 	Uom             string           `json:"uom" validate:"required,min=3"`
-	BuyPrice        int64            `josn:"buyPrice" validate:"required,min=1"`
-	SellPriceLevel1 int64            `josn:"sellPricelvl1" validate:"required,min=1"`
-	SellPriceLevel2 int64            `josn:"sellPricelvl2" validate:"required,min=1"`
+	BuyPrice        int64            `json:"buyPrice" validate:"required,min=1"`
+	SellPriceLevel1 int64            `json:"sellPricelvl1" validate:"required,min=1"`
+	SellPriceLevel2 int64            `json:"sellPricelvl2" validate:"required,min=1"`
 	ReorderLvl      uint             `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	QtyOnHand       int              `json:"qtyOhHand" validate:"required"`
 	BrandName       string           `json:"brand"`
