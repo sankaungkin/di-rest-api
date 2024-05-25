@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +13,7 @@ import (
 )
 
 type ProductHandler struct {
-	svc ProductRepositoryInterface
+	svc ProductServiceInterface
 }
 //! singleton pattern
 var(
@@ -33,34 +34,55 @@ func NewProductHandler(svc ProductServiceInterface) *ProductHandler{
 }
 
 func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
-	newProduct := new(models.Product)
-	if err := c.BodyParser(newProduct); err != nil {
+	input := new(CreateProductRequstDTO)
+	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status" : 400,
-			"message" : "Invalid JSON format",
+			"status":  400,
+			"message": "Invalid JSON format",
 		})
 	}
+
+	log.Println("New customer input: ", input)
+	newProduct := models.Product{
+		ID: input.ID,
+		ProductName: input.ProductName,
+		CategoryId: input.CategoryId,
+		Uom: input.Uom,
+		BuyPrice: input.BuyPrice,
+		SellPriceLevel1: input.SellPriceLevel1,
+		SellPriceLevel2: input.SellPriceLevel2,
+		ReorderLvl: input.ReorderLvl,
+		IsActive: input.IsActive,
+	}
+
+	err := c.BodyParser(&newProduct) 
+		if err != nil {
+			c.Status(http.StatusUnprocessableEntity).JSON(
+				&fiber.Map{"message": "request failed"})
+			return err
+		}
+	
+
 	errors := models.ValidateStruct(newProduct)
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
+	log.Println("newCustomer: ", newProduct)
 
-	if _, err := h.svc.CreateProduct(newProduct); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error" : err.Error(),
-		})
+	if _, err := h.svc.CreateSerive(&newProduct); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
 			"message": "category has been created successfully",
-			"data":    newProduct,
+			"data" : newProduct,
 		})
+
 }
 
 func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
-	products, err := h.svc.GetAllProducts()
+	products, err := h.svc.GetAllSerive()
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -76,7 +98,7 @@ func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	
 
-	product, err := h.svc.GetProductById(c.Params("id"))
+	product, err := h.svc.GetByIdSerive(c.Params("id"))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -97,7 +119,7 @@ func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 
 func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
-	product, err := h.svc.GetProductById(c.Params("id"))
+	foundProduct, err := h.svc.GetByIdSerive(c.Params("id"))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -109,15 +131,50 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.svc.UpdateProduct(product)
-	return c.JSON(fiber.Map{
-		"code":    200,
-		"message": "Update successfully",
+
+	input := new(UpdateProductRequstDTO)
+	log.Println("input: ", input)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+
+	updateProduct := models.Product{
+		ID: foundProduct.ID,
+		ProductName: foundProduct.ProductName,
+		CategoryId: foundProduct.CategoryId,
+		Uom: foundProduct.Uom,
+		BuyPrice: foundProduct.BuyPrice,
+		SellPriceLevel1: foundProduct.SellPriceLevel1,
+		SellPriceLevel2: foundProduct.SellPriceLevel2,
+		ReorderLvl: foundProduct.ReorderLvl,
+		IsActive: foundProduct.IsActive,
+	}
+	log.Println("updateCustomer: ", &updateProduct)
+	if err := c.BodyParser(&updateProduct); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}	
+
+	result, err :=	h.svc.Update(&updateProduct)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
 	})
 }
 
 func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
-	product, err := h.svc.GetProductById(c.Params("id"))
+
+	id := strings.ToUpper(c.Params("id"))
+	product, err := h.svc.GetByIdSerive(id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -129,7 +186,13 @@ func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.svc.DeleteProduct(product.ID)
+	err = h.svc.DeleteSerive(product.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status" : "FAIL",
+			"message" : "Internal server error",
+		})
+	}
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Delete successfully",

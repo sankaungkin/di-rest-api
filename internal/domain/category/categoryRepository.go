@@ -10,11 +10,11 @@ import (
 )
 
 type CategoryRepositoryInterface interface {
-	CreateCategory(category *models.Category) (*models.Category, error)
-	GetAllCategories() ([]models.Category, error)
-	GetCategoryById(id uint) (*models.Category, error)
-	UpdateCategory(category *models.Category) (*models.Category, error)
-	DeleteCategory(id uint) error
+	Create(category *models.Category) (*models.Category, error)
+	GetAll() ([]models.Category, error)
+	GetById(id uint) (*models.Category, error)
+	Update(category *models.Category) (*models.Category, error)
+	Delete(id uint) error
 }
 
 type CategoryRepository struct{
@@ -35,25 +35,14 @@ func NewCategoryRepository(db *gorm.DB) CategoryRepositoryInterface {
 	return repoInstance
 }
 
-func (r *CategoryRepository)CreateCategory(category *models.Category) (*models.Category, error) {
+func (r *CategoryRepository)Create(category *models.Category) (*models.Category, error) {
 
 	err := r.db.Create(&category).Error
 
 	return category, err
-
-	// input := new(dto.CreateCategoryRequestDTO)
-	// log.Println("input:", input)
-	// newCategory := &models.Category{
-	// 	CategoryName: input.CategoryName,
-	// }
-	// err := r.db.Create(newCategory)
-	// if err != nil {
-	// 	return nil, err.Error
-	// }
-	// return newCategory, nil
 }
 
-func (r *CategoryRepository)GetAllCategories() ([]models.Category, error){
+func (r *CategoryRepository)GetAll() ([]models.Category, error){
 
 	categories := []models.Category{}
 	r.db.Model(&models.Category{}).Order("ID asc").Limit(100).Find(&categories)
@@ -64,7 +53,7 @@ func (r *CategoryRepository)GetAllCategories() ([]models.Category, error){
 
 }
 
-func (r *CategoryRepository) GetCategoryById(id uint) (*models.Category, error){
+func (r *CategoryRepository) GetById(id uint) (*models.Category, error){
 	var category models.Category
 	result := r.db.First(&category, "id = ?", id)
 	if err := result.Error; err != nil {
@@ -75,7 +64,7 @@ func (r *CategoryRepository) GetCategoryById(id uint) (*models.Category, error){
 	return &category, nil
 }
 
-func (r *CategoryRepository) UpdateCategory(input *models.Category) (*models.Category, error) {
+func (r *CategoryRepository) Update(input *models.Category) (*models.Category, error) {
 
 	log.Println("input from CategoryRepository: ", input)
 	var existingCategory *models.Category
@@ -104,13 +93,6 @@ func (r *CategoryRepository) UpdateCategory(input *models.Category) (*models.Cat
 		return existingCategory, nil
 }
 
-func (r *CategoryRepository) DeleteCategory(id uint) error {
-	// var deletedCategory *models.Category
-	// err := r.db.Find(&deletedCategory, "id = ?", id)
-	// if err != nil {
-	// 	return  err.Error
-	// }
-	// r.db.Delete(&deletedCategory)
-	// return nil
+func (r *CategoryRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Category{}, id).Error
 }

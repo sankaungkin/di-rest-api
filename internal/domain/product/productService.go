@@ -8,11 +8,11 @@ import (
 )
 
 type ProductServiceInterface interface {
-	CreateProduct(product *models.Product) (*models.Product, error)
-	GetAllProducts() ([]models.Product, error)
-	GetProductById(id string) (*models.Product, error)
-	UpdateProduct(product *models.Product) (*models.Product, error)
-	DeleteProduct(id string)  error
+	CreateSerive(product *models.Product) (*models.Product, error)
+	GetAllSerive() ([]models.Product, error)
+	GetByIdSerive(id string) (*models.Product, error)
+	Update(product *models.Product) (*models.Product, error)
+	DeleteSerive(id string)  error
 }
 
 type ProductService struct {
@@ -39,22 +39,22 @@ func NewProductService(repo ProductRepositoryInterface) ProductServiceInterface{
 	return svcInstance
 }
 
-func (s *ProductService)CreateProduct(product *models.Product) (*models.Product, error){
+func (s *ProductService)CreateSerive(product *models.Product) (*models.Product, error){
 
-	return s.repo.CreateProduct(product)
+	return s.repo.Create(product)
 }
-func (s *ProductService)GetAllProducts() ([]models.Product, error){
-	return s.repo.GetAllProducts()
+func (s *ProductService)GetAllSerive() ([]models.Product, error){
+	return s.repo.GetAll()
 }
-func (s *ProductService) GetProductById(id string) (*models.Product, error){
-	return s.repo.GetProductById(id)
-}
-
-func (s *ProductService)UpdateProduct(product *models.Product) (*models.Product, error){
-	return s.repo.UpdateProduct(product)
+func (s *ProductService) GetByIdSerive(id string) (*models.Product, error){
+	return s.repo.GetById(id)
 }
 
-func (s *ProductService)DeleteProduct(id string)  error {
-	return s.repo.DeleteProduct(id)
+func (s *ProductService)Update(product *models.Product) (*models.Product, error){
+	return s.repo.Update(product)
+}
+
+func (s *ProductService)DeleteSerive(id string)  error {
+	return s.repo.Delete(id)
 }
 

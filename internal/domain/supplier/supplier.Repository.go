@@ -2,17 +2,18 @@ package supplier
 
 import (
 	"errors"
+	"log"
 
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
 
 type SupplierRepositoryInterface interface{
-	CreateSupplier(supplier *models.Supplier) (*models.Supplier, error)
-	GetAllSuppliers() ([]models.Supplier, error)
-	GetSupplierById(id uint) (*models.Supplier, error)
-	UpdateSupplier(Supplier *models.Supplier) (*models.Supplier, error)
-	DeleteSupplier(id uint) error
+	Create(supplier *models.Supplier) (*models.Supplier, error)
+	GetAll() ([]models.Supplier, error)
+	GetById(id uint) (*models.Supplier, error)
+	Update(Supplier *models.Supplier) (*models.Supplier, error)
+	Delete(id uint) error
 }
 
 type SupplierRepository struct {
@@ -23,59 +24,83 @@ func NewSupplierRepository(db *gorm.DB) SupplierRepositoryInterface{
 	return &SupplierRepository{db: db}
 }
 
-func(r *SupplierRepository)CreateSupplier(Supplier *models.Supplier) (*models.Supplier, error){
-	input := new(CreateSupplierRequestDTO)
-	newSupplier := &models.Supplier{
-		Name: input.Name,
-		Address: input.Address,
-		Phone: input.Phone,
-	}
+func(r *SupplierRepository)Create(supplier *models.Supplier) (*models.Supplier, error){
+	// input := new(CreateSupplierRequestDTO)
+	// newSupplier := &models.Supplier{
+	// 	Name: input.Name,
+	// 	Address: input.Address,
+	// 	Phone: input.Phone,
+	// }
 
-	err := r.db.Create(newSupplier)
-	if err != nil {
-		return nil, err.Error
-	}
+	// err := r.db.Create(newSupplier)
+	// if err != nil {
+	// 	return nil, err.Error
+	// }
 
-	return newSupplier, nil
+	// return newSupplier, nil
+
+	err := r.db.Create(&supplier).Error
+
+	return supplier, err
 }
 
-	func(r *SupplierRepository)GetAllSuppliers() ([]models.Supplier, error){
-		Suppliers := []models.Supplier{}
-		r.db.Model(&models.Supplier{}).Order("ID asc").Find(&Suppliers)
-		if len(Suppliers) == 0 {
-			return nil, errors.New("NO records found")
-		}
-		return Suppliers, nil
+func(r *SupplierRepository)GetAll() ([]models.Supplier, error){
+	suppliers := []models.Supplier{}
+	r.db.Model(&models.Supplier{}).Order("ID asc").Find(&suppliers)
+	if len(suppliers) == 0 {
+		return nil, errors.New("NO records found")
 	}
+	return suppliers, nil
+}
 
-	func(r *SupplierRepository)GetSupplierById(id uint) (*models.Supplier, error){
-		var Supplier models.Supplier
-		result := r.db.First(&Supplier, "id = ?",id)
-		if err := result.Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return nil, err
-			}
+func(r *SupplierRepository)GetById(id uint) (*models.Supplier, error){
+	var supplier models.Supplier
+	result := r.db.First(&supplier, "id = ?",id)
+	if err := result.Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, err
 		}
-		return &Supplier, nil
 	}
+	return &supplier, nil
+}
 
 
-	func(r *SupplierRepository)UpdateSupplier(Supplier *models.Supplier) (*models.Supplier, error){
-		var updateSupplier *models.Supplier
-		err := r.db.First(&updateSupplier,"id = ?",Supplier.ID)
+func(r *SupplierRepository)Update(input *models.Supplier) (*models.Supplier, error){
+	// var updateSupplier *models.Supplier
+	// err := r.db.First(&updateSupplier,"id = ?",Supplier.ID)
+	// if err != nil {
+	// 	return nil, err.Error
+	// }
+	// r.db.Save(&updateSupplier)
+	// return updateSupplier, nil
+	var existingSupplier *models.Supplier
+		err := r.db.Where("id = ?", input.ID).First(&existingSupplier).Error
 		if err != nil {
-			return nil, err.Error
+			// Handle error if customer not found or other issue
+			return nil, err
 		}
-		r.db.Save(&updateSupplier)
-		return updateSupplier, nil
-	}
 
-	func(r *SupplierRepository)DeleteSupplier(id uint) error {
-		var deleteSupplier *models.Supplier
-		err := r.db.First(&deleteSupplier, "id = ?", id)
-		if err != nil {
-			return err.Error
+		log.Println("input: ", input)
+		if input.Name == "" || input.Address == "" || input.Phone == ""  {
+			return nil, err
 		}
-		r.db.Delete(&deleteSupplier)
-		return nil
-	}
+		// Update relevant fields from input data
+		existingSupplier.Name = input.Name
+		existingSupplier.Address = input.Address
+		existingSupplier.Phone = input.Phone
+		// Save the updated customer data
+		err = r.db.Updates(&existingSupplier).Error
+		if err != nil {
+			// Handle error if update fails
+			return nil, err
+		}
+
+		// Return the updated customer object
+		return existingSupplier, nil
+}
+
+func(r *SupplierRepository)Delete(id uint) error {
+
+	return r.db.Delete(&models.Supplier{}, id).Error
+	
+}

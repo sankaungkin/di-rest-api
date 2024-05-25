@@ -38,8 +38,11 @@ func Initialize(app *fiber.App) {
 	} 
 	// product route
 	products := api.Group("/product")
+	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/:id", productService.GetProductById)
+	products.Put("/:id", productService.UpdateProduct)
+	products.Delete("/:id",productService.DeleteProduct)
 
 	// customer di
 	customerService, err := customerDi.InitCustomer()
@@ -48,9 +51,9 @@ func Initialize(app *fiber.App) {
 	}
 	// customer route
 	customer := api.Group("/customer")
+	customer.Post("/", customerService.CreateCustomer)
 	customer.Get("/", customerService.GetAllCustomers)
 	customer.Get("/:id", customerService.GetCustomerById)
-	customer.Post("/", customerService.CreateCustomer)
 	customer.Put("/:id", customerService.UpdateCustomer)
 	customer.Delete("/:id", customerService.DeleteCustomer)
 
@@ -61,7 +64,10 @@ func Initialize(app *fiber.App) {
 	}
 	// supplier route
 	supplier := api.Group("/supplier")
+	supplier.Post("/", supplierService.CreateSupplier)
 	supplier.Get("/", supplierService.GetAllSuppliers)
 	supplier.Get("/:id", supplierService.GetSupplierById)
+	supplier.Put("/:id", supplierService.UpdateSupplier)
+	supplier.Delete("/:id", supplierService.DeleteSupplier)
 
 }

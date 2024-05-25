@@ -65,7 +65,7 @@ type SaleInvoiceRequestDTO struct {
 	Total       int64               `json:"total"`
 	GrandTotal  int64               `json:"grandTotal"`
 	Remark      string              `json:"remark"`
-	SaleDate    string              `jsong:"saleDate"`
+	SaleDate    string              `json:"saleDate"`
 }
 
 type PurchaseInvoiceRequestDTO struct {
@@ -76,5 +76,5 @@ type PurchaseInvoiceRequestDTO struct {
 	Total           int64                   `json:"total"`
 	GrandTotal      int64                   `json:"grandTotal"`
 	Remark          string                  `json:"remark"`
-	PurchaseDate    string                  `jsong:"purchaseDate"`
+	PurchaseDate    string                  `json:"purchaseDate"`
 }

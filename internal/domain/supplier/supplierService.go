@@ -19,24 +19,24 @@ func NewSupplierService(repo SupplierRepositoryInterface) SupplierServiceInterfa
 }
 
 func (s *SupplierService)CreateSupplier(Supplier *models.Supplier) (*models.Supplier, error){
-	return s.repo.CreateSupplier(Supplier)
+	return s.repo.Create(Supplier)
 }
 
 
 
 func (s *SupplierService)GetAllSuppliers() ([]models.Supplier, error){
-	return s.repo.GetAllSuppliers()
+	return s.repo.GetAll()
 }
 
 func (s *SupplierService)GetSupplierById(id uint) (*models.Supplier, error){
-	return s.repo.GetSupplierById(id)
+	return s.repo.GetById(id)
 }
 
 func (s *SupplierService)UpdateSupplier(Supplier *models.Supplier) (*models.Supplier, error){
-	return s.repo.UpdateSupplier(Supplier)
+	return s.repo.Update(Supplier)
 }
 
 
 func (s *SupplierService)DeleteSupplier(id uint) error{
-	return s.repo.DeleteSupplier(id)
+	return s.repo.Delete(id)
 }

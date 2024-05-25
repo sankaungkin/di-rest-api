@@ -112,7 +112,7 @@ func(r *CustomerRepository)CreateCustomer(customer *models.Customer) (*models.Cu
 		return existingCustomer, nil
 	}
 
-	func(r *CustomerRepository)DeleteCustomer(id uint) error {
+	func(r *CustomerRepository) DeleteCustomer (id uint) error {
 		// return r.db.Delete(&User{}, id).Error
 		return r.db.Delete(&models.Customer{}, id).Error
 	}

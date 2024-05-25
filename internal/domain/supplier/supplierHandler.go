@@ -11,11 +11,11 @@ import (
 )
 
 type SupplierHandler struct {
-	srv SupplierServiceInterface
+	svc SupplierServiceInterface
 }
 
 func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler{
-	return &SupplierHandler{srv: svc}
+	return &SupplierHandler{svc: svc}
 }
 
 func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
@@ -31,7 +31,7 @@ func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
-	if _, err := h.srv.CreateSupplier(newSupplier); err != nil {
+	if _, err := h.svc.CreateSupplier(newSupplier); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
@@ -43,7 +43,7 @@ func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
 }
 
 func(h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
-	Suppliers, err := h.srv.GetAllSuppliers()
+	Suppliers, err := h.svc.GetAllSuppliers()
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -61,7 +61,7 @@ func(h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 		log.Fatal(err)
 	}
 
-	Supplier, err := h.srv.GetSupplierById(uint(id))
+	Supplier, err := h.svc.GetSupplierById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -85,7 +85,7 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	Supplier, err := h.srv.GetSupplierById(uint(id))
+	foundSupplier, err := h.svc.GetSupplierById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -97,10 +97,38 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.srv.UpdateSupplier(Supplier)
-	return c.JSON(fiber.Map{
-		"code":    200,
-		"message": "Update successfully",
+
+	input := new(UpdateSupplierRequstDTO)
+	log.Println("input: ", input)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+
+	updateSupplier := models.Supplier{
+		ID: foundSupplier.ID,
+		Name: input.Name,
+		Address: input.Address,
+		Phone: input.Phone,
+	}
+	log.Println("updateCustomer: ", &updateSupplier)
+	if err := c.BodyParser(&updateSupplier); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}	
+
+	result, err :=	h.svc.UpdateSupplier(&updateSupplier)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
 	})
 }
 
@@ -109,7 +137,7 @@ func(h *SupplierHandler)DeleteSupplier(c *fiber.Ctx) error{
 	if err != nil {
 		log.Fatal(err)
 	}
-	Supplier, err := h.srv.GetSupplierById(uint(id))
+	Supplier, err := h.svc.GetSupplierById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -121,7 +149,13 @@ func(h *SupplierHandler)DeleteSupplier(c *fiber.Ctx) error{
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	h.srv.DeleteSupplier(uint(Supplier.ID))
+	h.svc.DeleteSupplier(uint(Supplier.ID))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status" : "FAIL",
+			"message" : "Internal server error",
+		})
+	}
 	return c.JSON(fiber.Map{
 		"code":    200,
 		"message": "Delete successfully",

@@ -36,21 +36,21 @@ func NewCategoryService(repo CategoryRepositoryInterface) CategoryServiceInterfa
 }
 
 func(s *CategoryService)CreateCategory(category *models.Category) (*models.Category, error) {
-	return s.repo.CreateCategory(category)
+	return s.repo.Create(category)
 }
 
 func(s *CategoryService) GetAllCategories() ([]models.Category, error) {
-	return s.repo.GetAllCategories()
+	return s.repo.GetAll()
 }
 
 func(s *CategoryService) GetCategoryById(id uint) (*models.Category, error) {
-	return s.repo.GetCategoryById(id)
+	return s.repo.GetById(id)
 }
 
 func(s *CategoryService) UpdateCategory(category *models.Category) (*models.Category, error) {
-	return s.repo.UpdateCategory(category)
+	return s.repo.Update(category)
 }
 
 func(s *CategoryService) DeleteCategory(id uint) error {
-	return s.repo.DeleteCategory(id)
+	return s.repo.Delete(id)
 }
