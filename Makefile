@@ -15,4 +15,7 @@ supplier:
 
 category:
 	@wire ./internal/domain/category/di/wire.go
+
+inventory:
+	@wire ./internal/domain/inventory/di/wire.go
 	

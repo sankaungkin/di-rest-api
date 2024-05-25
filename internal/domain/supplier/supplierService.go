@@ -1,6 +1,11 @@
 package supplier
 
-import "github.com/sankangkin/di-rest-api/internal/models"
+import (
+	"log"
+	"sync"
+
+	"github.com/sankangkin/di-rest-api/internal/models"
+)
 
 type SupplierServiceInterface interface {
 	CreateSupplier(Supplier *models.Supplier) (*models.Supplier, error)
@@ -14,8 +19,18 @@ type SupplierService struct {
 	repo SupplierRepositoryInterface
 }
 
+var (
+	svcInstance *SupplierService
+	svcOnce sync.Once
+)
 func NewSupplierService(repo SupplierRepositoryInterface) SupplierServiceInterface{
-	return &SupplierService{repo:repo}
+
+	log.Println(Green +"SupplierService constructor is called" + Reset)
+	svcOnce.Do(func() {
+
+		svcInstance = &SupplierService{repo: repo}
+	})
+	return svcInstance
 }
 
 func (s *SupplierService)CreateSupplier(Supplier *models.Supplier) (*models.Supplier, error){

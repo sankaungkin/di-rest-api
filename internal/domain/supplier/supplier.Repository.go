@@ -3,6 +3,7 @@ package supplier
 import (
 	"errors"
 	"log"
+	"sync"
 
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
@@ -20,8 +21,20 @@ type SupplierRepository struct {
 	db *gorm.DB
 }
 
+var (
+	repoInstance *SupplierRepository
+	repoOnce sync.Once
+	Reset = "\033[0m" 
+	Green = "\033[32m" 
+)
+
 func NewSupplierRepository(db *gorm.DB) SupplierRepositoryInterface{
-	return &SupplierRepository{db: db}
+	log.Println(Green + "SupplierRepository constructor is called" + Reset)
+	repoOnce.Do(func ()  {
+		repoInstance = &SupplierRepository{db: db}
+	})
+
+	return repoInstance
 }
 
 func(r *SupplierRepository)Create(supplier *models.Supplier) (*models.Supplier, error){

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -14,8 +15,17 @@ type SupplierHandler struct {
 	svc SupplierServiceInterface
 }
 
+var(
+	hdlInstance *SupplierHandler
+	hdlOnce sync.Once
+)
+
 func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler{
-	return &SupplierHandler{svc: svc}
+	log.Println(Green + "SupplierHandler constructor is called" + Reset)
+	hdlOnce.Do(func() {
+		hdlInstance = &SupplierHandler{svc: svc}
+	})
+	return hdlInstance
 }
 
 func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {

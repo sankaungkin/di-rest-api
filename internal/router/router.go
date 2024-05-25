@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
 	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
+	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
 	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
 )
@@ -70,4 +71,14 @@ func Initialize(app *fiber.App) {
 	supplier.Put("/:id", supplierService.UpdateSupplier)
 	supplier.Delete("/:id", supplierService.DeleteSupplier)
 
+	// inventory di
+	inventoryService, err := inventoryDi.InitInventoryDI()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	// inventory route
+	inventory := api.Group("/inventory")
+	inventory.Get("/", inventoryService.GetInventory)
+	inventory.Post("/increase", inventoryService.IncreaseInventory)
+	inventory.Post("/decrease", inventoryService.DecreaseInventory)
 }
