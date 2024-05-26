@@ -39,6 +39,18 @@ type Product struct {
 	CreatedAt       int64            `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt       int64            `gorm:"autoUpdateTime:milli" json:"-"`
 }
+type Inventory struct {
+	gorm.Model
+	ID        uint   `gorm:"primaryKey:autoIncrement" json:"id"`
+	OutQty    uint   `json:"inQty"`
+	InQty     uint   `json:"outQty"`
+	ProductId string `json:"productId"`
+	Product   Product `gorm:"foreignKey:ProductId;" json:"product"`
+	Remark    string `json:"remark"`
+	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
+}
+
 
 type User struct {
 	gorm.Model
@@ -100,16 +112,6 @@ type PurchaseDetail struct {
 	PurchaseId  string `json:"purchaseId"`
 }
 
-type Inventory struct {
-	gorm.Model
-	ID        uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	OutQty    uint   `json:"inQty"`
-	InQty     uint   `json:"outQty"`
-	ProductId string `json:"productId"`
-	Remark    string `json:"remark"`
-	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
-}
 
 type Sale struct {
 	gorm.Model

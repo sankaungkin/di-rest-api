@@ -18,4 +18,7 @@ category:
 
 inventory:
 	@wire ./internal/domain/inventory/di/wire.go
+
+sale:
+	@wire ./internal/domain/sale/di/wire.go
 	

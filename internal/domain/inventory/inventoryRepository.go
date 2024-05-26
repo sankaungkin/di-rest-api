@@ -119,7 +119,7 @@ func(r *InventoryRepository)Decrease(input *models.Inventory) (string, error){
 
 func (r *InventoryRepository)   Get() ([]models.Inventory, error){
 	inventories := []models.Inventory{}
-	r.db.Model(&models.Inventory{}).Order("ID desc").Find(&inventories)
+	r.db.Preload("Product").Model(&models.Inventory{}).Order("ID desc").Find(&inventories)
 	if len(inventories) == 0 {
 		return nil, errors.New("NO records found")
 	}

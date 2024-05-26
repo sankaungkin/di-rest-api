@@ -84,7 +84,9 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllSerive()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
 	}
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{

@@ -8,6 +8,7 @@ import (
 	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
 	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
+	saleDI "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
 	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
 )
 
@@ -81,4 +82,15 @@ func Initialize(app *fiber.App) {
 	inventory.Get("/", inventoryService.GetInventory)
 	inventory.Post("/increase", inventoryService.IncreaseInventory)
 	inventory.Post("/decrease", inventoryService.DecreaseInventory)
+
+	// sale di
+	saleService, err := saleDI.InitSaleDI()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	// sale route
+	sale := api.Group("/sale")
+	sale.Post("/", saleService.CreateSale)
+	sale.Get("/", saleService.GetAllSales)
+	sale.Get("/:id", saleService.GetById)
 }
