@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -25,7 +26,7 @@ var (
 )
 func NewSupplierService(repo SupplierRepositoryInterface) SupplierServiceInterface{
 
-	log.Println(Green +"SupplierService constructor is called" + Reset)
+	log.Println(util.Green +"SupplierService constructor is called" + util.Reset)
 	svcOnce.Do(func() {
 
 		svcInstance = &SupplierService{repo: repo}

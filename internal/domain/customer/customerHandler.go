@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -21,7 +22,7 @@ var (
 )
 // constructor
 func NewCustomerHandler(svc CustomerServiceInterface) *CustomerHandler{
-	log.Println(Magenta + "CustomerHandler constructor is called " +Reset)
+	log.Println(util.Gray + "CustomerHandler constructor is called " +util.Reset)
 	hdlOnce.Do(func(){
 		hdlInstance = &CustomerHandler{svc: svc}
 	})

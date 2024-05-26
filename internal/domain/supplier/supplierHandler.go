@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -21,7 +22,7 @@ var(
 )
 
 func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler{
-	log.Println(Green + "SupplierHandler constructor is called" + Reset)
+	log.Println(util.Green + "SupplierHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &SupplierHandler{svc: svc}
 	})

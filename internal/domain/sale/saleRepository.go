@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -25,12 +26,10 @@ type SaleRepository struct{
 var (
 	repoInstance *SaleRepository
 	repoOnce sync.Once
-	Blue = "\033[34m" 
-	Reset = "\033[0m" 
 )
 
 func NewSaleRepository(db *gorm.DB) SaleRepositoryInterface {
-	log.Println(Blue + "SaleRepository constructor is called" + Reset)
+	log.Println(util.Blue + "SaleRepository constructor is called" + util.Reset)
 	repoOnce.Do(func() {
 		repoInstance = &SaleRepository{db: db}
 	})

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -24,12 +25,10 @@ type InventoryRepository struct {
 var (
 	repoInstance *InventoryRepository
 	repoOnce sync.Once
-	Reset = "\033[0m" 
-	Cyan = "\033[36m"
 )
 
 func NewInventoryRepository(db *gorm.DB) InventoryRepositoryInterface{
-	log.Println(Cyan + "InventoryRepository constructor is called" + Reset)
+	log.Println(util.Cyan + "InventoryRepository constructor is called" + util.Reset)
 	repoOnce.Do(func() {
 		repoInstance = &InventoryRepository{db: db}
 	})

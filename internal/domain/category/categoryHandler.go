@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -18,13 +19,11 @@ type CategoryHandler struct {
 var (
 	hdlInstance *CategoryHandler
 	hdlOnce sync.Once
-	Red = "\033[31m" 
-	Reset = "\033[0m" 
 )
 // constructor 
 func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler{
 	
-	log.Println(Red + "CategoryHandler constructor is called"+ Reset)
+	log.Println(util.Red + "CategoryHandler constructor is called"+ util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &CategoryHandler{svc: svc}
 	})

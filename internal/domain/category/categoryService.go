@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -27,7 +28,7 @@ var (
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCategoryService(repo CategoryRepositoryInterface) CategoryServiceInterface{
 
-	log.Println(Red + "CategoryService constructor is called" + Reset)
+	log.Println(util.Red + "CategoryService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
 		svcInstance = &CategoryService{repo: repo}

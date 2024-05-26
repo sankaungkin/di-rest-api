@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -20,7 +21,7 @@ var (
 )
 
 func NewInventoryHandler(svc InventoryServiceInterface) *InventoryHandler{
-	log.Println(Cyan + "InventoryHandler constructor is called" + Reset)
+	log.Println(util.Cyan + "InventoryHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &InventoryHandler{svc: svc}
 	})

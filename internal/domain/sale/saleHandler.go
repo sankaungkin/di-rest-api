@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -22,14 +23,13 @@ var (
 
 
 func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
-	log.Println(Blue + "SaleHandler constructor is called" + Reset)
+	log.Println(util.Blue + "SaleHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &SaleHandler{svc: svc}
 	})
 	return hdlInstance
 }
 
-//TODO implement create sale process
 func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 	
 	input := new(SaleInvoiceRequestDTO)

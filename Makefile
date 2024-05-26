@@ -21,4 +21,7 @@ inventory:
 
 sale:
 	@wire ./internal/domain/sale/di/wire.go
+
+purchase:
+	@wire ./internal/domain/purchase/di/wire.go
 	

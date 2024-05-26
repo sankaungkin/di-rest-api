@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -23,13 +24,11 @@ type SupplierRepository struct {
 
 var (
 	repoInstance *SupplierRepository
-	repoOnce sync.Once
-	Reset = "\033[0m" 
-	Green = "\033[32m" 
+	repoOnce sync.Once 
 )
 
 func NewSupplierRepository(db *gorm.DB) SupplierRepositoryInterface{
-	log.Println(Green + "SupplierRepository constructor is called" + Reset)
+	log.Println(util.Green + "SupplierRepository constructor is called" + util.Reset)
 	repoOnce.Do(func ()  {
 		repoInstance = &SupplierRepository{db: db}
 	})

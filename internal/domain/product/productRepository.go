@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -26,8 +27,6 @@ type ProductRepository struct{
 var (
 	repoInstance *ProductRepository
 	repoOnce sync.Once
-	Reset = "\033[0m" 
-	Yellow = "\033[33m"
 )
 
 // func NewProductRepository(db *gorm.DB) ProductRepositoryInterface {
@@ -38,7 +37,7 @@ var (
 
 // constructor
 func NewProductRepository(db *gorm.DB) ProductRepositoryInterface{
-	log.Println(Yellow + "ProductRepository constructor is called " + Reset)
+	log.Println(util.Yellow + "ProductRepository constructor is called " + util.Reset)
 	repoOnce.Do(func() {
 		repoInstance = &ProductRepository{db: db}
 	})

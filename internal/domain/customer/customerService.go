@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -31,7 +32,7 @@ var (
 
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterface {
-	log.Println(Magenta + "CustomerService constructor is called " + Reset)
+	log.Println(util.Gray + "CustomerService constructor is called " + util.Reset)
 	svcOnce.Do(func() {
 		svcInstance = &CustomerService{repo: repo}
 	})

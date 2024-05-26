@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -23,7 +24,7 @@ var (
 )
 
 func NewInventoryService(repo InventoryRepositoryInterface) InventoryServiceInterface {
-	log.Println(Cyan +"InventoryService constructor is called" + Reset)
+	log.Println(util.Cyan +"InventoryService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
 		svcInstance = &InventoryService{repo: repo}

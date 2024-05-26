@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -25,8 +26,6 @@ type CustomerRepository struct {
 var(
 	repoInstance *CustomerRepository
 	repoOnce sync.Once
-	Reset = "\033[0m" 
-	Magenta = "\033[35m"
 )
 
 // func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface{
@@ -34,7 +33,7 @@ var(
 // }
 
 func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface{
-	log.Println(Magenta + "CustomerRepository constructor is called" +Reset)
+	log.Println(util.Gray + "CustomerRepository constructor is called" + util.Reset)
 	repoOnce.Do(func(){
 		repoInstance = &CustomerRepository{db: db}
 	})

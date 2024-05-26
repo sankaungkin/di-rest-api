@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -28,7 +29,7 @@ var (
 
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCategoryRepository(db *gorm.DB) CategoryRepositoryInterface {
-	log.Println(Red+"CategoryRepository constructor is called"+Reset)
+	log.Println(util.Red+"CategoryRepository constructor is called"+util.Reset)
 	repoOnce.Do(func(){
 		repoInstance = &CategoryRepository{db: db}
 	})

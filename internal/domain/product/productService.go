@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -31,7 +32,7 @@ var (
 
 func NewProductService(repo ProductRepositoryInterface) ProductServiceInterface{
 	
-	log.Println(Yellow + "ProductService constructor is called"+ Reset) 
+	log.Println(util.Yellow + "ProductService constructor is called"+ util.Reset) 
 	
 	svcOnce.Do(func() {
 		svcInstance = &ProductService{repo: repo}
