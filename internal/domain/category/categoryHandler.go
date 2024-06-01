@@ -23,7 +23,7 @@ var (
 // constructor 
 func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler{
 	
-	log.Println(util.Red + "CategoryHandler constructor is called"+ util.Reset)
+	log.Println(util.Blue + "CategoryHandler constructor is called"+ util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &CategoryHandler{svc: svc}
 	})

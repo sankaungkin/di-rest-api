@@ -33,7 +33,7 @@ type Product struct {
 	SellPriceLevel1 int64            `json:"sellPricelvl1" validate:"required,min=1"`
 	SellPriceLevel2 int64            `json:"sellPricelvl2" validate:"required,min=1"`
 	ReorderLvl      uint             `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	QtyOnHand       int              `json:"qtyOhHand" validate:"required"`
+	QtyOnHand       int              `json:"qtyOnHand" validate:"required"`
 	BrandName       string           `json:"brand"`
 	IsActive        bool             `json:"isActive" gorm:"default:true"`
 	CreatedAt       int64            `gorm:"autoCreateTime" json:"-"`
@@ -51,15 +51,20 @@ type Inventory struct {
 	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
+type Role string 
+const (
+	ADMIN  Role = "admin"
+	USER 	Role = "user"
+)
 
 type User struct {
 	gorm.Model
 	ID        uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	Email     string `gorm:"uniqueIndex;" json:"email" validate:"required,email"`
-	UserName  string `json:"username" validate:"required,min=3"`
+	UserName  string `json:"userName" validate:"required,min=3"`
 	Password  string `json:"password" validate:"required,min=3"`
 	IsAdmin   bool   `json:"isAdmin" validate:"required"`
-	Role      string `json:"role" validate:"required" gorm:"default:user"`
+	Role      Role 		`json:"role" validate:"required" gorm:"type:enum('admin','user');default:user"`
 	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
 }

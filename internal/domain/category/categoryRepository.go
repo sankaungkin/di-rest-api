@@ -29,7 +29,7 @@ var (
 
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCategoryRepository(db *gorm.DB) CategoryRepositoryInterface {
-	log.Println(util.Red+"CategoryRepository constructor is called"+util.Reset)
+	log.Println(util.Blue+"CategoryRepository constructor is called"+util.Reset)
 	repoOnce.Do(func(){
 		repoInstance = &CategoryRepository{db: db}
 	})

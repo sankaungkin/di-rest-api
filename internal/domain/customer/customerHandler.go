@@ -42,7 +42,6 @@ func(h *CustomerHandler)CreateCustomer(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Println("New customer input: ", input)
 	newCustomer := models.Customer{
 		Name: input.Name,
 		Address: input.Address,
@@ -61,7 +60,6 @@ func(h *CustomerHandler)CreateCustomer(c *fiber.Ctx) error {
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
-	log.Println("newCustomer: ", newCustomer)
 
 	if _, err := h.svc.CreateCustomer(&newCustomer); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})

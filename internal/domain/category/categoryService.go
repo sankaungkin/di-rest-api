@@ -28,7 +28,7 @@ var (
 //! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCategoryService(repo CategoryRepositoryInterface) CategoryServiceInterface{
 
-	log.Println(util.Red + "CategoryService constructor is called" + util.Reset)
+	log.Println(util.Blue + "CategoryService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
 		svcInstance = &CategoryService{repo: repo}

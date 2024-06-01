@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	authDi "github.com/sankangkin/di-rest-api/internal/auth/di"
 	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
 	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
 	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
@@ -19,6 +20,19 @@ func Initialize(app *fiber.App) {
 	api.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(200).SendString("---->  Hello from stt api using go fiber framework <-- ")
 	})
+
+	// authentication di
+	authService, err := authDi.InitAuth()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	// auth route
+	auth := api.Group("/auth")
+	auth.Post("/signup", authService.SignUp)
+	auth.Post("/signin", authService.SignIn)
+	auth.Post("/refresh", authService.Refresh)
+	auth.Post("/logout", authService.Logout)
+
 
 	// category di
 	catService, err := categoryDi.InitCategory()

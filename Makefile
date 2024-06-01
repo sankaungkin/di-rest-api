@@ -24,4 +24,7 @@ sale:
 
 purchase:
 	@wire ./internal/domain/purchase/di/wire.go
+
+auth:
+	@wire ./internal/auth/di/wire.go
 	
