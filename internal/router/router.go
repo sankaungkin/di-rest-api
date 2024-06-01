@@ -12,6 +12,7 @@ import (
 	purchaseDi "github.com/sankangkin/di-rest-api/internal/domain/purchase/di"
 	saleDi "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
 	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
+	"github.com/sankangkin/di-rest-api/internal/middleware"
 )
 
 func Initialize(app *fiber.App) {
@@ -41,6 +42,7 @@ func Initialize(app *fiber.App) {
 	}
 	// category route
 	categories := api.Group("/category")
+	categories.Use(middleware.Protected())
 	categories.Post("/", catService.CreateCategory)
 	categories.Get("/",catService.GetAllCategorie)
 	categories.Get("/:id", catService.GetCategoryById)
@@ -55,6 +57,7 @@ func Initialize(app *fiber.App) {
 	} 
 	// product route
 	products := api.Group("/product")
+	products.Use(middleware.Protected())
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/:id", productService.GetProductById)
@@ -68,6 +71,7 @@ func Initialize(app *fiber.App) {
 	}
 	// customer route
 	customer := api.Group("/customer")
+	customer.Use(middleware.Protected())
 	customer.Post("/", customerService.CreateCustomer)
 	customer.Get("/", customerService.GetAllCustomers)
 	customer.Get("/:id", customerService.GetCustomerById)
@@ -81,6 +85,7 @@ func Initialize(app *fiber.App) {
 	}
 	// supplier route
 	supplier := api.Group("/supplier")
+	supplier.Use(middleware.Protected())
 	supplier.Post("/", supplierService.CreateSupplier)
 	supplier.Get("/", supplierService.GetAllSuppliers)
 	supplier.Get("/:id", supplierService.GetSupplierById)
@@ -94,6 +99,7 @@ func Initialize(app *fiber.App) {
 	}
 	// inventory route
 	inventory := api.Group("/inventory")
+	inventory.Use(middleware.Protected())
 	inventory.Get("/", inventoryService.GetInventory)
 	inventory.Post("/increase", inventoryService.IncreaseInventory)
 	inventory.Post("/decrease", inventoryService.DecreaseInventory)
@@ -105,6 +111,7 @@ func Initialize(app *fiber.App) {
 	}
 	// sale route
 	sale := api.Group("/sale")
+	sale.Use(middleware.Protected())
 	sale.Post("/", saleService.CreateSale)
 	sale.Get("/", saleService.GetAllSales)
 	sale.Get("/:id", saleService.GetById)
@@ -116,6 +123,7 @@ func Initialize(app *fiber.App) {
 	}
 	// purchase route
 	purchase := api.Group("/purchase")
+	purchase.Use(middleware.Protected())
 	purchase.Post("/", purchaseService.CreateSale)
 	purchase.Get("/", purchaseService.GetAllPurchases)
 	purchase.Get("/:id", purchaseService.GetById)

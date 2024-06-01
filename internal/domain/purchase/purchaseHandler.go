@@ -71,7 +71,7 @@ func (h *PurchaseHandler)CreateSale(c *fiber.Ctx) error{
 	
 	
 }
-//TODO implement get sales process
+
 func(h *PurchaseHandler)GetAllPurchases(c *fiber.Ctx) error{
 
 	purchases, err := h.svc.GetAllService()
