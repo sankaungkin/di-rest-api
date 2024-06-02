@@ -28,7 +28,23 @@ func NewInventoryHandler(svc InventoryServiceInterface) *InventoryHandler{
 	return hdlInstance
 }
 
-func (h *InventoryHandler)GetInventory(c *fiber.Ctx) error {
+// GetAllInventories godoc
+//
+//	@Summary		Fetch all inventory records
+//	@Description	Fetch all inventory records
+//	@Tags			Inventories
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Inventory
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/inventory	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+func (h *InventoryHandler)GetAllInventories(c *fiber.Ctx) error {
 	inventories, err := h.svc.GetAllService()
 	if err != nil {
 		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
@@ -41,6 +57,25 @@ func (h *InventoryHandler)GetInventory(c *fiber.Ctx) error {
 		})
 }
 
+// IncreaseInventory 	godoc
+//
+//	@Summary		Create increase inventory record based on parameters
+//	@Description	Create increase inventory record based on parameters
+//	@Tags			Inventories
+//	@Accept			json
+//	@Param			inventory	body		IncreaseInventoryDTO	true	"Inventory Data"
+//	@Success		200		{object}	models.Inventory
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/inventory/increase [post]
+//
+//	@Security		ApiKeyAuth
+//
+//	@param			Authorization	header	string	true	"Authorization"
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func (h *InventoryHandler) IncreaseInventory(c *fiber.Ctx) error {
 
 	input := new(IncreaseInventoryDTO)
@@ -76,6 +111,25 @@ func (h *InventoryHandler) IncreaseInventory(c *fiber.Ctx) error {
 	})
 }
 
+// DecreaseInventory 	godoc
+//
+//	@Summary		Create decrease inventory record based on parameters
+//	@Description	Create decrease inventory record based on parameters
+//	@Tags			Inventories
+//	@Accept			json
+//	@Param			inventory	body		IncreaseInventoryDTO	true	"Inventory Data"
+//	@Success		200		{object}	models.Inventory
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/inventory/decrease [post]
+//
+//	@Security		ApiKeyAuth
+//
+//	@param			Authorization	header	string	true	"Authorization"
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func (h *InventoryHandler) DecreaseInventory(c *fiber.Ctx) error {
 
 	input := new(IncreaseInventoryDTO)

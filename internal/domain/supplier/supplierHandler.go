@@ -29,6 +29,26 @@ func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler{
 	return hdlInstance
 }
 
+
+// CreateSupplier 	godoc
+//
+//	@Summary		Create new supplier based on parameters
+//	@Description	Create new supplier based on parameters
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Param			supplier	body		CreateSupplierRequestDTO	true	"Supplier Data"
+//	@Success		200		{object}	models.Supplier
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/supplier [post]
+//
+//	@Security		ApiKeyAuth
+//
+//	@param			Authorization	header	string	true	"Authorization"
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
 	newSupplier := new(models.Supplier)
 	if err := c.BodyParser(newSupplier); err != nil {
@@ -53,6 +73,22 @@ func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
 		})
 }
 
+// GetAllSuppliers godoc
+//
+//	@Summary		Fetch all supplier
+//	@Description	Fetch all supplier
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Supplier
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/supplier	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
 	Suppliers, err := h.svc.GetAllSuppliers()
 	if err != nil {
@@ -66,6 +102,23 @@ func(h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
 		})
 }
 
+// GetSupplierById godoc
+//
+//	@Summary		Fetch individual supplier by Id
+//	@Description	Fetch individual supplier by Id
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"supplier Id"
+//	@Success		200					{object}	models.Supplier
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/supplier/{id}	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10,32)
 	if err != nil {
@@ -91,6 +144,25 @@ func(h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 	})
 }
 
+
+// UpdateSupplier godoc
+//
+//	@Summary		Update individual supplier
+//	@Description	Update individual supplier
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"Supplier Id"
+//	@Param			product				body		UpdateSupplierRequstDTO	true	"Supplier Data"
+//	@Success		200					{object}	models.Supplier
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/supplier/{id}	[put]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10,32)
 	if err != nil {
@@ -143,6 +215,24 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 	})
 }
 
+
+// DeleteSupplier godoc
+//
+//	@Summary		Delete individual supplier
+//	@Description	Delete individual supplier
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"supplier Id"
+//	@Success		200					{object}	models.Supplier
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/supplier/{id}	[delete]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *SupplierHandler)DeleteSupplier(c *fiber.Ctx) error{
 	id, err := strconv.ParseUint(c.Params("id"), 10,32)
 	if err != nil {

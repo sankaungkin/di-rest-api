@@ -29,8 +29,8 @@ func Initialize(app *fiber.App) {
 	}
 	// auth route
 	auth := api.Group("/auth")
-	auth.Post("/signup", authService.SignUp)
-	auth.Post("/signin", authService.SignIn)
+	auth.Post("/register", authService.SignUp)
+	auth.Post("/login", authService.SignIn)
 	auth.Post("/refresh", authService.Refresh)
 	auth.Post("/logout", authService.Logout)
 
@@ -100,7 +100,7 @@ func Initialize(app *fiber.App) {
 	// inventory route
 	inventory := api.Group("/inventory")
 	inventory.Use(middleware.Protected())
-	inventory.Get("/", inventoryService.GetInventory)
+	inventory.Get("/", inventoryService.GetAllInventories)
 	inventory.Post("/increase", inventoryService.IncreaseInventory)
 	inventory.Post("/decrease", inventoryService.DecreaseInventory)
 
@@ -124,7 +124,7 @@ func Initialize(app *fiber.App) {
 	// purchase route
 	purchase := api.Group("/purchase")
 	purchase.Use(middleware.Protected())
-	purchase.Post("/", purchaseService.CreateSale)
+	purchase.Post("/", purchaseService.CreatePurchase)
 	purchase.Get("/", purchaseService.GetAllPurchases)
 	purchase.Get("/:id", purchaseService.GetById)
 }

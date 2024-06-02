@@ -34,6 +34,25 @@ func NewProductHandler(svc ProductServiceInterface) *ProductHandler{
 	return hdlInstance
 }
 
+// CreateProduct 	godoc
+//
+//	@Summary		Create new product based on parameters
+//	@Description	Create new product based on parameters
+//	@Tags			Products
+//	@Accept			json
+//	@Param			product	body		CreateProductRequstDTO	true	"Product Data"
+//	@Success		200		{object}	models.Product
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/product [post]
+//
+//	@Security		ApiKeyAuth
+//
+//	@param			Authorization	header	string	true	"Authorization"
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 	input := new(CreateProductRequstDTO)
 	if err := c.BodyParser(input); err != nil {
@@ -82,6 +101,22 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 
 }
 
+// GetProducts godoc
+//
+//	@Summary		Fetch all products
+//	@Description	Fetch all products
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Product
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/product	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllSerive()
 	if err != nil {
@@ -98,6 +133,23 @@ func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 
 }
 
+// GetProductById godoc
+//
+//	@Summary		Fetch individual product by Id
+//	@Description	Fetch individual product by Id
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"product Id"
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/product/{id}	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	
 
@@ -120,6 +172,24 @@ func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateProduct godoc
+//
+//	@Summary		Update individual product
+//	@Description	Update individual product
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"product Id"
+//	@Param			product				body		UpdateProductRequstDTO	true	"Product Data"
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/product/{id}	[put]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
 	foundProduct, err := h.svc.GetByIdSerive(c.Params("id"))
@@ -174,6 +244,23 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	})
 }
 
+// DeleteProduct godoc
+//
+//	@Summary		Delete individual product
+//	@Description	Delete individual product
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"product Id"
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/product/{id}	[delete]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 
 	id := strings.ToUpper(c.Params("id"))

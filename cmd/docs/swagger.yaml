@@ -1,3 +1,527 @@
+definitions:
+  dto.UpdateCategoryRequestDTO:
+    properties:
+      categoryName:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Category:
+    properties:
+      categoryName:
+        minLength: 3
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      updatedAt:
+        type: string
+    required:
+    - categoryName
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Customer:
+    properties:
+      address:
+        minLength: 3
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      name:
+        minLength: 3
+        type: string
+      phone:
+        minLength: 3
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - address
+    - name
+    - phone
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Inventory:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      inQty:
+        type: integer
+      outQty:
+        type: integer
+      product:
+        $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+      productId:
+        type: string
+      remark:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Product:
+    properties:
+      brand:
+        type: string
+      buyPrice:
+        minimum: 1
+        type: integer
+      categoryId:
+        type: integer
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      isActive:
+        type: boolean
+      productName:
+        minLength: 3
+        type: string
+      qtyOnHand:
+        type: integer
+      reorderlvl:
+        minimum: 1
+        type: integer
+      sellPricelvl1:
+        minimum: 1
+        type: integer
+      sellPricelvl2:
+        minimum: 1
+        type: integer
+      uom:
+        minLength: 3
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - buyPrice
+    - productName
+    - qtyOnHand
+    - reorderlvl
+    - sellPricelvl1
+    - sellPricelvl2
+    - uom
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Purchase:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      discount:
+        type: integer
+      grandTotal:
+        type: integer
+      id:
+        type: string
+      purchaseDate:
+        type: string
+      purchaseDetails:
+        items:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail'
+        type: array
+      remark:
+        type: string
+      supplier:
+        $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier'
+      supplierId:
+        type: integer
+      total:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      price:
+        type: integer
+      productId:
+        type: string
+      productName:
+        type: string
+      purchaseId:
+        type: string
+      qty:
+        type: integer
+      total:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Role:
+    enum:
+    - admin
+    - user
+    type: string
+    x-enum-varnames:
+    - ADMIN
+    - USER
+  github_com_sankangkin_di-rest-api_internal_models.Sale:
+    properties:
+      createdAt:
+        type: string
+      customer:
+        $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Customer'
+      customerId:
+        type: integer
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      discount:
+        type: integer
+      grandTotal:
+        type: integer
+      id:
+        type: string
+      remark:
+        type: string
+      saleDate:
+        type: string
+      saleDetails:
+        items:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.SaleDetail'
+        type: array
+      total:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.SaleDetail:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      price:
+        type: integer
+      productId:
+        type: string
+      productName:
+        type: string
+      qty:
+        type: integer
+      saleId:
+        type: string
+      total:
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.Supplier:
+    properties:
+      address:
+        minLength: 3
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      name:
+        minLength: 3
+        type: string
+      phone:
+        minLength: 3
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - address
+    - name
+    - phone
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      email:
+        type: string
+      id:
+        type: integer
+      isAdmin:
+        type: boolean
+      password:
+        minLength: 3
+        type: string
+      role:
+        $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Role'
+      updatedAt:
+        type: string
+      userName:
+        minLength: 3
+        type: string
+    required:
+    - email
+    - isAdmin
+    - password
+    - role
+    - userName
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  httputil.HttpError400:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+  httputil.HttpError401:
+    properties:
+      code:
+        example: 401
+        type: integer
+      message:
+        example: Unauthorized
+        type: string
+    type: object
+  httputil.HttpError500:
+    properties:
+      code:
+        example: 500
+        type: integer
+      message:
+        example: internal server error
+        type: string
+    type: object
+  internal_auth.SignInRequestDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_auth.SignInResponseDTO:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  internal_auth.SignUpDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+      userName:
+        type: string
+    required:
+    - email
+    - password
+    - role
+    - userName
+    type: object
+  internal_auth.SignUpResponseDTO:
+    properties:
+      AccessToken:
+        type: string
+      RefreshToken:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.User'
+    type: object
+  internal_domain_category.CreateCategoryRequestDTO:
+    properties:
+      categoryName:
+        type: string
+    type: object
+  internal_domain_customer.CreateCustomerRequestDTO:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_domain_customer.UpdateCustomerRequstDTO:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_domain_inventory.IncreaseInventoryDTO:
+    properties:
+      inQty:
+        type: integer
+      outQty:
+        type: integer
+      productId:
+        type: string
+      remark:
+        type: string
+    type: object
+  internal_domain_product.CreateProductRequstDTO:
+    properties:
+      brand:
+        type: string
+      buyPrice:
+        minimum: 1
+        type: integer
+      categoryId:
+        type: integer
+      id:
+        type: string
+      isActive:
+        type: boolean
+      productName:
+        minLength: 3
+        type: string
+      qtyOhHand:
+        type: integer
+      reorderlvl:
+        minimum: 1
+        type: integer
+      sellPriceLevel1:
+        minimum: 1
+        type: integer
+      sellPriceLevel2:
+        minimum: 1
+        type: integer
+      uom:
+        minLength: 3
+        type: string
+    required:
+    - buyPrice
+    - categoryId
+    - productName
+    - qtyOhHand
+    - reorderlvl
+    - sellPriceLevel1
+    - sellPriceLevel2
+    - uom
+    type: object
+  internal_domain_product.UpdateProductRequstDTO:
+    properties:
+      brand:
+        description: QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
+        type: string
+      buyPrice:
+        minimum: 1
+        type: integer
+      categoryId:
+        type: integer
+      isActive:
+        type: boolean
+      productName:
+        minLength: 3
+        type: string
+      reorderlvl:
+        minimum: 1
+        type: integer
+      sellPriceLevel1:
+        minimum: 1
+        type: integer
+      sellPriceLevel2:
+        minimum: 1
+        type: integer
+      uom:
+        minLength: 2
+        type: string
+    required:
+    - buyPrice
+    - categoryId
+    - productName
+    - reorderlvl
+    - sellPriceLevel1
+    - sellPriceLevel2
+    - uom
+    type: object
+  internal_domain_purchase.PurchaseInvoiceRequestDTO:
+    properties:
+      discount:
+        type: integer
+      grandTotal:
+        type: integer
+      id:
+        type: string
+      purchaseDate:
+        type: string
+      remark:
+        type: string
+      saleDetails:
+        items:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail'
+        type: array
+      supplierId:
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_domain_sale.SaleInvoiceRequestDTO:
+    properties:
+      customerId:
+        type: integer
+      discount:
+        type: integer
+      grandTotal:
+        type: integer
+      id:
+        type: string
+      remark:
+        type: string
+      saleDate:
+        type: string
+      saleDetails:
+        items:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.SaleDetail'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_domain_supplier.CreateSupplierRequestDTO:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
+  internal_domain_supplier.UpdateSupplierRequstDTO:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    type: object
 info:
   contact:
     email: sankaungkin@gmail.com
@@ -8,8 +532,1174 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
   title: REST-API with(golang fiber, google wire dependency injection)
-  version: "1.1"
-paths: {}
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Login Data
+        in: body
+        name: info
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.SignInRequestDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.SignInResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      summary: Login to the api with email and password
+      tags:
+      - Auth
+  /api/auth/logout:
+    post:
+      description: Logout user
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      summary: Logout user
+      tags:
+      - Auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get refresh token
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      summary: Get refresh token
+      tags:
+      - Auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user based on parameters
+      parameters:
+      - description: Signup Data
+        in: body
+        name: info
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.SignUpDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.SignUpResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      summary: Create new user based on parameters
+      tags:
+      - Auth
+  /api/category:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all Categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Category'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all Categories
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      description: Create new category based on parameters
+      parameters:
+      - description: Category Data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_category.CreateCategoryRequestDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create new category based on parameters
+      tags:
+      - Categories
+  /api/category/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete individual category
+      parameters:
+      - description: category Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Delete individual category
+      tags:
+      - Categories
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual category by Id
+      parameters:
+      - description: category Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch individual category by Id
+      tags:
+      - Categories
+    put:
+      consumes:
+      - application/json
+      description: Update individual category
+      parameters:
+      - description: category Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Category Data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateCategoryRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Category'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Update individual category
+      tags:
+      - Categories
+  /api/customer:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all customers
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Customer'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all customers
+      tags:
+      - Customers
+    post:
+      consumes:
+      - application/json
+      description: Create new customer based on parameters
+      parameters:
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_customer.CreateCustomerRequestDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Customer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create new customer based on parameters
+      tags:
+      - Customers
+  /api/customer/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete individual customer
+      parameters:
+      - description: customer Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Customer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Delete individual customer
+      tags:
+      - Customers
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual customer by Id
+      parameters:
+      - description: customer Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Customer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch individual customer by Id
+      tags:
+      - Customers
+    put:
+      consumes:
+      - application/json
+      description: Update individual customer
+      parameters:
+      - description: customer Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_customer.UpdateCustomerRequstDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Customer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Update individual customer
+      tags:
+      - Customers
+  /api/inventory:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all inventory records
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Inventory'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all inventory records
+      tags:
+      - Inventories
+  /api/inventory/decrease:
+    post:
+      consumes:
+      - application/json
+      description: Create decrease inventory record based on parameters
+      parameters:
+      - description: Inventory Data
+        in: body
+        name: inventory
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_inventory.IncreaseInventoryDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Inventory'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create decrease inventory record based on parameters
+      tags:
+      - Inventories
+  /api/inventory/increase:
+    post:
+      consumes:
+      - application/json
+      description: Create increase inventory record based on parameters
+      parameters:
+      - description: Inventory Data
+        in: body
+        name: inventory
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_inventory.IncreaseInventoryDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Inventory'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create increase inventory record based on parameters
+      tags:
+      - Inventories
+  /api/product:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create new product based on parameters
+      parameters:
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_product.CreateProductRequstDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create new product based on parameters
+      tags:
+      - Products
+  /api/product/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete individual product
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Delete individual product
+      tags:
+      - Products
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual product by Id
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch individual product by Id
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Update individual product
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_product.UpdateProductRequstDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Update individual product
+      tags:
+      - Products
+  /api/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Create new purchase based on parameters
+      parameters:
+      - description: Product Data
+        in: body
+        name: purchase
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_purchase.PurchaseInvoiceRequestDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create new purchase based on parameters
+      tags:
+      - Purchases
+  /api/purchase/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual purchase by Id
+      parameters:
+      - description: purchase Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch individual purchase by Id
+      tags:
+      - Purchases
+  /api/purchases:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all purchases
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all purchases
+      tags:
+      - Purchases
+  /api/sale:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all sales
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Sale'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all sales
+      tags:
+      - Sales
+    post:
+      consumes:
+      - application/json
+      description: Create new sale based on parameters
+      parameters:
+      - description: Product Data
+        in: body
+        name: sale
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_sale.SaleInvoiceRequestDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Sale'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create new sale based on parameters
+      tags:
+      - Sales
+  /api/sale/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual sale by Id
+      parameters:
+      - description: sale Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Sale'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch individual sale by Id
+      tags:
+      - Sales
+  /api/supplier:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all supplier
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch all supplier
+      tags:
+      - Suppliers
+    post:
+      consumes:
+      - application/json
+      description: Create new supplier based on parameters
+      parameters:
+      - description: Supplier Data
+        in: body
+        name: supplier
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_supplier.CreateSupplierRequestDTO'
+      - description: Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Create new supplier based on parameters
+      tags:
+      - Suppliers
+  /api/supplier/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete individual supplier
+      parameters:
+      - description: supplier Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Delete individual supplier
+      tags:
+      - Suppliers
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual supplier by Id
+      parameters:
+      - description: supplier Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Fetch individual supplier by Id
+      tags:
+      - Suppliers
+    put:
+      consumes:
+      - application/json
+      description: Update individual supplier
+      parameters:
+      - description: Supplier Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Supplier Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_supplier.UpdateSupplierRequstDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - ApiKeyAuth: []
+      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      summary: Update individual supplier
+      tags:
+      - Suppliers
 securityDefinitions:
   ApiKeyAuth:
     description: Type "Bearer" followed by a space and JWT token.

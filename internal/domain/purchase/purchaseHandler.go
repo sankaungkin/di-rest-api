@@ -31,7 +31,26 @@ func NewSaleHandler(svc PurchaseServiceInterface) *PurchaseHandler {
 	return hdlInstance
 }
 
-func (h *PurchaseHandler)CreateSale(c *fiber.Ctx) error{
+// CreatePurchase 	godoc
+//
+//	@Summary		Create new purchase based on parameters
+//	@Description	Create new purchase based on parameters
+//	@Tags			Purchases
+//	@Accept			json
+//	@Param			purchase	body		PurchaseInvoiceRequestDTO	true	"Product Data"
+//	@Success		200		{object}	models.Purchase
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/purchase [post]
+//
+//	@Security		ApiKeyAuth
+//
+//	@param			Authorization	header	string	true	"Authorization"
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+func (h *PurchaseHandler)CreatePurchase(c *fiber.Ctx) error{
 	
 	input := new(PurchaseInvoiceRequestDTO)
 	if err := c.BodyParser(input); err != nil {
@@ -72,6 +91,23 @@ func (h *PurchaseHandler)CreateSale(c *fiber.Ctx) error{
 	
 }
 
+
+// GetAllPurchases godoc
+//
+//	@Summary		Fetch all purchases
+//	@Description	Fetch all purchases
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Purchase
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *PurchaseHandler)GetAllPurchases(c *fiber.Ctx) error{
 
 	purchases, err := h.svc.GetAllService()
@@ -88,6 +124,23 @@ func(h *PurchaseHandler)GetAllPurchases(c *fiber.Ctx) error{
 		})
 }
 
+// GetPurchaseById godoc
+//
+//	@Summary		Fetch individual purchase by Id
+//	@Description	Fetch individual purchase by Id
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"purchase Id"
+//	@Success		200					{object}	models.Purchase
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/purchase/{id}	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func (h *PurchaseHandler)GetById(c *fiber.Ctx) error {
 
 	purchase, err := h.svc.GetById(c.Params("id"))

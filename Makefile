@@ -1,5 +1,5 @@
 swagger:
-	cd ./cmd && swag init
+	@swag init --parseDependency --parseInternal -g ./cmd/main.go -o ./cmd/docs
 
 compile:
 	@go build -o bin/min cmd/main.go

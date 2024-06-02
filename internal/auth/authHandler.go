@@ -30,6 +30,19 @@ func NewAuthHandler(svc AuthServiceInterface) *AuthHandler {
 	return hdlInstance
 }
 
+// 	Register	godoc
+//	@Summary		Create new user based on parameters
+//	@Description	Register new user based on parameters
+//
+//	@Tags			Auth
+//	@Accept			json
+//	@Param			info	body		SignUpDTO	true	"Signup Data"
+//	@Success		200		{object}	SignUpResponseDTO
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/auth/register [post]
 func (h *AuthHandler) SignUp(c *fiber.Ctx) error {
 	var user models.User
 	if err := c.BodyParser(&user); err != nil {
@@ -54,6 +67,18 @@ func (h *AuthHandler) SignUp(c *fiber.Ctx) error {
 	})
 }
 
+// Login	godoc
+//
+//	@Summary	Login to the api with email and password
+//	@Tags		Auth
+//	@Accept		json
+//	@Param		info	body		SignInRequestDTO	true	"Login Data"
+//	@Success	200		{object}	SignInResponseDTO
+//	@Failure	400		{object}	httputil.HttpError400
+//	@Failure	401		{object}	httputil.HttpError401
+//	@Failure	500		{object}	httputil.HttpError500
+//	@Failure	401		{object}	httputil.HttpError401
+//	@Router		/api/auth/login [post]
 func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 	input := new(SignInRequestDTO)
 
@@ -98,6 +123,18 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 
 }
 
+// Refresh	godoc
+//	@Summary		Get refresh token
+//	@Description	Get refresh token
+//
+//	@Tags			Auth
+//	@Accept			json
+//	@Success		200		
+//	@Failure		400	{object}	httputil.HttpError400
+//	@Failure		401	{object}	httputil.HttpError401
+//	@Failure		500	{object}	httputil.HttpError500
+//	@Failure		401	{object}	httputil.HttpError401
+//	@Router			/api/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 
 	tokenString := c.Cookies("refreshToken")
@@ -135,6 +172,17 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		}})
 }
 
+// Logout	godoc
+//	@Summary		Logout user
+//	@Description	Logout user
+//
+//	@Tags			Auth
+//	@Success		200	
+//	@Failure		400	{object}	httputil.HttpError400
+//	@Failure		401	{object}	httputil.HttpError401
+//	@Failure		500	{object}	httputil.HttpError500
+//	@Failure		401	{object}	httputil.HttpError401
+//	@Router			/api/auth/logout [post]
 func(h *AuthHandler) Logout(c *fiber.Ctx) error {
 	expired := time.Now().Add(-time.Hour * 24)
 	c.Cookie(&fiber.Cookie{

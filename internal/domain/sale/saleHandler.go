@@ -30,6 +30,25 @@ func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
 	return hdlInstance
 }
 
+// CreateSale 	godoc
+//
+//	@Summary		Create new sale based on parameters
+//	@Description	Create new sale based on parameters
+//	@Tags			Sales
+//	@Accept			json
+//	@Param			sale	body		SaleInvoiceRequestDTO	true	"Product Data"
+//	@Success		200		{object}	models.Sale
+//	@Failure		400		{object}	httputil.HttpError400
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Failure		500		{object}	httputil.HttpError500
+//	@Failure		401		{object}	httputil.HttpError401
+//	@Router			/api/sale [post]
+//
+//	@Security		ApiKeyAuth
+//
+//	@param			Authorization	header	string	true	"Authorization"
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 	
 	input := new(SaleInvoiceRequestDTO)
@@ -71,6 +90,22 @@ func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 	
 }
 
+// GetAllSales godoc
+//
+//	@Summary		Fetch all sales
+//	@Description	Fetch all sales
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Sale
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/sale	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
 
 	sales, err := h.svc.GetAllService()
@@ -87,6 +122,24 @@ func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
 		})
 }
 
+
+// GetById godoc
+//
+//	@Summary		Fetch individual sale by Id
+//	@Description	Fetch individual sale by Id
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"sale Id"
+//	@Success		200					{object}	models.Sale
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/sale/{id}	[get]
+//
+//	@Security		ApiKeyAuth
+//
+//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
 func (h *SaleHandler)GetById(c *fiber.Ctx) error {
 
 	sale, err := h.svc.GetById(c.Params("id"))
