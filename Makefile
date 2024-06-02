@@ -1,3 +1,6 @@
+swagger:
+	cd ./cmd && swag init
+
 compile:
 	@go build -o bin/min cmd/main.go
 

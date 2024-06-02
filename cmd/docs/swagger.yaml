@@ -1,0 +1,19 @@
+info:
+  contact:
+    email: sankaungkin@gmail.com
+    name: API Support
+  description: This is an auto-generated API docs.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: REST-API with(golang fiber, google wire dependency injection)
+  version: "1.1"
+paths: {}
+securityDefinitions:
+  ApiKeyAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
