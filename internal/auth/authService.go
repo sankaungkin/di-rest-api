@@ -3,13 +3,13 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
+	mylog "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,8 +30,16 @@ var (
 	svcOnce     sync.Once
 )
 
+func init() {
+	mylog.SetReportCaller(true)
+	Formatter := new(mylog.JSONFormatter)
+	Formatter.TimestampFormat = "2006-01-02 15:04:05"
+	mylog.SetFormatter(Formatter)
+}
+
 func NewAuthService(repo AuthRepositoryInterface) AuthServiceInterface {
-	log.Println(util.Red + "AuthService constructor is called" + util.Reset)
+	mylog.Info("AuthService is called.")
+	// log.Println(util.Red + "AuthService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
 		svcInstance = &AuthService{repo: repo}

@@ -1,12 +1,11 @@
 package auth
 
 import (
-	"log"
 	"strings"
 	"sync"
 
-	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
+	mylog "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -24,8 +23,18 @@ var (
 	repoOnce     sync.Once
 )
 
+func init() {
+	mylog.SetReportCaller(true)
+	Formatter := new(mylog.JSONFormatter)
+	Formatter.TimestampFormat = "2006-01-02 15:04:05"
+	mylog.SetFormatter(Formatter)
+}
+
+
 func NewAuthRepository(db *gorm.DB) AuthRepositoryInterface {
-	log.Println(util.Red + "AuthRepository constructor is called" + util.Reset)
+
+	mylog.Info("AuthRepository is called")
+	// log.Println(util.Red + "AuthRepository constructor is called" + util.Reset)
 	repoOnce.Do(func() {
 		repoInstance = &AuthRepository{db: db}
 	})

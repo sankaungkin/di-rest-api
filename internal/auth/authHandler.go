@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
+	mylog "github.com/sirupsen/logrus"
 )
 
 type AuthHandler struct {
@@ -20,8 +19,17 @@ var (
 	hdlOnce     sync.Once
 )
 
+func init() {
+	mylog.SetReportCaller(true)
+	Formatter := new(mylog.JSONFormatter)
+	Formatter.TimestampFormat = "15:04:05 01/02/06 "
+	mylog.SetFormatter(Formatter)
+}
+
 func NewAuthHandler(svc AuthServiceInterface) *AuthHandler {
-	log.Println(util.Red + "AuthHandler constructor is called" + util.Reset)
+
+	mylog.Info("AuthHandler constructor is called")
+	// log.Println(util.Red + "AuthHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &AuthHandler{
 			svc: svc,
