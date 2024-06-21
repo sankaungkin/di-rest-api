@@ -41,20 +41,21 @@ type Product struct {
 }
 type Inventory struct {
 	gorm.Model
-	ID        uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	OutQty    uint   `json:"inQty"`
-	InQty     uint   `json:"outQty"`
-	ProductId string `json:"productId"`
+	ID        uint    `gorm:"primaryKey:autoIncrement" json:"id"`
+	OutQty    uint    `json:"inQty"`
+	InQty     uint    `json:"outQty"`
+	ProductId string  `json:"productId"`
 	Product   Product `gorm:"foreignKey:ProductId;" json:"product"`
-	Remark    string `json:"remark"`
-	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
+	Remark    string  `json:"remark"`
+	CreatedAt int64   `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt int64   `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
-type Role string 
+type Role string
+
 const (
-	ADMIN  Role = "admin"
-	USER 	Role = "user"
+	ADMIN Role = "admin"
+	USER  Role = "user"
 )
 
 type User struct {
@@ -64,7 +65,7 @@ type User struct {
 	UserName  string `json:"userName" validate:"required,min=3"`
 	Password  string `json:"password" validate:"required,min=3"`
 	IsAdmin   bool   `json:"isAdmin" validate:"required"`
-	Role      Role 		`json:"role" validate:"required" gorm:"type:enum('admin','user');default:user"`
+	Role      Role   `json:"role" validate:"required" gorm:"default:user"`
 	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
 }
@@ -83,9 +84,9 @@ type Customer struct {
 type Supplier struct {
 	gorm.Model
 	ID        uint       `gorm:"primaryKey:autoIncrement" json:"id"`
-	Name      string 	`json:"name" validate:"required,min=3"`
-	Address   string 	`json:"address" validate:"required,min=3"`
-	Phone     string 	`json:"phone" validate:"required,min=3"`
+	Name      string     `json:"name" validate:"required,min=3"`
+	Address   string     `json:"address" validate:"required,min=3"`
+	Phone     string     `json:"phone" validate:"required,min=3"`
 	Purchases []Purchase `gorm:"foreignKey:SupplierId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	CreatedAt int64      `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64      `gorm:"autoUpdateTime:milli" json:"-"`
@@ -116,7 +117,6 @@ type PurchaseDetail struct {
 	Total       int64  `json:"total"`
 	PurchaseId  string `json:"purchaseId"`
 }
-
 
 type Sale struct {
 	gorm.Model

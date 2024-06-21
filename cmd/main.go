@@ -33,6 +33,6 @@ func main() {
 	app.Get("/swagger/*", swagger.HandlerDefault) // default
 
 	router.Initialize(app)
-	app.Listen(":3030")
-	
+	app.Listen(":5555")
+
 }

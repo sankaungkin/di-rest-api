@@ -40,18 +40,18 @@ services:
   #   volumes:
   #     - ./:/usr/src/app
 
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   restart: always
-  #   container_name: pgadmin
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "5050:80"
-  #   depends_on:
-  #     - posdb
-  #   networks:
-  #     - pos-networks
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    container_name: pgadmin
+    env_file:
+      - .env
+    ports:
+      - "5050:80"
+    depends_on:
+      - posdb
+    networks:
+      - pos-networks
 
 volumes:
   posdb:
