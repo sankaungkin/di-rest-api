@@ -167,7 +167,7 @@ func generateTokens(user *models.User, secretKey string) (string, string, error)
 
 	// Define refresh token claims with longer expiry
 	refreshTokenClaims := &jwt.MapClaims{
-		
+
 		"id":       user.ID,
 		"email":    user.Email,
 		"userName": user.UserName,
