@@ -1,0 +1,15 @@
+-   As a user , I want to create new category, with CategoryName only
+    -   CategoryName must not be empty
+    -   CategoryName must be at least 3 characters
+
+-   As an Admin, I want to update category CategoryName  
+    -   CategoryName must not be empty
+    -   CategoryName must be at least 3 characters
+
+-   As a user or an Admin, I want to see all Categories
+
+-   As a user or an Admin, I want to see an individual Category with ID
+    -   id is empty, show all Categories //TODO 
+
+-   As an Admin, I want to delete a category    
+    -   ID must not be empty
