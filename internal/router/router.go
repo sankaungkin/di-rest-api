@@ -34,7 +34,6 @@ func Initialize(app *fiber.App) {
 	auth.Post("/refresh", authService.Refresh)
 	auth.Post("/logout", authService.Logout)
 
-
 	// category di
 	catService, err := categoryDi.InitCategory()
 	if err != nil {
@@ -42,19 +41,18 @@ func Initialize(app *fiber.App) {
 	}
 	// category route
 	categories := api.Group("/category")
-	categories.Use(middleware.Protected())
+	// categories.Use(middleware.Protected())
 	categories.Post("/", catService.CreateCategory)
-	categories.Get("/",catService.GetAllCategorie)
+	categories.Get("/", catService.GetAllCategorie)
 	categories.Get("/:id", catService.GetCategoryById)
 	categories.Put("/:id", catService.UpdateCatagory)
 	categories.Delete("/:id", catService.DeleteCategory)
-
 
 	// product di
 	productService, err := productDi.InitProductDI()
 	if err != nil {
 		log.Fatalf(err.Error())
-	} 
+	}
 	// product route
 	products := api.Group("/product")
 	products.Use(middleware.Protected())
@@ -62,7 +60,7 @@ func Initialize(app *fiber.App) {
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/:id", productService.GetProductById)
 	products.Put("/:id", productService.UpdateProduct)
-	products.Delete("/:id",productService.DeleteProduct)
+	products.Delete("/:id", productService.DeleteProduct)
 
 	// customer di
 	customerService, err := customerDi.InitCustomer()

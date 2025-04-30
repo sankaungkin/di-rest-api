@@ -16,17 +16,18 @@ import (
 type ProductHandler struct {
 	svc ProductServiceInterface
 }
-//! singleton pattern
-var(
+
+// ! singleton pattern
+var (
 	hdlInstance *ProductHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
 
 // func NewProductHandler(srv ProductRepositoryInterface) *ProductHandler{
 // 	return &ProductHandler{srv:srv}
 // }
 
-func NewProductHandler(svc ProductServiceInterface) *ProductHandler{
+func NewProductHandler(svc ProductServiceInterface) *ProductHandler {
 	log.Println(util.Yellow + "ProductHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &ProductHandler{svc: svc}
@@ -53,7 +54,7 @@ func NewProductHandler(svc ProductServiceInterface) *ProductHandler{
 //	@param			Authorization	header	string	true	"Authorization"
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	input := new(CreateProductRequstDTO)
 	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -64,24 +65,23 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 
 	log.Println("New customer input: ", input)
 	newProduct := models.Product{
-		ID: input.ID,
-		ProductName: input.ProductName,
-		CategoryId: input.CategoryId,
-		Uom: input.Uom,
-		BuyPrice: input.BuyPrice,
+		ID:              input.ID,
+		ProductName:     input.ProductName,
+		CategoryId:      input.CategoryId,
+		Uom:             input.Uom,
+		BuyPrice:        input.BuyPrice,
 		SellPriceLevel1: input.SellPriceLevel1,
 		SellPriceLevel2: input.SellPriceLevel2,
-		ReorderLvl: input.ReorderLvl,
-		IsActive: input.IsActive,
+		ReorderLvl:      input.ReorderLvl,
+		IsActive:        input.IsActive,
 	}
 
-	err := c.BodyParser(&newProduct) 
-		if err != nil {
-			c.Status(http.StatusUnprocessableEntity).JSON(
-				&fiber.Map{"message": "request failed"})
-			return err
-		}
-	
+	err := c.BodyParser(&newProduct)
+	if err != nil {
+		c.Status(http.StatusUnprocessableEntity).JSON(
+			&fiber.Map{"message": "request failed"})
+		return err
+	}
 
 	errors := models.ValidateStruct(newProduct)
 	if errors != nil {
@@ -95,8 +95,8 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
-			"message": "category has been created successfully",
-			"data" : newProduct,
+			"message": "new PRODUCT has been created successfully",
+			"data":    newProduct,
 		})
 
 }
@@ -117,10 +117,10 @@ func (h *ProductHandler)CreateProduct(c *fiber.Ctx) error {
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
+func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllSerive()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -150,8 +150,7 @@ func(h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
-	
+func (h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 
 	product, err := h.svc.GetByIdSerive(c.Params("id"))
 	if err != nil {
@@ -190,7 +189,7 @@ func(h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
 	foundProduct, err := h.svc.GetByIdSerive(c.Params("id"))
 	if err != nil {
@@ -215,15 +214,15 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	}
 
 	updateProduct := models.Product{
-		ID: foundProduct.ID,
-		ProductName: foundProduct.ProductName,
-		CategoryId: foundProduct.CategoryId,
-		Uom: foundProduct.Uom,
-		BuyPrice: foundProduct.BuyPrice,
+		ID:              foundProduct.ID,
+		ProductName:     foundProduct.ProductName,
+		CategoryId:      foundProduct.CategoryId,
+		Uom:             foundProduct.Uom,
+		BuyPrice:        foundProduct.BuyPrice,
 		SellPriceLevel1: foundProduct.SellPriceLevel1,
 		SellPriceLevel2: foundProduct.SellPriceLevel2,
-		ReorderLvl: foundProduct.ReorderLvl,
-		IsActive: foundProduct.IsActive,
+		ReorderLvl:      foundProduct.ReorderLvl,
+		IsActive:        foundProduct.IsActive,
 	}
 	log.Println("updateCustomer: ", &updateProduct)
 	if err := c.BodyParser(&updateProduct); err != nil {
@@ -231,9 +230,9 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 			"status":  400,
 			"message": "Invalid JSON format",
 		})
-	}	
+	}
 
-	result, err :=	h.svc.Update(&updateProduct)
+	result, err := h.svc.Update(&updateProduct)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -261,7 +260,7 @@ func(h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
+func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 
 	id := strings.ToUpper(c.Params("id"))
 	product, err := h.svc.GetByIdSerive(id)
@@ -279,8 +278,8 @@ func(h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	err = h.svc.DeleteSerive(product.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status" : "FAIL",
-			"message" : "Internal server error",
+			"status":  "FAIL",
+			"message": "Internal server error",
 		})
 	}
 	return c.JSON(fiber.Map{

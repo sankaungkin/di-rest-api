@@ -13,19 +13,21 @@ import (
 )
 
 type CategoryHandler struct {
-	svc CategoryServiceInterface
+	Svc CategoryServiceInterface
 }
-//! singleton pattern
+
+// ! singleton pattern
 var (
 	hdlInstance *CategoryHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
-// constructor 
-func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler{
-	
-	log.Println(util.Blue + "CategoryHandler constructor is called"+ util.Reset)
+
+// constructor
+func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler {
+
+	log.Println(util.Blue + "CategoryHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
-		hdlInstance = &CategoryHandler{svc: svc}
+		hdlInstance = &CategoryHandler{Svc: svc}
 	})
 	return hdlInstance
 	// return &CategoryHandler{svc: svc}
@@ -50,7 +52,7 @@ func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler{
 //	@param			Authorization	header	string	true	"Authorization"
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
+func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 	newCategory := new(models.Category)
 	if err := c.BodyParser(newCategory); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -64,7 +66,7 @@ func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
 	}
 
-	if _, err := h.svc.CreateCategory(newCategory); err != nil {
+	if _, err := h.Svc.CreateCategory(newCategory); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
@@ -91,11 +93,16 @@ func(h *CategoryHandler) CreateCategory(c *fiber.Ctx) error{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error{
-	categories, err := h.svc.GetAllCategories() 
+func (h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error {
+	categories, err := h.Svc.GetAllCategories()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
+
+	if categories == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No categories found"})
+	}
+
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
@@ -121,13 +128,13 @@ func(h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+func (h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	category, err := h.svc.GetCategoryById(uint(id))
+	category, err := h.Svc.GetCategoryById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -164,13 +171,13 @@ func(h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+func (h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	foundCategory, err := h.svc.GetCategoryById(uint(id))
+
+	foundCategory, err := h.Svc.GetCategoryById(uint(id))
 	log.Println("foundCategory: ", foundCategory)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -192,7 +199,7 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 		})
 	}
 	updateCategory := models.Category{
-		ID: foundCategory.ID,
+		ID:           foundCategory.ID,
 		CategoryName: foundCategory.CategoryName,
 	}
 
@@ -201,8 +208,8 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 			"status":  400,
 			"message": "Invalid JSON format",
 		})
-	}	
-	result, err :=	h.svc.UpdateCategory(&updateCategory)
+	}
+	result, err := h.Svc.UpdateCategory(&updateCategory)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -212,7 +219,7 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 		"message": "Update Successfully",
 		"data":    result,
 	})
-	
+
 }
 
 // DeleteCategory godoc
@@ -232,12 +239,12 @@ func(h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
-	category, err := h.svc.GetCategoryById(uint(id))
+	category, err := h.Svc.GetCategoryById(uint(id))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -249,11 +256,11 @@ func(h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	err = h.svc.DeleteCategory(uint(category.ID))
+	err = h.Svc.DeleteCategory(uint(category.ID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status" : "FAIL",
-			"message" : "Internal server error",
+			"status":  "FAIL",
+			"message": "Internal server error",
 		})
 	}
 	return c.JSON(fiber.Map{
