@@ -89,9 +89,9 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	}
 	log.Println("newProduct : ", newProduct)
 
-	// if _, err := h.svc.CreateSerive(&newProduct); err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	// }
+	if _, err := h.svc.CreateSerive(&newProduct); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
