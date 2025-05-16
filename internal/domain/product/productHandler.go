@@ -129,6 +129,7 @@ func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 			"status":  "SUCCESS",
 			"message": strconv.Itoa(len(products)) + " records found",
 			"data":    products,
+			"count":   len(products),
 		})
 
 }
