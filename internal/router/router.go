@@ -25,7 +25,7 @@ func Initialize(app *fiber.App) {
 	// authentication di
 	authService, err := authDi.InitAuth()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 	// auth route
 	auth := api.Group("/auth")
@@ -40,7 +40,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// category route
-	categories := api.Group("/category")
+	categories := api.Group("/categories")
 	// categories.Use(middleware.Protected())
 	categories.Post("/", catService.CreateCategory)
 	categories.Get("/", catService.GetAllCategorie)
@@ -54,7 +54,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// product route
-	products := api.Group("/product")
+	products := api.Group("/products")
 	products.Use(middleware.Protected())
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
@@ -68,7 +68,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// customer route
-	customer := api.Group("/customer")
+	customer := api.Group("/customers")
 	customer.Use(middleware.Protected())
 	customer.Post("/", customerService.CreateCustomer)
 	customer.Get("/", customerService.GetAllCustomers)
@@ -82,7 +82,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// supplier route
-	supplier := api.Group("/supplier")
+	supplier := api.Group("/suppliers")
 	supplier.Use(middleware.Protected())
 	supplier.Post("/", supplierService.CreateSupplier)
 	supplier.Get("/", supplierService.GetAllSuppliers)
@@ -96,7 +96,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// inventory route
-	inventory := api.Group("/inventory")
+	inventory := api.Group("/inventories")
 	inventory.Use(middleware.Protected())
 	inventory.Get("/", inventoryService.GetAllInventories)
 	inventory.Post("/increase", inventoryService.IncreaseInventory)
@@ -108,7 +108,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// sale route
-	sale := api.Group("/sale")
+	sale := api.Group("/sales")
 	sale.Use(middleware.Protected())
 	sale.Post("/", saleService.CreateSale)
 	sale.Get("/", saleService.GetAllSales)
@@ -120,7 +120,7 @@ func Initialize(app *fiber.App) {
 		log.Fatalf(err.Error())
 	}
 	// purchase route
-	purchase := api.Group("/purchase")
+	purchase := api.Group("/purchases")
 	purchase.Use(middleware.Protected())
 	purchase.Post("/", purchaseService.CreatePurchase)
 	purchase.Get("/", purchaseService.GetAllPurchases)

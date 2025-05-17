@@ -42,7 +42,7 @@ func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/sale [post]
+//	@Router			/api/sales [post]
 //
 //	@Security		ApiKeyAuth
 //
@@ -52,6 +52,7 @@ func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
 func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 	
 	input := new(SaleInvoiceRequestDTO)
+	log.Println("input", input)
 	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  400,
@@ -101,7 +102,7 @@ func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
-//	@Router			/api/sale	[get]
+//	@Router			/api/sales	[get]
 //
 //	@Security		ApiKeyAuth
 //
@@ -135,7 +136,7 @@ func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/sale/{id}	[get]
+//	@Router			/api/sales/{id}	[get]
 //
 //	@Security		ApiKeyAuth
 //

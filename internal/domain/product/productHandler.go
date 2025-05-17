@@ -63,7 +63,7 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Println("New customer input: ", input)
+	log.Println("New product input: ", input)
 	newProduct := models.Product{
 		ID:              input.ID,
 		ProductName:     input.ProductName,
