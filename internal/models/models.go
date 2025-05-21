@@ -51,6 +51,19 @@ type Inventory struct {
 	UpdatedAt int64   `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
+type ItemTransaction struct {
+	gorm.Model
+	// TODO to enhance with UUID
+	ID          uint   `gorm:"primaryKey:autoIncrement" json:"id"`
+	ProductId   string `json:"productId"`
+	ReferenceNo string `json:"referenceNo"`
+	InQty       int    `json:"inQty"`
+	OutQty      int    `json:"outQty"`
+	TranType    string `json:"tranType"`
+	Remark      string `json:"remark"`
+	CreatedAt   int64  `gorm:"autoCreateTime" json:"createdTime"`
+}
+
 type Role string
 
 const (
@@ -142,19 +155,6 @@ type SaleDetail struct {
 	Price       int64  `json:"price"`
 	Total       int64  `json:"total"`
 	SaleId      string `json:"saleId"`
-}
-
-type ItemTransaction struct {
-	gorm.Model
-	// TODO to enhance with UUID
-	ID          uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	ProductId   string `json:"productId"`
-	ReferenceNo string `json:"referenceNo"`
-	InQty       int    `json:"inQty"`
-	OutQty      int    `json:"outQty"`
-	TranType    string `json:"tranType"`
-	Remark      string `json:"remark"`
-	CreatedAt   int64  `gorm:"autoCreateTiem" json:"createdTime"`
 }
 
 type ErrorResponse struct {

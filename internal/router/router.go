@@ -8,6 +8,7 @@ import (
 	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
 	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
 	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
+	transactionDi "github.com/sankangkin/di-rest-api/internal/domain/itemtransactions/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
 	purchaseDi "github.com/sankangkin/di-rest-api/internal/domain/purchase/di"
 	saleDi "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
@@ -61,6 +62,18 @@ func Initialize(app *fiber.App) {
 	products.Get("/:id", productService.GetProductById)
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
+
+	// item transactions di
+	transactionService, err := transactionDi.InitTransactionDI()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	// item transactions route
+	transactions := api.Group("/transactions")
+	transactions.Get("/", transactionService.GetAll)
+	transactions.Get("/by-product/:productId", transactionService.GetTransactionsByProductId)
+	transactions.Get("/by-type/:tranType", transactionService.GetTransactionsByTransactionType)
+	transactions.Get("/by-product-type/:productId/:tranType", transactionService.GetByProductIdAndTranType)
 
 	// customer di
 	customerService, err := customerDi.InitCustomer()

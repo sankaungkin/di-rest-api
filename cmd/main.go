@@ -5,8 +5,8 @@ import (
 
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/swagger"
 	"github.com/sankangkin/di-rest-api/internal/router"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 // @title					REST-API with(golang fiber, google wire dependency injection)
@@ -30,10 +30,10 @@ func main() {
 	app := fiber.New()
 	app.Use(cors.New())
 
-	app.Get("/swagger/*", swagger.HandlerDefault) // default
+	// app.Get("/swagger/*", swagger.HandlerDefault) // default
 
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 	router.Initialize(app)
 	app.Listen(":5555")
-
 
 }

@@ -44,6 +44,15 @@ func(r *InventoryRepository)Increase(input *models.Inventory) (string, error) {
 		Remark: input.Remark,
 	}
 
+	newItemTransaction := models.ItemTransaction {
+		InQty: int(input.InQty),
+		OutQty: int(input.OutQty),
+		ProductId: input.ProductId,
+		TranType: "DEBIT",
+		ReferenceNo: strconv.Itoa(int(input.ID)),
+		Remark: input.Remark,
+	}
+
 	tx := r.db.Begin()
 
 	defer func() {
@@ -57,6 +66,10 @@ func(r *InventoryRepository)Increase(input *models.Inventory) (string, error) {
 	if err := tx.Create(&newInventory).Error; err != nil {
 		tx.Rollback()
 		return "",err
+	}
+	if err := tx.Create(&newItemTransaction).Error; err != nil {
+		tx.Rollback()
+		return "", err
 	}
 
 	var product models.Product
@@ -84,6 +97,15 @@ func(r *InventoryRepository)Decrease(input *models.Inventory) (string, error){
 		Remark: input.Remark,
 	}
 
+	newItemTransaction := models.ItemTransaction {
+		InQty: int(input.InQty),
+		OutQty: int(input.OutQty),
+		ProductId: input.ProductId,
+		TranType: "CREDIT",
+		ReferenceNo: strconv.Itoa(int(input.ID)),
+		Remark: input.Remark,
+	}
+
 	tx := r.db.Begin()
 
 	defer func() {
@@ -97,6 +119,10 @@ func(r *InventoryRepository)Decrease(input *models.Inventory) (string, error){
 	if err := tx.Create(&newInventory).Error; err != nil {
 		tx.Rollback()
 		return "",err
+	}
+	if err := tx.Create(&newItemTransaction).Error; err != nil {
+		tx.Rollback()
+		return "", err
 	}
 
 	var product models.Product

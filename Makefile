@@ -10,6 +10,9 @@ run:
 product:
 	@wire ./internal/domain/product/di/wire.go
 
+itemtransactions:
+	@wire ./internal/domain/itemtransactions/di/wire.go
+
 customer:
 	@wire ./internal/domain/customer/di/wire.go
 
@@ -30,4 +33,6 @@ purchase:
 
 auth:
 	@wire ./internal/auth/di/wire.go
+
+
 	

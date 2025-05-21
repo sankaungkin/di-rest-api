@@ -120,6 +120,7 @@ func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
 			"status":  "SUCCESS",
 			"message": strconv.Itoa(len(sales)) + " records found",
 			"data":    sales,
+			"count": len(sales),
 		})
 }
 
