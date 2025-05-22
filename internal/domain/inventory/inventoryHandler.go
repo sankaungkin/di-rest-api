@@ -11,16 +11,16 @@ import (
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
-type InventoryHandler struct{
+type InventoryHandler struct {
 	svc InventoryServiceInterface
 }
 
 var (
 	hdlInstance *InventoryHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
 
-func NewInventoryHandler(svc InventoryServiceInterface) *InventoryHandler{
+func NewInventoryHandler(svc InventoryServiceInterface) *InventoryHandler {
 	log.Println(util.Cyan + "InventoryHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &InventoryHandler{svc: svc}
@@ -44,10 +44,11 @@ func NewInventoryHandler(svc InventoryServiceInterface) *InventoryHandler{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func (h *InventoryHandler)GetAllInventories(c *fiber.Ctx) error {
-	inventories, err := h.svc.GetAllService()
+func (h *InventoryHandler) GetAllInventories(c *fiber.Ctx) error {
+	// inventories, err := h.svc.GetAllService()
+	inventories, err := h.svc.GetInvData()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
@@ -86,10 +87,10 @@ func (h *InventoryHandler) IncreaseInventory(c *fiber.Ctx) error {
 		})
 	}
 	newInventory := models.Inventory{
-		InQty: input.InQty,
-		OutQty: input.OutQty,
+		InQty:     input.InQty,
+		OutQty:    input.OutQty,
 		ProductId: input.ProductId,
-		Remark: input.Remark,
+		Remark:    input.Remark,
 	}
 	errors := models.ValidateStruct(newInventory)
 	if errors != nil {
@@ -101,13 +102,13 @@ func (h *InventoryHandler) IncreaseInventory(c *fiber.Ctx) error {
 	msg, err := h.svc.IncreaseInventoryService(&newInventory)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status" : "FAIL",
-			"message" : err.Error(),
+			"status":  "FAIL",
+			"message": err.Error(),
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status" : "success",
-		"message" : msg,
+		"status":  "success",
+		"message": msg,
 	})
 }
 
@@ -140,10 +141,10 @@ func (h *InventoryHandler) DecreaseInventory(c *fiber.Ctx) error {
 		})
 	}
 	newInventory := models.Inventory{
-		InQty: input.InQty,
-		OutQty: input.OutQty,
+		InQty:     input.InQty,
+		OutQty:    input.OutQty,
 		ProductId: input.ProductId,
-		Remark: input.Remark,
+		Remark:    input.Remark,
 	}
 	errors := models.ValidateStruct(newInventory)
 	if errors != nil {
@@ -155,12 +156,12 @@ func (h *InventoryHandler) DecreaseInventory(c *fiber.Ctx) error {
 	msg, err := h.svc.DecreaseInventoryService(&newInventory)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status" : "FAIL",
-			"message" : err.Error(),
+			"status":  "FAIL",
+			"message": err.Error(),
 		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status" : "success",
-		"message" : msg,
+		"status":  "success",
+		"message": msg,
 	})
 }
