@@ -12,16 +12,14 @@ import (
 	"gorm.io/gorm"
 )
 
-
-type PurchaseHandler struct{
+type PurchaseHandler struct {
 	svc PurchaseServiceInterface
 }
 
 var (
 	hdlInstance *PurchaseHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
-
 
 func NewSaleHandler(svc PurchaseServiceInterface) *PurchaseHandler {
 	log.Println(util.Magenta + "SaleHandler constructor is called" + util.Reset)
@@ -50,8 +48,8 @@ func NewSaleHandler(svc PurchaseServiceInterface) *PurchaseHandler {
 //	@param			Authorization	header	string	true	"Authorization"
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func (h *PurchaseHandler)CreatePurchase(c *fiber.Ctx) error{
-	
+func (h *PurchaseHandler) CreatePurchase(c *fiber.Ctx) error {
+
 	input := new(PurchaseInvoiceRequestDTO)
 	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -60,14 +58,14 @@ func (h *PurchaseHandler)CreatePurchase(c *fiber.Ctx) error{
 		})
 	}
 	newPurchase := models.Purchase{
-		ID:          input.ID,
-		SupplierId:  input.SupplierId,
-		Discount:    input.Discount,
-		GrandTotal:  input.GrandTotal,
-		Remark:      input.Remark,
+		ID:              input.ID,
+		SupplierId:      input.SupplierId,
+		Discount:        input.Discount,
+		GrandTotal:      input.GrandTotal,
+		Remark:          input.Remark,
 		PurchaseDate:    input.PurchaseDate,
 		PurchaseDetails: input.PurchaseDetails,
-		Total:       input.Total,
+		Total:           input.Total,
 	}
 	errors := models.ValidateStruct(newPurchase)
 	if errors != nil {
@@ -85,12 +83,10 @@ func (h *PurchaseHandler)CreatePurchase(c *fiber.Ctx) error{
 		&fiber.Map{
 			"status":  "SUCCESS",
 			"message": "category has been created successfully",
-			"data" : newPurchase,
+			"data":    newPurchase,
 		})
-	
-	
-}
 
+}
 
 // GetAllPurchases godoc
 //
@@ -108,11 +104,11 @@ func (h *PurchaseHandler)CreatePurchase(c *fiber.Ctx) error{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *PurchaseHandler)GetAllPurchases(c *fiber.Ctx) error{
+func (h *PurchaseHandler) GetAllPurchases(c *fiber.Ctx) error {
 
 	purchases, err := h.svc.GetAllService()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -121,6 +117,7 @@ func(h *PurchaseHandler)GetAllPurchases(c *fiber.Ctx) error{
 			"status":  "SUCCESS",
 			"message": strconv.Itoa(len(purchases)) + " records found",
 			"data":    purchases,
+			"count":   len(purchases),
 		})
 }
 
@@ -141,7 +138,7 @@ func(h *PurchaseHandler)GetAllPurchases(c *fiber.Ctx) error{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func (h *PurchaseHandler)GetById(c *fiber.Ctx) error {
+func (h *PurchaseHandler) GetById(c *fiber.Ctx) error {
 
 	purchase, err := h.svc.GetById(c.Params("id"))
 	if err != nil {

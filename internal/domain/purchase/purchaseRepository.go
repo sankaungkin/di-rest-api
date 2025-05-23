@@ -118,13 +118,27 @@ func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 
 func (r *PurchaseRepository) GetById(id string) (*models.Purchase, error) {
 
+	// var purchase models.Purchase
+	// result := r.db.First(&purchase, "id = ?", strings.ToUpper(id))
+	// if err := result.Error; err != nil {
+	// 	if err == gorm.ErrRecordNotFound {
+	// 		return nil, err
+	// 	}
+	// 	return nil, err
+	// }
+	// return &purchase, nil
 	var purchase models.Purchase
-	result := r.db.First(&purchase, "id = ?", strings.ToUpper(id))
-	if err := result.Error; err != nil {
+	err := r.db.
+		Preload("Supplier").
+		Preload("PurchaseDetails").
+		First(&purchase, "id = ?", strings.ToUpper(id)).Error
+
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, err
 		}
 		return nil, err
 	}
+
 	return &purchase, nil
 }
