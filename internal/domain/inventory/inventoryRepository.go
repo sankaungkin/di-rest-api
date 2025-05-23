@@ -5,7 +5,6 @@ import (
 	"log"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -158,7 +157,9 @@ func (r *InventoryRepository) GetInvData() ([]ResponseInventoryDTO, error) {
 	var result []ResponseInventoryDTO
 
 	err := r.db.
-		Preload("ItemTransactions").
+		Preload("ItemTransactions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC")
+		}).
 		Find(&products).Error
 	if err != nil {
 		return nil, err
@@ -174,7 +175,8 @@ func (r *InventoryRepository) GetInvData() ([]ResponseInventoryDTO, error) {
 				Remark:      it.Remark,   // Fixed: using it instead of inv
 				TranType:    it.TranType, // Fixed: using it instead of inv
 				QtyOnHand:   p.QtyOnHand,
-				CreatedAt:   time.Unix(int64(it.CreatedAt), 0), // Fixed: using it instead of inv
+				// CreatedAt:   time.Unix(int64(it.CreatedAt), 0), // Fixed: using it instead of inv
+				CreatedAt: it.CreatedAt.Format("15:04:05 2006-01-02"),
 			}
 			result = append(result, dto)
 		}

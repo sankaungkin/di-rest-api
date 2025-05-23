@@ -47,7 +47,10 @@ func (r *TransactionRepository) GetAll() ([]models.ItemTransaction, error) {
 func (r *TransactionRepository) GetByProductId(productId string) ([]models.ItemTransaction, error) {
 	var transactions []models.ItemTransaction
 
-	result := r.db.Where("product_id = ?", strings.ToUpper(productId)).Find(&transactions)
+	result := r.db.Where("product_id = ?",
+		strings.ToUpper(productId)).
+		Order("created_at ASC").
+		Find(&transactions)
 	if err := result.Error; err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -42,27 +43,27 @@ type Product struct {
 }
 type Inventory struct {
 	gorm.Model
-	ID        uint    `gorm:"primaryKey:autoIncrement" json:"id"`
-	OutQty    uint    `json:"inQty"`
-	InQty     uint    `json:"outQty"`
-	ProductId string  `json:"productId"`
-	Product   Product `gorm:"foreignKey:ProductId;" json:"product"`
-	Remark    string  `json:"remark"`
-	CreatedAt int64   `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt int64   `gorm:"autoUpdateTime:milli" json:"-"`
+	ID        uint      `gorm:"primaryKey:autoIncrement" json:"id"`
+	OutQty    uint      `json:"inQty"`
+	InQty     uint      `json:"outQty"`
+	ProductId string    `json:"productId"`
+	Product   Product   `gorm:"foreignKey:ProductId;" json:"product"`
+	Remark    string    `json:"remark"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdTime"`
+	UpdatedAt time.Time `gorm:"autoCreateTime" json:"updatedTime"`
 }
 
 type ItemTransaction struct {
 	gorm.Model
 	// TODO to enhance with UUID
-	ID          uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	ProductId   string `json:"productId"`
-	ReferenceNo string `json:"referenceNo"`
-	InQty       int    `json:"inQty"`
-	OutQty      int    `json:"outQty"`
-	TranType    string `json:"tranType"`
-	Remark      string `json:"remark"`
-	CreatedAt   int64  `gorm:"autoCreateTime" json:"createdTime"`
+	ID          uint      `gorm:"primaryKey:autoIncrement" json:"id"`
+	ProductId   string    `json:"productId"`
+	ReferenceNo string    `json:"referenceNo"`
+	InQty       int       `json:"inQty"`
+	OutQty      int       `json:"outQty"`
+	TranType    string    `json:"tranType"`
+	Remark      string    `json:"remark"`
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"createdTime"`
 }
 
 type Role string
