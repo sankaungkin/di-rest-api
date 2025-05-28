@@ -13,19 +13,19 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type SaleRepositoryInterface interface{
+type SaleRepositoryInterface interface {
 	Create(sale *models.Sale) (*models.Sale, error)
 	GetAll() ([]models.Sale, error)
 	GetById(id string) (*models.Sale, error)
 }
 
-type SaleRepository struct{
+type SaleRepository struct {
 	db *gorm.DB
 }
 
 var (
 	repoInstance *SaleRepository
-	repoOnce sync.Once
+	repoOnce     sync.Once
 )
 
 func NewSaleRepository(db *gorm.DB) SaleRepositoryInterface {
@@ -36,8 +36,8 @@ func NewSaleRepository(db *gorm.DB) SaleRepositoryInterface {
 	return repoInstance
 }
 
-func (r *SaleRepository)Create(input *models.Sale) (*models.Sale, error ){
-	
+func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
+
 	newSale := models.Sale{
 		ID:          input.ID,
 		CustomerId:  input.CustomerId,
@@ -68,34 +68,36 @@ func (r *SaleRepository)Create(input *models.Sale) (*models.Sale, error ){
 	if err := tx.Create(&newSale).Error; err != nil {
 		tx.Rollback()
 		return nil, err
-	}	
+	}
 	for i := range newSale.SaleDetails {
 
-		// decrease product qtyonhand
-		var product models.Product
-		result := tx.First(&product, "id = ?", newSale.SaleDetails[i].ProductId)
+		// decrease productStock qtyonhand
+		var productStock models.ProductStock
+		result := tx.First(&productStock, "product_id = ?", newSale.SaleDetails[i].ProductId)
 		if err := result.Error; err != nil {
 			return nil, err
 		}
-		product.QtyOnHand -= int(newSale.SaleDetails[i].Qty)
-		tx.Save(&product)
+		productStock.BaseQty -= int(newSale.SaleDetails[i].Qty)
+		productStock.DerivedQty -= int(newSale.SaleDetails[i].DrivedQty)
+		tx.Save(&productStock)
 
 		// create inventory record
-		newInventory := models.Inventory{
-			InQty:     0,
-			OutQty:    uint(newSale.SaleDetails[i].Qty),
-			ProductId: newSale.SaleDetails[i].ProductId,
-			Remark:    "SaleID:" + newSale.ID + ", line items id:" + strconv.Itoa(int(newSale.SaleDetails[i].ID)) + ", decrease quantity: " + strconv.Itoa(newSale.SaleDetails[i].Qty),
-		}
-		tx.Save(&newInventory)
+		// newInventory := models.Inventory{
+		// 	InQty:     0,
+		// 	OutQty:    newSale.SaleDetails[i].Qty,
+		// 	ProductId: newSale.SaleDetails[i].ProductId,
+		// 	Remark:    "SaleID:" + newSale.ID + ", line items id:" + strconv.Itoa(int(newSale.SaleDetails[i].ID)) + ", decrease quantity: " + strconv.Itoa(newSale.SaleDetails[i].Qty),
+		// }
+		// tx.Save(&newInventory)
 
 		newItemTransaction := models.ItemTransaction{
 			InQty:       0,
 			OutQty:      newSale.SaleDetails[i].Qty,
 			ProductId:   newSale.SaleDetails[i].ProductId,
+			Uom:         newSale.SaleDetails[i].Uom,
 			TranType:    "CREDIT",
 			ReferenceNo: newSale.ID + "-" + strconv.Itoa(int(newSale.SaleDetails[i].ID)),
-			Remark:      "SaleID:" + newSale.ID + ", line items id:" + strconv.Itoa(int(newSale.SaleDetails[i].ID)) + ", decrease quantity: " + strconv.Itoa(newSale.SaleDetails[i].Qty),
+			Remark:      "SaleID:" + newSale.ID + ", line items id:" + strconv.Itoa(int(newSale.SaleDetails[i].ID)) + ", decrease quantity: " + strconv.Itoa(newSale.SaleDetails[i].Qty) + " " + newSale.SaleDetails[i].Uom,
 		}
 		tx.Save(&newItemTransaction)
 
@@ -105,7 +107,7 @@ func (r *SaleRepository)Create(input *models.Sale) (*models.Sale, error ){
 
 }
 
-func (r *SaleRepository)GetAll() ([]models.Sale, error) {
+func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 
 	sales := []models.Sale{}
 	r.db.Preload(clause.Associations).Model(&models.Sale{}).Order("ID desc").Find(&sales)

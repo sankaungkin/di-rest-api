@@ -1,16 +1,16 @@
 package inventory
 
 type IncreaseInventoryDTO struct {
-	OutQty    uint   `json:"outQty"`
-	InQty     uint   `json:"inQty"`
+	OutQty    int    `json:"outQty"`
+	InQty     int    `json:"inQty"`
 	ProductId string `json:"productId"`
 	Remark    string `json:"remark"`
 }
 
 type ResponseInventoryDTO struct {
 	ProductName string `json:"productName"`
-	OutQty      uint   `json:"outQty"`
-	InQty       uint   `json:"inQty"`
+	OutQty      int    `json:"outQty"`
+	InQty       int    `json:"inQty"`
 	TranType    string `json:"tranType"`
 	ProductId   string `json:"productId"`
 	Remark      string `json:"remark"`

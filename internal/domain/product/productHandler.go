@@ -72,8 +72,8 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 		BuyPrice:        input.BuyPrice,
 		SellPriceLevel1: input.SellPriceLevel1,
 		SellPriceLevel2: input.SellPriceLevel2,
-		ReorderLvl:      input.ReorderLvl,
-		IsActive:        input.IsActive,
+		// ReorderLvl:      input.ReorderLvl,
+		IsActive: input.IsActive,
 	}
 
 	err := c.BodyParser(&newProduct)
@@ -252,8 +252,8 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 		BuyPrice:        foundProduct.BuyPrice,
 		SellPriceLevel1: foundProduct.SellPriceLevel1,
 		SellPriceLevel2: foundProduct.SellPriceLevel2,
-		ReorderLvl:      foundProduct.ReorderLvl,
-		IsActive:        foundProduct.IsActive,
+		// ReorderLvl:      foundProduct.ReorderLvl,
+		IsActive: foundProduct.IsActive,
 	}
 	log.Println("updateCustomer: ", &updateProduct)
 	if err := c.BodyParser(&updateProduct); err != nil {

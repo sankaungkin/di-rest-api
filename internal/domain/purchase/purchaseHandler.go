@@ -82,7 +82,7 @@ func (h *PurchaseHandler) CreatePurchase(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
-			"message": "category has been created successfully",
+			"message": "purchase operation has been created successfully",
 			"data":    newPurchase,
 		})
 

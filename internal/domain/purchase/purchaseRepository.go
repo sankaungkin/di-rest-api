@@ -71,23 +71,14 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 	}
 	for i := range newPurchase.PurchaseDetails {
 
-		// decrease product qtyonhand
-		var product models.Product
-		result := tx.First(&product, "id = ?", newPurchase.PurchaseDetails[i].ProductId)
+		// increase productStock qtyonhand
+		var productStock models.ProductStock
+		result := tx.First(&productStock, "product_id = ?", newPurchase.PurchaseDetails[i].ProductId)
 		if err := result.Error; err != nil {
 			return nil, err
 		}
-		product.QtyOnHand += int(newPurchase.PurchaseDetails[i].Qty)
-		tx.Save(&product)
-
-		// create inventory record
-		newInventory := models.Inventory{
-			InQty:     uint(newPurchase.PurchaseDetails[i].Qty),
-			OutQty:    0,
-			ProductId: newPurchase.PurchaseDetails[i].ProductId,
-			Remark:    "SaleID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", decrease quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty),
-		}
-		tx.Save(&newInventory)
+		productStock.BaseQty += int(newPurchase.PurchaseDetails[i].Qty)
+		tx.Save(&productStock)
 
 		newItemTransaction := models.ItemTransaction{
 			InQty:       newPurchase.PurchaseDetails[i].Qty,
@@ -95,7 +86,8 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 			ProductId:   newPurchase.PurchaseDetails[i].ProductId,
 			TranType:    "DEBIT",
 			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)),
-			Remark:      "PurchaseID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty),
+			Uom:         newPurchase.PurchaseDetails[i].Uom,
+			Remark:      "PurchaseID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].Uom,
 		}
 		tx.Save(&newItemTransaction)
 
@@ -118,15 +110,6 @@ func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 
 func (r *PurchaseRepository) GetById(id string) (*models.Purchase, error) {
 
-	// var purchase models.Purchase
-	// result := r.db.First(&purchase, "id = ?", strings.ToUpper(id))
-	// if err := result.Error; err != nil {
-	// 	if err == gorm.ErrRecordNotFound {
-	// 		return nil, err
-	// 	}
-	// 	return nil, err
-	// }
-	// return &purchase, nil
 	var purchase models.Purchase
 	err := r.db.
 		Preload("Supplier").

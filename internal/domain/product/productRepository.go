@@ -81,11 +81,11 @@ func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 			BuyPrice:        p.BuyPrice,
 			SellPriceLevel1: p.SellPriceLevel1,
 			SellPriceLevel2: p.SellPriceLevel2,
-			ReorderLvl:      p.ReorderLvl,
-			QtyOnHand:       p.QtyOnHand,
-			BrandName:       p.BrandName,
-			IsActive:        p.IsActive,
-			CreatedAt:       time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
+			// ReorderLvl:      p.ReorderLvl,
+			// QtyOnHand:       p.QtyOnHand,
+			BrandName: p.BrandName,
+			IsActive:  p.IsActive,
+			CreatedAt: time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
 		}
 		dtos = append(dtos, dto)
 	}
@@ -112,7 +112,7 @@ func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]Respon
 		Table("product_prices AS pp").
 		Select("p.id AS product_id, p.product_name, u.unit_name AS uom, pp.unit_price").
 		Joins("JOIN products AS p ON pp.product_id = p.id").
-		Joins("JOIN unit_of_measurements AS u ON pp.unit_id = u.id").
+		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
 		Where("pp.product_id = ?", strings.ToUpper(productId)).
 		Scan(&results).Error
 
@@ -133,7 +133,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	}
 
 	log.Println("input: ", input)
-	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.ReorderLvl == 0 || input.SellPriceLevel2 == 0 {
+	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.SellPriceLevel2 == 0 {
 		return nil, err
 	}
 	// Update relevant fields from input data
@@ -144,7 +144,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	existingProduct.CategoryId = input.CategoryId
 	existingProduct.SellPriceLevel1 = input.SellPriceLevel1
 	existingProduct.SellPriceLevel2 = input.SellPriceLevel2
-	existingProduct.ReorderLvl = input.ReorderLvl
+	// existingProduct.ReorderLvl = input.ReorderLvl
 
 	// Save the updated customer data
 	log.Println("existingCustomer: ", existingProduct)

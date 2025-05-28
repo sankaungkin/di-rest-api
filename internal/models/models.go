@@ -34,12 +34,13 @@ type Product struct {
 	BuyPrice         int64             `json:"buyPrice" validate:"required,min=1"`
 	SellPriceLevel1  int64             `json:"sellPricelvl1" validate:"required,min=1"`
 	SellPriceLevel2  int64             `json:"sellPricelvl2" validate:"required,min=1"`
-	ReorderLvl       uint              `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	QtyOnHand        int               `json:"qtyOnHand" validate:"required"`
-	BrandName        string            `json:"brand"`
-	IsActive         bool              `json:"isActive" gorm:"default:true"`
-	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`
+	// ReorderLvl       uint              `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	// QtyOnHand        int               `json:"qtyOnHand" validate:"required"`
+	// DerivedQtyOnHand int               `json:"derivedQtyOnHand" validate:"required"`
+	BrandName string `json:"brand"`
+	IsActive  bool   `json:"isActive" gorm:"default:true"`
+	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
 type UnitOfMeasure struct {
@@ -59,9 +60,10 @@ type ProductPrice struct {
 type ProductStock struct {
 	gorm.Model
 	ID         uint   `gorm:"primaryKey" json:"id"`
-	ProductId  string `json:"productId" validate:"required"`
-	BaseQty    int32  `json:"baseQty" validate:"required,min=1"`
-	DerivedQty int32  `json:"derivedQty" validate:"required,min=1"`
+	ProductId  string `gorm:"type:varchar(20)" json:"productId"`
+	BaseQty    int    `json:"baseQty" validate:"required,min=1"`
+	DerivedQty int    `json:"derivedQty" validate:"required,min=1"`
+	ReorderLvl int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 }
 
 type UnitConversion struct {
@@ -76,8 +78,8 @@ type UnitConversion struct {
 type Inventory struct {
 	gorm.Model
 	ID        uint      `gorm:"primaryKey:autoIncrement" json:"id"`
-	OutQty    uint      `json:"inQty"`
-	InQty     uint      `json:"outQty"`
+	OutQty    int       `json:"inQty"`
+	InQty     int       `json:"outQty"`
 	ProductId string    `json:"productId"`
 	Product   Product   `gorm:"foreignKey:ProductId;" json:"product"`
 	Remark    string    `json:"remark"`
@@ -93,6 +95,7 @@ type ItemTransaction struct {
 	ReferenceNo string    `json:"referenceNo"`
 	InQty       int       `json:"inQty"`
 	OutQty      int       `json:"outQty"`
+	Uom         string    `json:"uom"`
 	TranType    string    `json:"tranType"`
 	Remark      string    `json:"remark"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"createdTime"`
@@ -157,10 +160,11 @@ type Purchase struct {
 type PurchaseDetail struct {
 	gorm.Model
 	ID          uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	ProductId   string `json:"productId"`
+	ProductId   string `gorm:"type:varchar(20)" json:"productId"`
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
 	Price       int64  `json:"price"`
+	Uom         string `json:"uom"`
 	Total       int64  `json:"total"`
 	PurchaseId  string `json:"purchaseId"`
 }
@@ -186,6 +190,8 @@ type SaleDetail struct {
 	ProductId   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
+	DrivedQty   int    `json:"derivedQty"`
+	Uom         string `json:"uom"`
 	Price       int64  `json:"price"`
 	Total       int64  `json:"total"`
 	SaleId      string `json:"saleId"`

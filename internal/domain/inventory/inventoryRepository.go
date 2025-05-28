@@ -45,8 +45,8 @@ func (r *InventoryRepository) Increase(input *models.Inventory) (string, error) 
 	}
 
 	newItemTransaction := models.ItemTransaction{
-		InQty:       int(input.InQty),
-		OutQty:      int(input.OutQty),
+		InQty:       input.InQty,
+		OutQty:      input.OutQty,
 		ProductId:   input.ProductId,
 		TranType:    "DEBIT",
 		ReferenceNo: strconv.Itoa(int(input.ID)),
@@ -81,7 +81,7 @@ func (r *InventoryRepository) Increase(input *models.Inventory) (string, error) 
 		}
 		return "", err
 	}
-	product.QtyOnHand += int(input.InQty)
+	// product.QtyOnHand += int(input.InQty)
 	tx.Save(&product)
 	tx.Commit()
 	message := input.ProductId + " is increased by " + strconv.Itoa(int(input.InQty)) + " EACH"
@@ -134,7 +134,7 @@ func (r *InventoryRepository) Decrease(input *models.Inventory) (string, error) 
 		}
 		return "", err
 	}
-	product.QtyOnHand -= int(input.OutQty)
+	// product.QtyOnHand -= int(input.OutQty)
 	tx.Save(&product)
 	tx.Commit()
 	message := input.ProductId + " is decrease by " + strconv.Itoa(int(input.OutQty)) + " EACH"
@@ -169,12 +169,12 @@ func (r *InventoryRepository) GetInvData() ([]ResponseInventoryDTO, error) {
 		for _, it := range p.ItemTransactions {
 			dto := ResponseInventoryDTO{
 				ProductName: p.ProductName,
-				OutQty:      uint(it.OutQty), // Fixed: using it instead of inv
-				InQty:       uint(it.InQty),  // Fixed: using it instead of inv
+				OutQty:      it.OutQty, // Fixed: using it instead of inv
+				InQty:       it.InQty,  // Fixed: using it instead of inv
 				ProductId:   p.ID,
 				Remark:      it.Remark,   // Fixed: using it instead of inv
 				TranType:    it.TranType, // Fixed: using it instead of inv
-				QtyOnHand:   p.QtyOnHand,
+				// QtyOnHand:   p.QtyOnHand,
 				// CreatedAt:   time.Unix(int64(it.CreatedAt), 0), // Fixed: using it instead of inv
 				CreatedAt: it.CreatedAt.Format("15:04:05 2006-01-02"),
 			}
