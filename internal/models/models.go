@@ -68,11 +68,11 @@ type ProductStock struct {
 
 type UnitConversion struct {
 	gorm.Model
-	ID        uint   `gorm:"primaryKey" json:"id"`
-	ProductId string `json:"productId" validate:"required"`
-	FromUnit  string `json:"fromUnit" validate:"required"`
-	ToUnit    string `json:"toUnit" validate:"required"`
-	Factor    uint   `json:"factor" validate:"required,min=1"`
+	ID         uint   `gorm:"primaryKey" json:"id"`
+	ProductId  string `json:"productId" validate:"required"`
+	BaseUnit   string `json:"fromUnit" validate:"required"`
+	DeriveUnit string `json:"toUnit" validate:"required"`
+	Factor     uint   `json:"factor" validate:"required,min=1"`
 }
 
 type Inventory struct {
@@ -190,7 +190,7 @@ type SaleDetail struct {
 	ProductId   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
-	DrivedQty   int    `json:"derivedQty"`
+	DerivedQty  int    `json:"derivedQty"`
 	Uom         string `json:"uom"`
 	Price       int64  `json:"price"`
 	Total       int64  `json:"total"`

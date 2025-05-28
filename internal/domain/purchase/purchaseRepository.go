@@ -2,6 +2,7 @@ package purchase
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -87,7 +88,11 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 			TranType:    "DEBIT",
 			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)),
 			Uom:         newPurchase.PurchaseDetails[i].Uom,
-			Remark:      "PurchaseID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].Uom,
+			// Remark:      "PurchaseID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].Uom,
+			Remark: fmt.Sprintf(
+				"PurchaseID:%s, line item id:%d, decrease %d %s ",
+				newPurchase.ID, newPurchase.PurchaseDetails[i].ID, newPurchase.PurchaseDetails[i].Qty, newPurchase.PurchaseDetails[i].Uom,
+			),
 		}
 		tx.Save(&newItemTransaction)
 

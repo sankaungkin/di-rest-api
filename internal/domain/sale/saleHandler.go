@@ -12,15 +12,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type SaleHandler struct{
+type SaleHandler struct {
 	svc SaleServiceInterface
 }
 
 var (
 	hdlInstance *SaleHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
-
 
 func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
 	log.Println(util.Blue + "SaleHandler constructor is called" + util.Reset)
@@ -49,8 +48,8 @@ func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
 //	@param			Authorization	header	string	true	"Authorization"
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
-	
+func (h *SaleHandler) CreateSale(c *fiber.Ctx) error {
+
 	input := new(SaleInvoiceRequestDTO)
 	log.Println("input", input)
 	if err := c.BodyParser(input); err != nil {
@@ -84,11 +83,10 @@ func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
-			"message": "category has been created successfully",
-			"data" : newSale,
+			"message": "Sale has been created successfully",
+			"data":    newSale,
 		})
-	
-	
+
 }
 
 // GetAllSales godoc
@@ -107,11 +105,11 @@ func (h *SaleHandler)CreateSale(c *fiber.Ctx) error{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
+func (h *SaleHandler) GetAllSales(c *fiber.Ctx) error {
 
 	sales, err := h.svc.GetAllService()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
@@ -120,10 +118,9 @@ func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
 			"status":  "SUCCESS",
 			"message": strconv.Itoa(len(sales)) + " records found",
 			"data":    sales,
-			"count": len(sales),
+			"count":   len(sales),
 		})
 }
-
 
 // GetById godoc
 //
@@ -142,7 +139,7 @@ func(h *SaleHandler)GetAllSales(c *fiber.Ctx) error{
 //	@Security		ApiKeyAuth
 //
 //	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func (h *SaleHandler)GetById(c *fiber.Ctx) error {
+func (h *SaleHandler) GetById(c *fiber.Ctx) error {
 
 	sale, err := h.svc.GetById(c.Params("id"))
 	if err != nil {
