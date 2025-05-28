@@ -60,6 +60,7 @@ func Initialize(app *fiber.App) {
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/:id", productService.GetProductById)
+	products.Get("/unit-prices/:id", productService.GetProductUnitPricesById)
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
 

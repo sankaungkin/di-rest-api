@@ -172,6 +172,36 @@ func (h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	})
 }
 
+func (h *ProductHandler) GetProductUnitPricesById(c *fiber.Ctx) error {
+	productId := c.Params("id")
+	if productId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Product ID is required",
+		})
+	}
+
+	unitPrices, err := h.svc.GetProductUnitPricesByIdSerive(c.Params("id"))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "No unit prices found for this product",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": strconv.Itoa(len(unitPrices)) + " unit prices found",
+		"data":    unitPrices,
+		"count":   len(unitPrices),
+	})
+}
+
 // UpdateProduct godoc
 //
 //	@Summary		Update individual product

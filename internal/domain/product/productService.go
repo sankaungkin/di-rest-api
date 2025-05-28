@@ -12,6 +12,7 @@ type ProductServiceInterface interface {
 	CreateSerive(product *models.Product) (*models.Product, error)
 	GetAllSerive() ([]ResponseProductDTO, error)
 	GetByIdSerive(id string) (*models.Product, error)
+	GetProductUnitPricesByIdSerive(productId string) ([]ResponseProductUnitPriceDTO, error)
 	Update(product *models.Product) (*models.Product, error)
 	DeleteSerive(id string) error
 }
@@ -50,6 +51,10 @@ func (s *ProductService) GetAllSerive() ([]ResponseProductDTO, error) {
 }
 func (s *ProductService) GetByIdSerive(id string) (*models.Product, error) {
 	return s.repo.GetById(id)
+}
+
+func (s *ProductService) GetProductUnitPricesByIdSerive(productId string) ([]ResponseProductUnitPriceDTO, error) {
+	return s.repo.GetProductUnitPricesById(productId)
 }
 
 func (s *ProductService) Update(product *models.Product) (*models.Product, error) {

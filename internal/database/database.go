@@ -17,19 +17,19 @@ type DatabaseInterface interface {
 }
 
 var (
-	db *gorm.DB
+	db     *gorm.DB
 	dbOnce sync.Once
-	Blue = "\033[34m" 
-	Reset = "\033[0m" 
+	Blue   = "\033[34m"
+	Reset  = "\033[0m"
 )
 
 func NewDB() (*gorm.DB, error) {
 
 	dbOnce.Do(func() {
-		log.Println(Blue +"------> NewDB constructor is called <-----"+Reset)
+		log.Println(Blue + "------> NewDB constructor is called <-----" + Reset)
 		err := godotenv.Load(".env")
 		if err != nil {
-			log.Fatalf(err.Error())
+			log.Fatal(err)
 		}
 
 		Host := os.Getenv("DB_HOST")
@@ -42,7 +42,7 @@ func NewDB() (*gorm.DB, error) {
 		var dsn = fmt.Sprintf(
 			"host=%s port=%s password=%s user=%s dbname=%s sslmode=%s",
 			Host, Port, Password, User, DBName, SSLMode)
-		
+
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			// return nil, err
@@ -53,6 +53,10 @@ func NewDB() (*gorm.DB, error) {
 			&models.Customer{},
 			&models.Supplier{},
 			&models.Product{},
+			&models.UnitOfMeasure{},
+			&models.UnitConversion{},
+			&models.ProductPrice{},
+			&models.ProductStock{},
 			&models.Inventory{},
 			&models.Sale{},
 			&models.SaleDetail{},
@@ -68,5 +72,3 @@ func NewDB() (*gorm.DB, error) {
 	return db, nil
 
 }
-
-

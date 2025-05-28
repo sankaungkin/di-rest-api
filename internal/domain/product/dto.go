@@ -41,3 +41,10 @@ type ResponseProductDTO struct {
 	IsActive        bool   `json:"isActive" gorm:"default:true"`
 	CreatedAt       string `json:"createdAt"`
 }
+
+type ResponseProductUnitPriceDTO struct {
+	ProductID   string `json:"productId"`
+	ProductName string `json:"productName"`
+	Uom         string `json:"uom"`
+	UnitPrice   int64  `json:"unitPrice"`
+}

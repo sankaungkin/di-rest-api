@@ -41,6 +41,38 @@ type Product struct {
 	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`
 }
+
+type UnitOfMeasure struct {
+	gorm.Model
+	ID       uint   `gorm:"primaryKey" json:"id"`
+	UnitName string `json:"unitName" validate:"required,min=3"`
+}
+
+type ProductPrice struct {
+	gorm.Model
+	ID        uint   `gorm:"primaryKey" json:"id"`
+	ProductId string `json:"productId" validate:"required"`
+	UnitId    uint   `json:"unitId" validate:"required"`
+	UnitPrice int64  `json:"price" validate:"required,min=1"`
+}
+
+type ProductStock struct {
+	gorm.Model
+	ID         uint   `gorm:"primaryKey" json:"id"`
+	ProductId  string `json:"productId" validate:"required"`
+	BaseQty    int32  `json:"baseQty" validate:"required,min=1"`
+	DerivedQty int32  `json:"derivedQty" validate:"required,min=1"`
+}
+
+type UnitConversion struct {
+	gorm.Model
+	ID        uint   `gorm:"primaryKey" json:"id"`
+	ProductId string `json:"productId" validate:"required"`
+	FromUnit  string `json:"fromUnit" validate:"required"`
+	ToUnit    string `json:"toUnit" validate:"required"`
+	Factor    uint   `json:"factor" validate:"required,min=1"`
+}
+
 type Inventory struct {
 	gorm.Model
 	ID        uint      `gorm:"primaryKey:autoIncrement" json:"id"`
@@ -199,6 +231,22 @@ func ValidateStruct[T any](payload T) []*ErrorResponse {
 }
 
 func MigrateModels(db *gorm.DB) error {
-	err := db.AutoMigrate(&Category{}, &Product{}, &User{}, &Customer{}, &Supplier{}, &Sale{}, &SaleDetail{}, &Purchase{}, &PurchaseDetail{}, &ItemTransaction{}, &User{})
+	err := db.AutoMigrate(
+		&Category{},
+		&Product{},
+		&UnitOfMeasure{},
+		&UnitConversion{},
+		&ProductPrice{},
+		&ProductStock{},
+		&User{},
+		&Customer{},
+		&Supplier{},
+		&Sale{},
+		&SaleDetail{},
+		&Purchase{},
+		&PurchaseDetail{},
+		&ItemTransaction{},
+		&User{},
+	)
 	return err
 }

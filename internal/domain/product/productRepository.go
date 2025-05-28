@@ -17,6 +17,7 @@ type ProductRepositoryInterface interface {
 	// GetAll() ([]models.Product, error)
 	GetAll() ([]ResponseProductDTO, error)
 	GetById(id string) (*models.Product, error)
+	GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error)
 	Update(product *models.Product) (*models.Product, error)
 	Delete(id string) error
 }
@@ -102,6 +103,24 @@ func (r *ProductRepository) GetById(id string) (*models.Product, error) {
 		}
 	}
 	return &product, nil
+}
+
+func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error) {
+	var results []ResponseProductUnitPriceDTO
+
+	err := r.db.
+		Table("product_prices AS pp").
+		Select("p.id AS product_id, p.product_name, u.unit_name AS uom, pp.unit_price").
+		Joins("JOIN products AS p ON pp.product_id = p.id").
+		Joins("JOIN unit_of_measurements AS u ON pp.unit_id = u.id").
+		Where("pp.product_id = ?", strings.ToUpper(productId)).
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (r *ProductRepository) Update(input *models.Product) (*models.Product, error) {
