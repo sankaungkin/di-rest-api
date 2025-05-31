@@ -265,7 +265,10 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
 	result, err := h.svc.Update(&updateProduct)
 	if err != nil {
-		log.Fatalf(err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
@@ -318,3 +321,66 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 		"message": "Delete successfully",
 	})
 }
+
+func (h *ProductHandler) GetAllProductStocks(c *fiber.Ctx) error {
+	products, err := h.svc.GetAllProductStocks()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(products)) + " records found",
+			"data":    products,
+			"count":   len(products),
+		})
+}
+
+func (h *ProductHandler) GetAllProductPrices(c *fiber.Ctx) error {
+	products, err := h.svc.GetAllProductPrices()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(products)) + " records found",
+			"data":    products,
+			"count":   len(products),
+		})
+}
+
+func (h *ProductHandler) GetUnitConversionsById(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "ID is required",
+		})
+	}
+
+	unitConversions, err := h.svc.GetUnitConversionsById(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "No unit conversions found for this ID",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": strconv.Itoa(len(unitConversions)) + " unit conversions found",
+		"data":    unitConversions,
+	})
+}
+
+// GetProductStocksById godoc

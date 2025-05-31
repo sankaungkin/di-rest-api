@@ -59,8 +59,11 @@ func Initialize(app *fiber.App) {
 	products.Use(middleware.Protected())
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
+	products.Get("/stocks", productService.GetAllProductStocks)
+	products.Get("/prices", productService.GetAllProductPrices)
 	products.Get("/:id", productService.GetProductById)
-	products.Get("/unit-prices/:id", productService.GetProductUnitPricesById)
+	products.Get("/prices/:id", productService.GetProductUnitPricesById)
+	products.Get("/conversions/:id", productService.GetUnitConversionsById)
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
 

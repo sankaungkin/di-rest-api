@@ -43,8 +43,17 @@ type ResponseProductDTO struct {
 }
 
 type ResponseProductUnitPriceDTO struct {
+	Serial      int    `json:"serial"`
 	ProductID   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Uom         string `json:"uom"`
 	UnitPrice   int64  `json:"unitPrice"`
+}
+
+type ResponseProductStockDTO struct {
+	ProductID         string `json:"productId"`
+	ProductName       string `json:"productName"`
+	BaseUomInStock    int    `json:"baseUomInStock"`
+	DerivedUomInStock int    `json:"derivedUomInStock"`
+	Reorder           int    `json:"reorder"`
 }

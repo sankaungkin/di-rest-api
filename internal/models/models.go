@@ -34,13 +34,10 @@ type Product struct {
 	BuyPrice         int64             `json:"buyPrice" validate:"required,min=1"`
 	SellPriceLevel1  int64             `json:"sellPricelvl1" validate:"required,min=1"`
 	SellPriceLevel2  int64             `json:"sellPricelvl2" validate:"required,min=1"`
-	// ReorderLvl       uint              `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	// QtyOnHand        int               `json:"qtyOnHand" validate:"required"`
-	// DerivedQtyOnHand int               `json:"derivedQtyOnHand" validate:"required"`
-	BrandName string `json:"brand"`
-	IsActive  bool   `json:"isActive" gorm:"default:true"`
-	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
+	BrandName        string            `json:"brand"`
+	IsActive         bool              `json:"isActive" gorm:"default:true"`
+	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
 type UnitOfMeasure struct {
@@ -70,8 +67,8 @@ type UnitConversion struct {
 	gorm.Model
 	ID         uint   `gorm:"primaryKey" json:"id"`
 	ProductId  string `json:"productId" validate:"required"`
-	BaseUnit   string `json:"fromUnit" validate:"required"`
-	DeriveUnit string `json:"toUnit" validate:"required"`
+	BaseUnit   string `json:"baseUnit" validate:"required"`
+	DeriveUnit string `json:"deriveUnit" validate:"required"`
 	Factor     uint   `json:"factor" validate:"required,min=1"`
 }
 

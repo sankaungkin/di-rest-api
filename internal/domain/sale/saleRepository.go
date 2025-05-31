@@ -289,19 +289,6 @@ func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 	return sales, nil
 }
 
-// func (r *SaleRepository)GetById(id string) (*models.Sale, error) {
-
-// 	var sale models.Sale
-// 	result := r.db.First(&sale, "id = ?", strings.ToUpper(id))
-// 	if err := result.Error; err != nil {
-// 		if err == gorm.ErrRecordNotFound {
-// 			return nil, err
-// 		}
-// 		return nil, err
-// 	}
-// 	return &sale, nil
-// }
-
 func (r *SaleRepository) GetById(id string) (*models.Sale, error) {
 	var sale models.Sale
 	err := r.db.
