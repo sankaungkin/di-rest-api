@@ -18,9 +18,10 @@ type ProductRepositoryInterface interface {
 	GetAll() ([]ResponseProductDTO, error)
 	GetById(id string) (*models.Product, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
+	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	GetAllProductPrices() ([]ResponseProductUnitPriceDTO, error)
 	GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error)
-	GetUnitConversionsById(id string) ([]models.UnitConversion, error)
+	GetUnitConversionsById(id string) (models.UnitConversion, error)
 	Update(product *models.Product) (*models.Product, error)
 	Delete(id string) error
 }
@@ -66,7 +67,7 @@ func (r *ProductRepository) Create(product *models.Product) (*models.Product, er
 
 func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 	var products []models.Product
-	err := r.db.Model(&models.Product{}).Order("id asc").Find(&products).Error
+	err := r.db.Model(&models.Product{}).Order("id DESC").Find(&products).Error
 	if err != nil {
 		return nil, err
 	}
@@ -107,29 +108,6 @@ func (r *ProductRepository) GetById(id string) (*models.Product, error) {
 	}
 	return &product, nil
 }
-
-// func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error) {
-// 	var results []ResponseProductUnitPriceDTO
-
-// 	err := r.db.
-// 		Table("product_prices AS pp").
-// 		Select("p.id AS product_id, p.product_name, u.unit_name AS uom, pp.unit_price").
-// 		Joins("JOIN products AS p ON pp.product_id = p.id").
-// 		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
-// 		Where("pp.product_id = ?", strings.ToUpper(productId)).
-// 		Scan(&results).Error
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Add serial numbers
-// 	for i := range results {
-// 		results[i].Serial = i + 1
-// 	}
-
-// 	return results, nil
-// }
 
 func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error) {
 	var results []ResponseProductUnitPriceDTO
@@ -219,6 +197,23 @@ func (r *ProductRepository) GetAllProductStocks() ([]ResponseProductStockDTO, er
 	return results, nil
 }
 
+func (r *ProductRepository) GetProductStocksById(productId string) (*ResponseProductStockDTO, error) {
+	var result ResponseProductStockDTO
+
+	err := r.db.
+		Table("product_stocks").
+		Select("product_stocks.product_id, products.product_name, product_stocks.base_qty as base_uom_in_stock, product_stocks.derived_qty as derived_uom_in_stock, product_stocks.reorder_lvl as reorder").
+		Joins("JOIN products ON products.id = product_stocks.product_id").
+		Where("product_stocks.product_id = ?", strings.ToUpper(productId)).
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (r *ProductRepository) GetAllProductPrices() ([]ResponseProductUnitPriceDTO, error) {
 	var results []ResponseProductUnitPriceDTO
 
@@ -243,14 +238,17 @@ func (r *ProductRepository) GetAllProductPrices() ([]ResponseProductUnitPriceDTO
 	return results, nil
 }
 
-func (r *ProductRepository) GetUnitConversionsById(id string) ([]models.UnitConversion, error) {
-	var unitConversions []models.UnitConversion
+func (r *ProductRepository) GetUnitConversionsById(id string) (models.UnitConversion, error) {
+	var unitConversions models.UnitConversion
 	err := r.db.Where("product_id = ?", strings.ToUpper(id)).Find(&unitConversions).Error
 	if err != nil {
-		return nil, err
+		if err == gorm.ErrRecordNotFound {
+			return models.UnitConversion{}, errors.New("no unit conversion found for this product")
+		}
+		return models.UnitConversion{}, err
 	}
-	if len(unitConversions) == 0 {
-		return nil, errors.New("no unit conversions found")
+	if unitConversions.ProductId == "" {
+		return models.UnitConversion{}, errors.New("no unit conversion found for this product")
 	}
 	return unitConversions, nil
 }

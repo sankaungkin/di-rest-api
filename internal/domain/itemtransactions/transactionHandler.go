@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
+	"github.com/sankangkin/di-rest-api/internal/models"
 
 	"gorm.io/gorm"
 )
@@ -188,3 +189,29 @@ func (h *TransactionHandler) GetByProductIdAndTranType(c *fiber.Ctx) error {
 		"count":   len(transactions),
 	})
 }
+
+func (h *TransactionHandler) CreateAdjustmentTransaction(c *fiber.Ctx) error {
+	var transaction models.ItemTransaction
+	if err := c.BodyParser(&transaction); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Invalid request body",
+		})
+	}
+
+	createdTransaction, err := h.svc.CreateAdjustmentTransaction(transaction)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Transaction created successfully",
+		"data":    createdTransaction,
+	})
+}
+
+// CreateAdjustmentTransaction godoc

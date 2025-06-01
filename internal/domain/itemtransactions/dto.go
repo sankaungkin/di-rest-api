@@ -9,3 +9,13 @@ type ItemTransactionDTO struct {
 	TranType    string `json:"tranType"`
 	Remark      string `json:"remark"`
 }
+
+type ResquestInventoryDTO struct {
+	ProductId   string `json:"productId"`
+	BaseQty     int    `json:"baseQty"`
+	DerivedQty  int    `json:"derivedQty"`
+	Remark      string `json:"remark"`
+	TranType    string `json:"tranType"`    // DEBIT or CREDIT
+	ReferenceNo string `json:"referenceNo"` // Reference number for the transaction
+	CreatedAt   string `json:"createdAt"`   // Timestamp of the transaction
+}

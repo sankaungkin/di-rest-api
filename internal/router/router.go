@@ -26,7 +26,7 @@ func Initialize(app *fiber.App) {
 	// authentication di
 	authService, err := authDi.InitAuth()
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("Failed to initialize auth service: %v", err)
 	}
 	// auth route
 	auth := api.Group("/auth")
@@ -38,7 +38,7 @@ func Initialize(app *fiber.App) {
 	// category di
 	catService, err := categoryDi.InitCategory()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize category service: %v", err)
 	}
 	// category route
 	categories := api.Group("/categories")
@@ -52,7 +52,7 @@ func Initialize(app *fiber.App) {
 	// product di
 	productService, err := productDi.InitProductDI()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize product service: %v", err)
 	}
 	// product route
 	products := api.Group("/products")
@@ -60,6 +60,7 @@ func Initialize(app *fiber.App) {
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/stocks", productService.GetAllProductStocks)
+	products.Get("/stocks/:id", productService.GetProductStocksById)
 	products.Get("/prices", productService.GetAllProductPrices)
 	products.Get("/:id", productService.GetProductById)
 	products.Get("/prices/:id", productService.GetProductUnitPricesById)
@@ -70,7 +71,7 @@ func Initialize(app *fiber.App) {
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize transaction service: %v", err)
 	}
 	// item transactions route
 	transactions := api.Group("/transactions")
@@ -78,11 +79,12 @@ func Initialize(app *fiber.App) {
 	transactions.Get("/by-product/:productId", transactionService.GetTransactionsByProductId)
 	transactions.Get("/by-type/:tranType", transactionService.GetTransactionsByTransactionType)
 	transactions.Get("/by-product-type/:productId/:tranType", transactionService.GetByProductIdAndTranType)
+	transactions.Post("/adjustment", transactionService.CreateAdjustmentTransaction)
 
 	// customer di
 	customerService, err := customerDi.InitCustomer()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize customer service: %v", err)
 	}
 	// customer route
 	customer := api.Group("/customers")
@@ -96,7 +98,7 @@ func Initialize(app *fiber.App) {
 	// supplier di
 	supplierService, err := supplierDi.InitSupplier()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize supplier service: %v", err)
 	}
 	// supplier route
 	supplier := api.Group("/suppliers")
@@ -110,7 +112,7 @@ func Initialize(app *fiber.App) {
 	// inventory di
 	inventoryService, err := inventoryDi.InitInventoryDI()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize inventory service: %v", err)
 	}
 	// inventory route
 	inventory := api.Group("/inventories")
@@ -122,7 +124,7 @@ func Initialize(app *fiber.App) {
 	// sale di
 	saleService, err := saleDi.InitSaleDI()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize sale service: %v", err)
 	}
 	// sale route
 	sale := api.Group("/sales")
@@ -134,7 +136,7 @@ func Initialize(app *fiber.App) {
 	// purchase di
 	purchaseService, err := purchaseDi.InitPurchaseDI()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Failed to initialize purchase service: %v", err)
 	}
 	// purchase route
 	purchase := api.Group("/purchases")

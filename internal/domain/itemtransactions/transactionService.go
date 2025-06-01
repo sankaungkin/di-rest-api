@@ -13,6 +13,7 @@ type TransactionServiceInterface interface {
 	GetByProductId(id string) ([]models.ItemTransaction, error)
 	GetByTransactionType(tranType string) ([]models.ItemTransaction, error)
 	GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error)
+	CreateAdjustmentTransaction(transaction models.ItemTransaction) (*models.ItemTransaction, error)
 }
 
 type TransactionService struct {
@@ -46,4 +47,8 @@ func (s *TransactionService) GetByTransactionType(tranType string) ([]models.Ite
 
 func (s *TransactionService) GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error) {
 	return s.repo.GetByProductIdAndTranType(productId, tran_type)
+}
+
+func (s *TransactionService) CreateAdjustmentTransaction(transaction models.ItemTransaction) (*models.ItemTransaction, error) {
+	return s.repo.CreateAdjustmentTransaction(transaction)
 }

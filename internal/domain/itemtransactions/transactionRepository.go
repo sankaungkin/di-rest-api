@@ -16,6 +16,7 @@ type TransactionRepositoryInterface interface {
 	GetByProductId(id string) ([]models.ItemTransaction, error)
 	GetByTransactionType(tranType string) ([]models.ItemTransaction, error)
 	GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error)
+	CreateAdjustmentTransaction(transaction models.ItemTransaction) (*models.ItemTransaction, error)
 }
 
 type TransactionRepository struct {
@@ -49,7 +50,7 @@ func (r *TransactionRepository) GetByProductId(productId string) ([]models.ItemT
 
 	result := r.db.Where("product_id = ?",
 		strings.ToUpper(productId)).
-		Order("created_at ASC").
+		Order("created_at DESC").
 		Find(&transactions)
 	if err := result.Error; err != nil {
 		return nil, err
@@ -71,9 +72,48 @@ func (r *TransactionRepository) GetByTransactionType(tran_type string) ([]models
 func (r *TransactionRepository) GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error) {
 
 	var transactions []models.ItemTransaction
-	result := r.db.Where("product_id = ? AND tran_type = ?", strings.ToUpper(productId), strings.ToUpper(tran_type)).Find(&transactions)
+	result := r.db.Where("product_id = ? AND tran_type = ?", strings.ToUpper(productId), strings.ToUpper(tran_type)).Find(&transactions).Order("created_at DESC")
 	if err := result.Error; err != nil {
 		return nil, err
 	}
 	return transactions, nil
+}
+func (r *TransactionRepository) CreateAdjustmentTransaction(transaction models.ItemTransaction) (*models.ItemTransaction, error) {
+	// Make a copy to return after transaction
+	var createdTransaction models.ItemTransaction
+
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// Step 1: Create ItemTransaction
+		if err := tx.Create(&transaction).Error; err != nil {
+			return err
+		}
+
+		// Keep the created transaction (with auto-generated ID, etc.)
+		createdTransaction = transaction
+
+		// Step 2: Fetch ProductStock
+		var stock models.ProductStock
+		if err := tx.Where("product_id = ?", transaction.ProductId).First(&stock).Error; err != nil {
+			return err
+		}
+
+		// Step 3: Set new quantity based on UOM
+		if transaction.Uom == "EACH" {
+			stock.BaseQty = transaction.InQty
+		} else {
+			stock.DerivedQty = transaction.InQty
+		}
+
+		// Step 4: Save updated stock
+		if err := tx.Save(&stock).Error; err != nil {
+			return err
+		}
+
+		return nil // commit transaction
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &createdTransaction, nil
 }

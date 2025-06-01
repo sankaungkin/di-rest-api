@@ -105,7 +105,7 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 
 	purchases := []models.Purchase{}
-	r.db.Preload(clause.Associations).Model(&models.Purchase{}).Order("ID desc").Find(&purchases)
+	r.db.Preload(clause.Associations).Model(&models.Purchase{}).Order("created_at DESC").Find(&purchases)
 	if len(purchases) == 0 {
 		return nil, errors.New("NO records found")
 	}

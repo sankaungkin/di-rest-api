@@ -37,122 +37,6 @@ func NewSaleRepository(db *gorm.DB) SaleRepositoryInterface {
 	return repoInstance
 }
 
-// Create inserts a new sale record into the database.
-// It validates the sale data, handles stock updates, and manages transactions.
-// If any error occurs during the process, it rolls back the transaction and returns the error.
-// If successful, it commits the transaction and returns the created sale record.
-func (r *SaleRepository) CreateOld(input *models.Sale) (*models.Sale, error) {
-	newSale := models.Sale{
-		ID:          input.ID,
-		CustomerId:  input.CustomerId,
-		Discount:    input.Discount,
-		GrandTotal:  input.GrandTotal,
-		Remark:      input.Remark,
-		SaleDate:    input.SaleDate,
-		SaleDetails: input.SaleDetails,
-		Total:       input.Total,
-	}
-
-	// Basic validation
-	err := models.ValidateStruct(newSale)
-	if err != nil {
-		return nil, gorm.ErrCheckConstraintViolated
-	}
-
-	tx := r.db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-	if err := tx.Error; err != nil {
-		return nil, err
-	}
-
-	// Save sale
-	if err := tx.Create(&newSale).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	for i := range newSale.SaleDetails {
-		sd := newSale.SaleDetails[i]
-
-		var productStock models.ProductStock
-		if err := tx.First(&productStock, "product_id = ?", sd.ProductId).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-
-		var unitConv models.UnitConversion
-		if err := tx.First(&unitConv, "product_id = ?", sd.ProductId).Error; err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("unit conversion not found for product %s", sd.ProductId)
-		}
-
-		// Handle sale by base unit
-		if sd.Uom == unitConv.BaseUnit {
-			if sd.Qty > productStock.BaseQty {
-				tx.Rollback()
-				return nil, fmt.Errorf("not enough stock: base unit of %s. requested %d, available %d", sd.ProductId, sd.Qty, productStock.BaseQty)
-			}
-
-			productStock.BaseQty -= sd.Qty
-
-			// Save item transaction
-			trx := models.ItemTransaction{
-				ProductId:   sd.ProductId,
-				ReferenceNo: newSale.ID + "-" + strconv.Itoa(int(sd.ID)),
-				OutQty:      sd.Qty,
-				Uom:         sd.Uom,
-				TranType:    "CREDIT",
-				Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (base unit)", sd.SaleId, sd.ID, sd.ProductId, sd.Qty, sd.Uom),
-			}
-			if err := tx.Create(&trx).Error; err != nil {
-				tx.Rollback()
-				return nil, err
-			}
-
-		} else if sd.Uom == unitConv.DeriveUnit {
-			if sd.DerivedQty > productStock.DerivedQty {
-				tx.Rollback()
-				return nil, fmt.Errorf("not enough stock: derived unit of %s. requested %d, available %d", sd.ProductId, sd.DerivedQty, productStock.DerivedQty)
-			}
-
-			productStock.DerivedQty -= sd.DerivedQty
-
-			// Save item transaction
-			trx := models.ItemTransaction{
-				ProductId:   sd.ProductId,
-				ReferenceNo: newSale.ID + "-" + strconv.Itoa(int(sd.ID)),
-				OutQty:      sd.DerivedQty,
-				Uom:         sd.Uom,
-				TranType:    "CREDIT",
-				Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId Sold %s %d %s (derived unit)", sd.SaleId, sd.ID, sd.ProductId, sd.DerivedQty, sd.Uom),
-			}
-			if err := tx.Create(&trx).Error; err != nil {
-				tx.Rollback()
-				return nil, err
-			}
-		} else {
-			tx.Rollback()
-			return nil, fmt.Errorf("invalid unit %s for product %s", sd.Uom, sd.ProductId)
-		}
-
-		// Save updated stock
-		if err := tx.Save(&productStock).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
-
-	return &newSale, nil
-}
-
 func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	newSale := models.Sale{
 		ID:          input.ID,
@@ -281,7 +165,7 @@ func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error
 func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 
 	sales := []models.Sale{}
-	r.db.Preload(clause.Associations).Model(&models.Sale{}).Order("ID desc").Find(&sales)
+	r.db.Preload(clause.Associations).Model(&models.Sale{}).Order("sale_date DESC").Find(&sales)
 	if len(sales) == 0 {
 		return nil, errors.New("NO records found")
 	}
