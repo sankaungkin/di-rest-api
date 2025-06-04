@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
-	"github.com/sankangkin/di-rest-api/internal/models"
 
 	"gorm.io/gorm"
 )
@@ -191,7 +190,7 @@ func (h *TransactionHandler) GetByProductIdAndTranType(c *fiber.Ctx) error {
 }
 
 func (h *TransactionHandler) CreateAdjustmentTransaction(c *fiber.Ctx) error {
-	var transaction models.ItemTransaction
+	var transaction ResquestAdjustInventoryDTO
 	if err := c.BodyParser(&transaction); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "FAIL",

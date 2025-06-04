@@ -10,10 +10,13 @@ type ItemTransactionDTO struct {
 	Remark      string `json:"remark"`
 }
 
-type ResquestInventoryDTO struct {
+type ResquestAdjustInventoryDTO struct {
 	ProductId   string `json:"productId"`
 	BaseQty     int    `json:"baseQty"`
 	DerivedQty  int    `json:"derivedQty"`
+	InQty       int    `json:"inQty"`  // Quantity to be added
+	OutQty      int    `json:"outQty"` // Quantity to be removed
+	Uom         string `json:"uom"`    // Unit of Measure (e.g., EACH, KG)
 	Remark      string `json:"remark"`
 	TranType    string `json:"tranType"`    // DEBIT or CREDIT
 	ReferenceNo string `json:"referenceNo"` // Reference number for the transaction

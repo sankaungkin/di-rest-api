@@ -16,7 +16,7 @@ type TransactionRepositoryInterface interface {
 	GetByProductId(id string) ([]models.ItemTransaction, error)
 	GetByTransactionType(tranType string) ([]models.ItemTransaction, error)
 	GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error)
-	CreateAdjustmentTransaction(transaction models.ItemTransaction) (*models.ItemTransaction, error)
+	CreateAdjustmentTransaction(transaction ResquestAdjustInventoryDTO) (*models.ItemTransaction, error)
 }
 
 type TransactionRepository struct {
@@ -78,18 +78,27 @@ func (r *TransactionRepository) GetByProductIdAndTranType(productId string, tran
 	}
 	return transactions, nil
 }
-func (r *TransactionRepository) CreateAdjustmentTransaction(transaction models.ItemTransaction) (*models.ItemTransaction, error) {
+func (r *TransactionRepository) CreateAdjustmentTransaction(transaction ResquestAdjustInventoryDTO) (*models.ItemTransaction, error) {
 	// Make a copy to return after transaction
 	var createdTransaction models.ItemTransaction
 
+	newItemTran := models.ItemTransaction{
+		ProductId:   transaction.ProductId,
+		ReferenceNo: transaction.ReferenceNo,
+		OutQty:      transaction.OutQty,
+		InQty:       transaction.InQty,
+		TranType:    transaction.TranType,
+		Remark:      transaction.Remark,
+	}
+
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		// Step 1: Create ItemTransaction
-		if err := tx.Create(&transaction).Error; err != nil {
+		if err := tx.Create(&newItemTran).Error; err != nil {
 			return err
 		}
 
 		// Keep the created transaction (with auto-generated ID, etc.)
-		createdTransaction = transaction
+		createdTransaction = newItemTran
 
 		// Step 2: Fetch ProductStock
 		var stock models.ProductStock
@@ -100,6 +109,7 @@ func (r *TransactionRepository) CreateAdjustmentTransaction(transaction models.I
 		// Step 3: Set new quantity based on UOM
 		if transaction.Uom == "EACH" {
 			stock.BaseQty = transaction.InQty
+
 		} else {
 			stock.DerivedQty = transaction.InQty
 		}
