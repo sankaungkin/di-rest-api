@@ -15,7 +15,7 @@ import (
 
 type AuthServiceInterface interface {
 	Signup(user *models.User) (*models.User, error)
-	Signin(username, password string) (string, string, error)
+	Signin(username, password string) (string, string, string, string, error)
 	FindUserByEmail(email string) (*models.User, error)
 	Refresh(refreshToken string) (string, error)
 	Signout(accessToken string) error
@@ -72,23 +72,23 @@ func (s *AuthService) FindUserByEmail(email string) (*models.User, error) {
 	return s.repo.GetUserByName(email)
 }
 
-func (s *AuthService) Signin(email, password string) (string, string, error) {
+func (s *AuthService) Signin(email, password string) (string, string, string, string, error) {
 
 	found, err := s.repo.GetUserByName(email)
 
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
 
 	if !comparePasswords(found.Password, []byte(password)) {
-		return "", "", errors.New("invalid credentials")
+		return "", "", "", "", errors.New("invalid credentials")
 	}
 
-	at, rt, err := generateTokens(found, util.SecreteKey)
+	at, rt, userName, role, err := generateTokens(found, util.SecreteKey)
 	if err != nil {
-		return "", "", errors.New("authentication faileds")
+		return "", "", "", "", errors.New("authentication faileds")
 	}
-	return at, rt, nil
+	return at, rt, userName, role, nil
 }
 
 func (s *AuthService) Refresh(refreshToken string) (string, error) {
@@ -147,7 +147,7 @@ func SessionExpires() time.Time {
 	return time.Now().Add(5 * 24 * time.Hour)
 }
 
-func generateTokens(user *models.User, secretKey string) (string, string, error) {
+func generateTokens(user *models.User, secretKey string) (string, string, string, string, error) {
 	// Define signing method and create claims
 	claims := &jwt.MapClaims{
 		"id":       user.ID,
@@ -162,7 +162,7 @@ func generateTokens(user *models.User, secretKey string) (string, string, error)
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	accessTokenString, err := accessToken.SignedString([]byte(secretKey))
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
 
 	// Define refresh token claims with longer expiry
@@ -181,8 +181,10 @@ func generateTokens(user *models.User, secretKey string) (string, string, error)
 	// Create refresh token
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
 	refreshTokenString, err := refreshToken.SignedString([]byte(secretKey))
+	userName := user.UserName
+	role := string(user.Role)
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", err
 	}
-	return accessTokenString, refreshTokenString, nil
+	return accessTokenString, refreshTokenString, userName, role, nil
 }

@@ -23,6 +23,8 @@ type SignInRequestDTO struct {
 type SignInResponseDTO struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
+	UserName     string `json:"userName"`
+	Role         string `json:"role"`
 }
 
 type RefreshResponseDTO struct {

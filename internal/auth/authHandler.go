@@ -38,19 +38,19 @@ func NewAuthHandler(svc AuthServiceInterface) *AuthHandler {
 	return hdlInstance
 }
 
-// 	Register	godoc
-//	@Summary		Create new user based on parameters
-//	@Description	Register new user based on parameters
+// Register	godoc
+// @Summary		Create new user based on parameters
+// @Description	Register new user based on parameters
 //
-//	@Tags			Auth
-//	@Accept			json
-//	@Param			info	body		SignUpDTO	true	"Signup Data"
-//	@Success		200		{object}	SignUpResponseDTO
-//	@Failure		400		{object}	httputil.HttpError400
-//	@Failure		401		{object}	httputil.HttpError401
-//	@Failure		500		{object}	httputil.HttpError500
-//	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/auth/register [post]
+// @Tags			Auth
+// @Accept			json
+// @Param			info	body		SignUpDTO	true	"Signup Data"
+// @Success		200		{object}	SignUpResponseDTO
+// @Failure		400		{object}	httputil.HttpError400
+// @Failure		401		{object}	httputil.HttpError401
+// @Failure		500		{object}	httputil.HttpError500
+// @Failure		401		{object}	httputil.HttpError401
+// @Router			/api/auth/register [post]
 func (h *AuthHandler) SignUp(c *fiber.Ctx) error {
 	var user models.User
 	if err := c.BodyParser(&user); err != nil {
@@ -100,11 +100,11 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 	if errors != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "fail validation", "errors": errors})
 	}
-	at, rt, err := h.svc.Signin(input.Email, input.Password)
+	at, rt, userName, role, err := h.svc.Signin(input.Email, input.Password)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "fail signin", "errors": err.Error()})
 	}
-	
+
 	c.Cookie(&fiber.Cookie{
 		Name:     "accessToken",
 		Value:    at,
@@ -127,17 +127,20 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 		"data": SignInResponseDTO{
 			AccessToken:  at,
 			RefreshToken: rt,
+			UserName:     userName,
+			Role:         role,
 		}})
 
 }
 
 // Refresh	godoc
+//
 //	@Summary		Get refresh token
 //	@Description	Get refresh token
 //
 //	@Tags			Auth
 //	@Accept			json
-//	@Success		200		
+//	@Success		200
 //	@Failure		400	{object}	httputil.HttpError400
 //	@Failure		401	{object}	httputil.HttpError401
 //	@Failure		500	{object}	httputil.HttpError500
@@ -181,17 +184,18 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 }
 
 // Logout	godoc
+//
 //	@Summary		Logout user
 //	@Description	Logout user
 //
 //	@Tags			Auth
-//	@Success		200	
+//	@Success		200
 //	@Failure		400	{object}	httputil.HttpError400
 //	@Failure		401	{object}	httputil.HttpError401
 //	@Failure		500	{object}	httputil.HttpError500
 //	@Failure		401	{object}	httputil.HttpError401
 //	@Router			/api/auth/logout [post]
-func(h *AuthHandler) Logout(c *fiber.Ctx) error {
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	expired := time.Now().Add(-time.Hour * 24)
 	c.Cookie(&fiber.Cookie{
 		Name:     "refreshToken",

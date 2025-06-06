@@ -10,6 +10,7 @@
 ./tmp
 *.log
 *settings.json
+.air.toml
 
 # Test binary, built with `go test -c`
 # *.test
