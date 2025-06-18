@@ -55,18 +55,37 @@ func Initialize(app *fiber.App) {
 		log.Fatalf("Failed to initialize product service: %v", err)
 	}
 	// product route
+	// products := api.Group("/products")
+	// products.Use(middleware.Protected())
+	// products.Post("/", productService.CreateProduct)
+	// products.Get("/", productService.GetAllProducts)
+	// products.Get("/stocks", productService.GetAllProductStocks)
+	// products.Get("/stocks/:id", productService.GetProductStocksById)
+	// products.Get("/prices", productService.GetAllProductPrices)
+	// products.Get("/:id", productService.GetProductById)
+	// products.Get("/prices/:id", productService.GetProductUnitPricesById)
+	// products.Get("/conversions/:id", productService.GetUnitConversionsById)
+	// products.Get("/units", productService.GetAllUnitConversions)
+	// products.Put("/:id", productService.UpdateProduct)
+	// products.Delete("/:id", productService.DeleteProduct)
+
 	products := api.Group("/products")
 	products.Use(middleware.Protected())
+
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
+
 	products.Get("/stocks", productService.GetAllProductStocks)
 	products.Get("/stocks/:id", productService.GetProductStocksById)
 	products.Get("/prices", productService.GetAllProductPrices)
-	products.Get("/:id", productService.GetProductById)
 	products.Get("/prices/:id", productService.GetProductUnitPricesById)
+
 	products.Get("/conversions/:id", productService.GetUnitConversionsById)
+	products.Get("/units", productService.GetAllUnitConversions) // ✅ Move this BEFORE `/:id`
+
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
+	products.Get("/:id", productService.GetProductById) // ❗️Keep this at the BOTTOM
 
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()

@@ -411,4 +411,18 @@ func (h *ProductHandler) GetUnitConversionsById(c *fiber.Ctx) error {
 	})
 }
 
-// GetProductStocksById godoc
+func (h *ProductHandler) GetAllUnitConversions(c *fiber.Ctx) error {
+	unitConversions, err := h.svc.GetAllUnitConversions()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(unitConversions)) + " records found",
+			"data":    unitConversions,
+			"count":   len(unitConversions),
+		})
+}

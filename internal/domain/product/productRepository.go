@@ -24,6 +24,7 @@ type ProductRepositoryInterface interface {
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
 	Update(product *models.Product) (*models.Product, error)
 	Delete(id string) error
+	GetAllUnitConversions() ([]models.UnitOfMeasure, error)
 }
 
 type ProductRepository struct {
@@ -251,4 +252,13 @@ func (r *ProductRepository) GetUnitConversionsById(id string) (models.UnitConver
 		return models.UnitConversion{}, errors.New("no unit conversion found for this product")
 	}
 	return unitConversions, nil
+}
+
+func (r *ProductRepository) GetAllUnitConversions() ([]models.UnitOfMeasure, error) {
+	var unitOfMeasures []models.UnitOfMeasure
+	err := r.db.Model(&models.UnitOfMeasure{}).Order("ID asc").Limit(100).Find(&unitOfMeasures).Error
+	if err != nil {
+		return nil, err
+	}
+	return unitOfMeasures, nil
 }

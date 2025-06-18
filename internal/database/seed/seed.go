@@ -20,6 +20,14 @@ func main() {
 	load()
 }
 
+var unitOfMeasures = []models.UnitOfMeasure{
+	{UnitName: "EACH"},
+	{UnitName: "PACK"},
+	{UnitName: "FEET"},
+	{UnitName: "DOZEN"},
+	{UnitName: "BOTTLE"},
+}
+
 var categories = []models.Category{
 	{
 		CategoryName: "Construction Materials",
@@ -283,6 +291,9 @@ func load() {
 
 	fmt.Println("Seeding suppliers data ....")
 	db.Create(&suppliers)
+
+	fmt.Println("Seeding unit of measures data ....")
+	db.Create(&unitOfMeasures)
 
 	fmt.Println("..... Seeding completed .....")
 }
