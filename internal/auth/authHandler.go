@@ -102,7 +102,7 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 	}
 	at, rt, userName, role, err := h.svc.Signin(input.Email, input.Password)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "fail signin", "errors": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "invalid credentials", "errors": err.Error()})
 	}
 
 	c.Cookie(&fiber.Cookie{
@@ -148,13 +148,30 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 //	@Router			/api/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 
-	tokenString := c.Cookies("refreshToken")
-	rt, err := h.svc.Refresh(tokenString)
+	// tokenString := c.Cookies("refreshToken")
+	// rt, err := h.svc.Refresh(tokenString)
 
+	// if err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"status": "fail",
+	// 		"errors": err.Error(),
+	// 	})
+	// }
+
+	var body RefreshRequestDTO
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "Invalid body",
+		})
+	}
+
+	rt, err := h.svc.Refresh(body.RefreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status": "fail",
-			"errors": err.Error(),
+			"error":  err.Error(),
 		})
 	}
 
