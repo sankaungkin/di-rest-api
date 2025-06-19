@@ -48,6 +48,8 @@ definitions:
     properties:
       createdAt:
         type: string
+      createdTime:
+        type: string
       deletedAt:
         $ref: '#/definitions/gorm.DeletedAt'
       id:
@@ -61,6 +63,36 @@ definitions:
       productId:
         type: string
       remark:
+        type: string
+      updatedAt:
+        type: string
+      updatedTime:
+        type: string
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.ItemTransaction:
+    properties:
+      createdAt:
+        type: string
+      createdTime:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        description: TODO to enhance with UUID
+        type: integer
+      inQty:
+        type: integer
+      outQty:
+        type: integer
+      productId:
+        type: string
+      referenceNo:
+        type: string
+      remark:
+        type: string
+      tranType:
+        type: string
+      uom:
         type: string
       updatedAt:
         type: string
@@ -85,11 +117,6 @@ definitions:
       productName:
         minLength: 3
         type: string
-      qtyOnHand:
-        type: integer
-      reorderlvl:
-        minimum: 1
-        type: integer
       sellPricelvl1:
         minimum: 1
         type: integer
@@ -99,16 +126,18 @@ definitions:
       uom:
         minLength: 3
         type: string
+      uomId:
+        minimum: 3
+        type: integer
       updatedAt:
         type: string
     required:
     - buyPrice
     - productName
-    - qtyOnHand
-    - reorderlvl
     - sellPricelvl1
     - sellPricelvl2
     - uom
+    - uomId
     type: object
   github_com_sankangkin_di-rest-api_internal_models.Purchase:
     properties:
@@ -159,6 +188,8 @@ definitions:
         type: integer
       total:
         type: integer
+      uom:
+        type: string
       updatedAt:
         type: string
     type: object
@@ -205,6 +236,8 @@ definitions:
         type: string
       deletedAt:
         $ref: '#/definitions/gorm.DeletedAt'
+      derivedQty:
+        type: integer
       id:
         type: integer
       price:
@@ -219,6 +252,8 @@ definitions:
         type: string
       total:
         type: integer
+      uom:
+        type: string
       updatedAt:
         type: string
     type: object
@@ -245,6 +280,37 @@ definitions:
     - address
     - name
     - phone
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.UnitConversion:
+    properties:
+      baseUnit:
+        type: string
+      baseUnitId:
+        type: integer
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      deriveUnit:
+        type: string
+      deriveUnitId:
+        type: integer
+      factor:
+        minimum: 1
+        type: integer
+      id:
+        type: integer
+      productId:
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - baseUnit
+    - baseUnitId
+    - deriveUnit
+    - deriveUnitId
+    - factor
+    - productId
     type: object
   github_com_sankangkin_di-rest-api_internal_models.User:
     properties:
@@ -310,6 +376,16 @@ definitions:
         example: internal server error
         type: string
     type: object
+  internal_auth.RefreshRequestDTO:
+    properties:
+      refreshToken:
+        type: string
+    type: object
+  internal_auth.RefreshResponseDTO:
+    properties:
+      refreshToken:
+        type: string
+    type: object
   internal_auth.SignInRequestDTO:
     properties:
       email:
@@ -325,6 +401,10 @@ definitions:
       accessToken:
         type: string
       refreshToken:
+        type: string
+      role:
+        type: string
+      userName:
         type: string
     type: object
   internal_auth.SignUpDTO:
@@ -384,6 +464,35 @@ definitions:
       productId:
         type: string
       remark:
+        type: string
+    type: object
+  internal_domain_itemtransactions.ResquestAdjustInventoryDTO:
+    properties:
+      baseQty:
+        type: integer
+      createdAt:
+        description: Timestamp of the transaction
+        type: string
+      derivedQty:
+        type: integer
+      inQty:
+        description: Quantity to be added
+        type: integer
+      outQty:
+        description: Quantity to be removed
+        type: integer
+      productId:
+        type: string
+      referenceNo:
+        description: Reference number for the transaction
+        type: string
+      remark:
+        type: string
+      tranType:
+        description: DEBIT or CREDIT
+        type: string
+      uom:
+        description: Unit of Measure (e.g., EACH, KG)
         type: string
     type: object
   internal_domain_product.CreateProductRequstDTO:
@@ -472,12 +581,12 @@ definitions:
         type: string
       purchaseDate:
         type: string
-      remark:
-        type: string
-      saleDetails:
+      purchaseDetails:
         items:
           $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail'
         type: array
+      remark:
+        type: string
       supplierId:
         type: integer
       total:
@@ -522,10 +631,11 @@ definitions:
       phone:
         type: string
     type: object
+host: localhost:5555
 info:
   contact:
     email: sankaungkin@gmail.com
-    name: API Support
+    name: San KaungKin
   description: This is an auto-generated API docs.
   license:
     name: Apache 2.0
@@ -590,23 +700,26 @@ paths:
     post:
       consumes:
       - application/json
-      description: Get refresh token
+      description: Get new access token using refresh token
+      parameters:
+      - description: Refresh token request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.RefreshRequestDTO'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.RefreshResponseDTO'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/httputil.HttpError400'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httputil.HttpError401'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputil.HttpError500'
-      summary: Get refresh token
+      summary: Refresh access token
       tags:
       - Auth
   /api/auth/register:
@@ -641,7 +754,7 @@ paths:
       summary: Create new user based on parameters
       tags:
       - Auth
-  /api/category:
+  /api/categories:
     get:
       consumes:
       - application/json
@@ -712,7 +825,7 @@ paths:
       summary: Create new category based on parameters
       tags:
       - Categories
-  /api/category/{id}:
+  /api/categories/{id}:
     delete:
       consumes:
       - application/json
@@ -824,7 +937,7 @@ paths:
       summary: Update individual category
       tags:
       - Categories
-  /api/customer:
+  /api/customers:
     get:
       consumes:
       - application/json
@@ -851,8 +964,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch all customers
       tags:
       - Customers
@@ -867,11 +979,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_domain_customer.CreateCustomerRequestDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -890,12 +997,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Create new customer based on parameters
       tags:
       - Customers
-  /api/customer/{id}:
+  /api/customers/{id}:
     delete:
       consumes:
       - application/json
@@ -926,8 +1032,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Delete individual customer
       tags:
       - Customers
@@ -961,8 +1066,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch individual customer by Id
       tags:
       - Customers
@@ -1002,12 +1106,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Update individual customer
       tags:
       - Customers
-  /api/inventory:
+  /api/inventories:
     get:
       consumes:
       - application/json
@@ -1034,12 +1137,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch all inventory records
       tags:
       - Inventories
-  /api/inventory/decrease:
+  /api/inventories/decrease:
     post:
       consumes:
       - application/json
@@ -1051,11 +1153,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_domain_inventory.IncreaseInventoryDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -1074,12 +1171,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Create decrease inventory record based on parameters
       tags:
       - Inventories
-  /api/inventory/increase:
+  /api/inventories/increase:
     post:
       consumes:
       - application/json
@@ -1091,11 +1187,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_domain_inventory.IncreaseInventoryDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -1114,12 +1205,47 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Create increase inventory record based on parameters
       tags:
       - Inventories
   /api/product:
+    post:
+      consumes:
+      - application/json
+      description: Create a new product with name, category, prices, and status
+      parameters:
+      - description: Product input data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_product.CreateProductRequstDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Create new product
+      tags:
+      - Products
+  /api/products:
     get:
       consumes:
       - application/json
@@ -1146,51 +1272,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch all products
       tags:
       - Products
-    post:
-      consumes:
-      - application/json
-      description: Create new product based on parameters
-      parameters:
-      - description: Product Data
-        in: body
-        name: product
-        required: true
-        schema:
-          $ref: '#/definitions/internal_domain_product.CreateProductRequstDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputil.HttpError400'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httputil.HttpError401'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputil.HttpError500'
-      security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
-      summary: Create new product based on parameters
-      tags:
-      - Products
-  /api/product/{id}:
+  /api/products/{id}:
     delete:
       consumes:
       - application/json
@@ -1221,8 +1307,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Delete individual product
       tags:
       - Products
@@ -1256,8 +1341,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch individual product by Id
       tags:
       - Products
@@ -1297,12 +1381,239 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Update individual product
       tags:
       - Products
-  /api/purchase:
+  /api/products/conversions/:
+    get:
+      consumes:
+      - application/json
+      description: Get unit conversions
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get unit conversions
+      tags:
+      - Products
+  /api/products/conversions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get unit conversions by Id
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get unit conversions by Id
+      tags:
+      - Products
+  /api/products/prices/:
+    get:
+      consumes:
+      - application/json
+      description: Get all product prices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get all product prices
+      tags:
+      - Products
+  /api/products/prices/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual product price by Id
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual product price by Id
+      tags:
+      - Products
+  /api/products/stocks:
+    get:
+      consumes:
+      - application/json
+      description: Get all product stocks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get all product stocks
+      tags:
+      - Products
+  /api/products/stocks/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get all product stocks By Id
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get all product stocks By Id
+      tags:
+      - Products
+  /api/purchases:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all purchases
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all purchases
+      tags:
+      - Purchases
     post:
       consumes:
       - application/json
@@ -1314,11 +1625,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_domain_purchase.PurchaseInvoiceRequestDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -1337,12 +1643,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Create new purchase based on parameters
       tags:
       - Purchases
-  /api/purchase/{id}:
+  /api/purchases/{id}:
     get:
       consumes:
       - application/json
@@ -1373,44 +1678,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch individual purchase by Id
       tags:
       - Purchases
-  /api/purchases:
-    get:
-      consumes:
-      - application/json
-      description: Fetch all purchases
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
-            type: array
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputil.HttpError400'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httputil.HttpError401'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputil.HttpError500'
-      security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
-      summary: Fetch all purchases
-      tags:
-      - Purchases
-  /api/sale:
+  /api/sales:
     get:
       consumes:
       - application/json
@@ -1437,8 +1709,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch all sales
       tags:
       - Sales
@@ -1453,11 +1724,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_domain_sale.SaleInvoiceRequestDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -1476,12 +1742,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Create new sale based on parameters
       tags:
       - Sales
-  /api/sale/{id}:
+  /api/sales/{id}:
     get:
       consumes:
       - application/json
@@ -1512,12 +1777,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch individual sale by Id
       tags:
       - Sales
-  /api/supplier:
+  /api/suppliers:
     get:
       consumes:
       - application/json
@@ -1544,8 +1808,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch all supplier
       tags:
       - Suppliers
@@ -1560,11 +1823,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/internal_domain_supplier.CreateSupplierRequestDTO'
-      - description: Authorization
-        in: header
-        name: Authorization
-        required: true
-        type: string
       responses:
         "200":
           description: OK
@@ -1583,12 +1841,11 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Create new supplier based on parameters
       tags:
       - Suppliers
-  /api/supplier/{id}:
+  /api/suppliers/{id}:
     delete:
       consumes:
       - application/json
@@ -1619,8 +1876,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Delete individual supplier
       tags:
       - Suppliers
@@ -1654,8 +1910,7 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Fetch individual supplier by Id
       tags:
       - Suppliers
@@ -1695,13 +1950,200 @@ paths:
           schema:
             $ref: '#/definitions/httputil.HttpError500'
       security:
-      - ApiKeyAuth: []
-      - Bearer  <-----------------------------------------add this in all controllers that need authentication: []
+      - Bearer: []
       summary: Update individual supplier
       tags:
       - Suppliers
+  /api/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all transactions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all transactions
+      tags:
+      - Transactions
+  /api/transactions/adjustment:
+    post:
+      consumes:
+      - application/json
+      description: Create
+      parameters:
+      - description: Bearer token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Product input data
+        in: body
+        name: transaction
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_itemtransactions.ResquestAdjustInventoryDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Create adjustment transaction
+      tags:
+      - Transactions
+  /api/transactions/by-product-type/{productId}/{tranType}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual transaction by productId and tranType
+      parameters:
+      - description: Product ID
+        in: path
+        name: productId
+        required: true
+        type: string
+      - description: Transaction Type
+        in: path
+        name: tranType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual transaction by productId and tranType
+      tags:
+      - Transactions
+  /api/transactions/by-product/{productId}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual transaction by productId
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual transaction by productId
+      tags:
+      - Transactions
+  /api/transactions/by-type/{tranType}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual transaction by protransactionType
+      parameters:
+      - description: transactionType
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual transaction by transactionType
+      tags:
+      - Transactions
 securityDefinitions:
-  ApiKeyAuth:
+  Bearer:
     description: Type "Bearer" followed by a space and JWT token.
     in: header
     name: Authorization

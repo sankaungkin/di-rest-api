@@ -42,12 +42,7 @@ func NewSaleHandler(svc SaleServiceInterface) *SaleHandler {
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Router			/api/sales [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Security		Bearer
 func (h *SaleHandler) CreateSale(c *fiber.Ctx) error {
 
 	input := new(SaleInvoiceRequestDTO)
@@ -101,10 +96,7 @@ func (h *SaleHandler) CreateSale(c *fiber.Ctx) error {
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
 //	@Router			/api/sales	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Security		Bearer
 func (h *SaleHandler) GetAllSales(c *fiber.Ctx) error {
 
 	sales, err := h.svc.GetAllService()
@@ -135,10 +127,7 @@ func (h *SaleHandler) GetAllSales(c *fiber.Ctx) error {
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
 //	@Router			/api/sales/{id}	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Security		Bearer
 func (h *SaleHandler) GetById(c *fiber.Ctx) error {
 
 	sale, err := h.svc.GetById(c.Params("id"))

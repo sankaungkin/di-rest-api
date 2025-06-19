@@ -41,13 +41,8 @@ func NewSaleHandler(svc PurchaseServiceInterface) *PurchaseHandler {
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/purchase [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/purchases [post]
+//	@Security		Bearer
 func (h *PurchaseHandler) CreatePurchase(c *fiber.Ctx) error {
 
 	input := new(PurchaseInvoiceRequestDTO)
@@ -100,10 +95,7 @@ func (h *PurchaseHandler) CreatePurchase(c *fiber.Ctx) error {
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
 //	@Router			/api/purchases	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Security		Bearer
 func (h *PurchaseHandler) GetAllPurchases(c *fiber.Ctx) error {
 
 	purchases, err := h.svc.GetAllService()
@@ -133,11 +125,8 @@ func (h *PurchaseHandler) GetAllPurchases(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/purchase/{id}	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/purchases/{id}	[get]
+//	@Security		Bearer
 func (h *PurchaseHandler) GetById(c *fiber.Ctx) error {
 
 	purchase, err := h.svc.GetById(c.Params("id"))

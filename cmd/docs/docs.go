@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
+            "name": "San KaungKin",
             "email": "sankaungkin@gmail.com"
         },
         "license": {
@@ -105,34 +105,39 @@ const docTemplate = `{
         },
         "/api/auth/refresh": {
             "post": {
-                "description": "Get refresh token",
+                "description": "Get new access token using refresh token",
                 "consumes": [
+                    "application/json"
+                ],
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Get refresh token",
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh token request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_auth.RefreshRequestDTO"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_auth.RefreshResponseDTO"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/httputil.HttpError400"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError401"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError500"
                         }
                     }
                 }
@@ -187,7 +192,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/category": {
+        "/api/categories": {
             "get": {
                 "security": [
                     {
@@ -301,7 +306,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/category/{id}": {
+        "/api/categories/{id}": {
             "get": {
                 "security": [
                     {
@@ -480,14 +485,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/customer": {
+        "/api/customers": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch all customers",
@@ -534,10 +536,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Create new customer based on parameters",
@@ -557,13 +556,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_customer.CreateCustomerRequestDTO"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -594,14 +586,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/customer/{id}": {
+        "/api/customers/{id}": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch individual customer by Id",
@@ -654,10 +643,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Update individual customer",
@@ -719,10 +705,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Delete individual customer",
@@ -773,14 +756,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/inventory": {
+        "/api/inventories": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch all inventory records",
@@ -825,14 +805,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/inventory/decrease": {
+        "/api/inventories/decrease": {
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Create decrease inventory record based on parameters",
@@ -852,13 +829,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_inventory.IncreaseInventoryDTO"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -889,14 +859,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/inventory/increase": {
+        "/api/inventories/increase": {
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Create increase inventory record based on parameters",
@@ -916,13 +883,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_inventory.IncreaseInventoryDTO"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -954,13 +914,67 @@ const docTemplate = `{
             }
         },
         "/api/product": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create a new product with name, category, prices, and status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Create new product",
+                "parameters": [
+                    {
+                        "description": "Product input data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_product.CreateProductRequstDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch all products",
@@ -1003,39 +1017,188 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
+            }
+        },
+        "/api/products/conversions/": {
+            "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
-                "description": "Create new product based on parameters",
+                "description": "Get unit conversions",
                 "consumes": [
+                    "application/json"
+                ],
+                "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Products"
                 ],
-                "summary": "Create new product based on parameters",
+                "summary": "Get unit conversions",
                 "parameters": [
                     {
-                        "description": "Product Data",
-                        "name": "product",
-                        "in": "body",
-                        "required": true,
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_product.CreateProductRequstDTO"
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/conversions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get unit conversions by Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get unit conversions by Id",
+                "parameters": [
                     {
                         "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/prices/": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get all product prices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get all product prices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/prices/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual product price by Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Fetch individual product price by Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -1067,14 +1230,112 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/product/{id}": {
+        "/api/products/stocks": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get all product stocks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get all product stocks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/stocks/{id}": {
+            "get": {
+                "security": [
                     {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get all product stocks By Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get all product stocks By Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch individual product by Id",
@@ -1127,10 +1388,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Update individual product",
@@ -1192,10 +1450,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Delete individual product",
@@ -1246,14 +1501,58 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/purchase": {
+        "/api/purchases": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all purchases",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Purchases"
+                ],
+                "summary": "Fetch all purchases",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Create new purchase based on parameters",
@@ -1273,13 +1572,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_purchase.PurchaseInvoiceRequestDTO"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1310,14 +1602,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/purchase/{id}": {
+        "/api/purchases/{id}": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch individual purchase by Id",
@@ -1368,66 +1657,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/purchases": {
+        "/api/sales": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
-                    }
-                ],
-                "description": "Fetch all purchases",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Purchases"
-                ],
-                "summary": "Fetch all purchases",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError400"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError401"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError500"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/sale": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch all sales",
@@ -1474,10 +1708,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Create new sale based on parameters",
@@ -1497,13 +1728,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_sale.SaleInvoiceRequestDTO"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1534,14 +1758,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/sale/{id}": {
+        "/api/sales/{id}": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch individual sale by Id",
@@ -1592,14 +1813,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/supplier": {
+        "/api/suppliers": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch all supplier",
@@ -1646,10 +1864,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Create new supplier based on parameters",
@@ -1669,13 +1884,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_supplier.CreateSupplierRequestDTO"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -1706,14 +1914,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/supplier/{id}": {
+        "/api/suppliers/{id}": {
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Fetch individual supplier by Id",
@@ -1766,10 +1971,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Update individual supplier",
@@ -1831,10 +2033,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "Bearer  \u003c-----------------------------------------add this in all controllers that need authentication": []
+                        "Bearer": []
                     }
                 ],
                 "description": "Delete individual supplier",
@@ -1862,6 +2061,300 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Supplier"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Fetch all transactions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/adjustment": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Create adjustment transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Product input data",
+                        "name": "transaction",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_itemtransactions.ResquestAdjustInventoryDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/by-product-type/{productId}/{tranType}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual transaction by productId and tranType",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Fetch individual transaction by productId and tranType",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product ID",
+                        "name": "productId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Transaction Type",
+                        "name": "tranType",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/by-product/{productId}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual transaction by productId",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Fetch individual transaction by productId",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/transactions/by-type/{tranType}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual transaction by protransactionType",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Fetch individual transaction by transactionType",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "transactionType",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction"
+                            }
                         }
                     },
                     "400": {
@@ -1959,6 +2452,9 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
+                "createdTime": {
+                    "type": "string"
+                },
                 "deletedAt": {
                     "$ref": "#/definitions/gorm.DeletedAt"
                 },
@@ -1982,6 +2478,51 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                },
+                "updatedTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_sankangkin_di-rest-api_internal_models.ItemTransaction": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdTime": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "description": "TODO to enhance with UUID",
+                    "type": "integer"
+                },
+                "inQty": {
+                    "type": "integer"
+                },
+                "outQty": {
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "referenceNo": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "tranType": {
+                    "type": "string"
+                },
+                "uom": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },
@@ -1990,11 +2531,10 @@ const docTemplate = `{
             "required": [
                 "buyPrice",
                 "productName",
-                "qtyOnHand",
-                "reorderlvl",
                 "sellPricelvl1",
                 "sellPricelvl2",
-                "uom"
+                "uom",
+                "uomId"
             ],
             "properties": {
                 "brand": {
@@ -2023,13 +2563,6 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 3
                 },
-                "qtyOnHand": {
-                    "type": "integer"
-                },
-                "reorderlvl": {
-                    "type": "integer",
-                    "minimum": 1
-                },
                 "sellPricelvl1": {
                     "type": "integer",
                     "minimum": 1
@@ -2041,6 +2574,10 @@ const docTemplate = `{
                 "uom": {
                     "type": "string",
                     "minLength": 3
+                },
+                "uomId": {
+                    "type": "integer",
+                    "minimum": 3
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2121,6 +2658,9 @@ const docTemplate = `{
                 "total": {
                     "type": "integer"
                 },
+                "uom": {
+                    "type": "string"
+                },
                 "updatedAt": {
                     "type": "string"
                 }
@@ -2190,6 +2730,9 @@ const docTemplate = `{
                 "deletedAt": {
                     "$ref": "#/definitions/gorm.DeletedAt"
                 },
+                "derivedQty": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2210,6 +2753,9 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                },
+                "uom": {
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2244,6 +2790,50 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "minLength": 3
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_sankangkin_di-rest-api_internal_models.UnitConversion": {
+            "type": "object",
+            "required": [
+                "baseUnit",
+                "baseUnitId",
+                "deriveUnit",
+                "deriveUnitId",
+                "factor",
+                "productId"
+            ],
+            "properties": {
+                "baseUnit": {
+                    "type": "string"
+                },
+                "baseUnitId": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "deriveUnit": {
+                    "type": "string"
+                },
+                "deriveUnitId": {
+                    "type": "integer"
+                },
+                "factor": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2342,6 +2932,22 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_auth.RefreshRequestDTO": {
+            "type": "object",
+            "properties": {
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_auth.RefreshResponseDTO": {
+            "type": "object",
+            "properties": {
+                "refreshToken": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_auth.SignInRequestDTO": {
             "type": "object",
             "required": [
@@ -2364,6 +2970,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "refreshToken": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "userName": {
                     "type": "string"
                 }
             }
@@ -2454,6 +3066,47 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "remark": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_domain_itemtransactions.ResquestAdjustInventoryDTO": {
+            "type": "object",
+            "properties": {
+                "baseQty": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "description": "Timestamp of the transaction",
+                    "type": "string"
+                },
+                "derivedQty": {
+                    "type": "integer"
+                },
+                "inQty": {
+                    "description": "Quantity to be added",
+                    "type": "integer"
+                },
+                "outQty": {
+                    "description": "Quantity to be removed",
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "referenceNo": {
+                    "description": "Reference number for the transaction",
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "tranType": {
+                    "description": "DEBIT or CREDIT",
+                    "type": "string"
+                },
+                "uom": {
+                    "description": "Unit of Measure (e.g., EACH, KG)",
                     "type": "string"
                 }
             }
@@ -2575,14 +3228,14 @@ const docTemplate = `{
                 "purchaseDate": {
                     "type": "string"
                 },
-                "remark": {
-                    "type": "string"
-                },
-                "saleDetails": {
+                "purchaseDetails": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail"
                     }
+                },
+                "remark": {
+                    "type": "string"
                 },
                 "supplierId": {
                     "type": "integer"
@@ -2654,7 +3307,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "ApiKeyAuth": {
+        "Bearer": {
             "description": "Type \"Bearer\" followed by a space and JWT token.",
             "type": "apiKey",
             "name": "Authorization",
@@ -2666,7 +3319,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "",
+	Host:             "localhost:5555",
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "REST-API with(golang fiber, google wire dependency injection)",

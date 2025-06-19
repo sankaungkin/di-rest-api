@@ -13,15 +13,16 @@ import (
 // @version					1.0
 // @description				This is an auto-generated API docs.
 // @termsOfService				http://swagger.io/terms/
-// @contact.name				API Support
+// @contact.name				San KaungKin
 // @contact.email				sankaungkin@gmail.com
 // @license.name				Apache 2.0
 // @license.url				http://www.apache.org/licenses/LICENSE-2.0.html
-//
-// @securityDefinitions.apikey	ApiKeyAuth
-// @in							header
-// @name						Authorization
-// @description				Type "Bearer" followed by a space and JWT token.
+// @host						localhost:5555
+
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description	Type "Bearer" followed by a space and JWT token.
 
 func main() {
 

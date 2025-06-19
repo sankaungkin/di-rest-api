@@ -39,11 +39,8 @@ func NewInventoryHandler(svc InventoryServiceInterface) *InventoryHandler {
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
-//	@Router			/api/inventory	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/inventories	[get]
+//	@Security		Bearer
 func (h *InventoryHandler) GetAllInventories(c *fiber.Ctx) error {
 	// inventories, err := h.svc.GetAllService()
 	inventories, err := h.svc.GetInvData()
@@ -70,13 +67,8 @@ func (h *InventoryHandler) GetAllInventories(c *fiber.Ctx) error {
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/inventory/increase [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/inventories/increase [post]
+//	@Security		Bearer
 func (h *InventoryHandler) IncreaseInventory(c *fiber.Ctx) error {
 
 	input := new(IncreaseInventoryDTO)
@@ -124,13 +116,8 @@ func (h *InventoryHandler) IncreaseInventory(c *fiber.Ctx) error {
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/inventory/decrease [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/inventories/decrease [post]
+//	@Security		Bearer
 func (h *InventoryHandler) DecreaseInventory(c *fiber.Ctx) error {
 
 	input := new(IncreaseInventoryDTO)

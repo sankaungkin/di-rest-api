@@ -35,25 +35,19 @@ func NewProductHandler(svc ProductServiceInterface) *ProductHandler {
 	return hdlInstance
 }
 
-// CreateProduct 	godoc
-//
-//	@Summary		Create new product based on parameters
-//	@Description	Create new product based on parameters
-//	@Tags			Products
-//	@Accept			json
-//	@Param			product	body		CreateProductRequstDTO	true	"Product Data"
-//	@Success		200		{object}	models.Product
-//	@Failure		400		{object}	httputil.HttpError400
-//	@Failure		401		{object}	httputil.HttpError401
-//	@Failure		500		{object}	httputil.HttpError500
-//	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/product [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+// CreateProduct godoc
+// @Summary      Create new product
+// @Description  Create a new product with name, category, prices, and status
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        product      body      CreateProductRequstDTO     true  "Product input data"
+// @Success      200          {object}  models.Product
+// @Failure      400          {object}  httputil.HttpError400
+// @Failure      401          {object}  httputil.HttpError401
+// @Failure      500          {object}  httputil.HttpError500
+// @Router       /api/product [post]
+// @Security     Bearer
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	input := new(CreateProductRequstDTO)
 	if err := c.BodyParser(input); err != nil {
@@ -112,11 +106,8 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
-//	@Router			/api/product	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/products [get]
+//	@Security		Bearer
 func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllSerive()
 	if err != nil {
@@ -146,11 +137,8 @@ func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/product/{id}	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/products/{id} [get]
+//	@Security		Bearer
 func (h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 
 	product, err := h.svc.GetByIdSerive(c.Params("id"))
@@ -172,6 +160,21 @@ func (h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	})
 }
 
+// GetProductUnitPricesById godoc
+//
+//	@Summary		Fetch individual product price by Id
+//	@Description	Fetch individual product price by Id
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"product Id"
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/products/prices/{id} [get]
+//
+// @Security       Bearer
 func (h *ProductHandler) GetProductUnitPricesById(c *fiber.Ctx) error {
 	productId := c.Params("id")
 	if productId == "" {
@@ -215,11 +218,9 @@ func (h *ProductHandler) GetProductUnitPricesById(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/product/{id}	[put]
+//	@Router			/api/products/{id}	[put]
 //
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Security		Bearer
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
 	foundProduct, err := h.svc.GetByIdSerive(c.Params("id"))
@@ -289,11 +290,8 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/product/{id}	[delete]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
+//	@Router			/api/products/{id}	[delete]
+//	@Security		Bearer
 func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 
 	id := strings.ToUpper(c.Params("id"))
@@ -322,6 +320,19 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	})
 }
 
+// GetAllProductStocks godoc
+//
+//	@Summary		Get all product stocks
+//	@Description	Get all product stocks
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/products/stocks [get]
+//	@Security		Bearer
 func (h *ProductHandler) GetAllProductStocks(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllProductStocks()
 	if err != nil {
@@ -338,6 +349,21 @@ func (h *ProductHandler) GetAllProductStocks(c *fiber.Ctx) error {
 		})
 }
 
+// GetAllProductStocksById godoc
+//
+//	@Summary		Get all product stocks By Id
+//	@Description	Get all product stocks By Id
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"product Id"
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//
+// @Router			/api/products/stocks/{id} [get]
+// @Security		Bearer
 func (h *ProductHandler) GetProductStocksById(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {
@@ -366,6 +392,20 @@ func (h *ProductHandler) GetProductStocksById(c *fiber.Ctx) error {
 	})
 }
 
+// GetAllProductPrices godoc
+//
+//	@Summary		Get all product prices
+//	@Description	Get all product prices
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//
+// @Router			/api/products/prices/ [get]
+// @Security		Bearer
 func (h *ProductHandler) GetAllProductPrices(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllProductPrices()
 	if err != nil {
@@ -382,6 +422,21 @@ func (h *ProductHandler) GetAllProductPrices(c *fiber.Ctx) error {
 		})
 }
 
+// GetUnitConversionsById godoc
+//
+//	@Summary		Get unit conversions by Id
+//	@Description	Get unit conversions by Id
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"product Id"
+//	@Success		200					{object}	models.UnitConversion
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//
+// @Router			/api/products/conversions/{id} [get]
+// @Security		Bearer
 func (h *ProductHandler) GetUnitConversionsById(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {
@@ -411,6 +466,21 @@ func (h *ProductHandler) GetUnitConversionsById(c *fiber.Ctx) error {
 	})
 }
 
+// GetAllUnitConversions godoc
+//
+//	@Summary		Get unit conversions
+//	@Description	Get unit conversions
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"product Id"
+//	@Success		200					{object}	models.UnitConversion
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//
+// @Router			/api/products/conversions/ [get]
+// @Security		Bearer
 func (h *ProductHandler) GetAllUnitConversions(c *fiber.Ctx) error {
 	unitConversions, err := h.svc.GetAllUnitConversions()
 	if err != nil {

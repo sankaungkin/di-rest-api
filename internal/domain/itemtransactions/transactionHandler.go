@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
-
+	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -33,7 +33,7 @@ func NewTransactionHandler(svc TransactionServiceInterface) *TransactionHandler 
 //
 //	@Summary		Fetch all transactions
 //	@Description	Fetch all transactions
-//	@Tags			ItemTransaction
+//	@Tags			Transactions
 //	@Accept			json
 //	@Produce		json
 //	@Success		200				{array}		models.ItemTransaction
@@ -41,11 +41,10 @@ func NewTransactionHandler(svc TransactionServiceInterface) *TransactionHandler 
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
 //	@Router			/api/transactions	[get]
-//
-//	@Security		ApiKeyAuth
-//
 //	@Security		Bearer
 func (h *TransactionHandler) GetAll(c *fiber.Ctx) error {
+	newTransaction := models.ItemTransaction{}
+	log.Println(newTransaction)
 	transactions, err := h.svc.GetAll()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -65,7 +64,7 @@ func (h *TransactionHandler) GetAll(c *fiber.Ctx) error {
 //
 //	@Summary		Fetch individual transaction by productId
 //	@Description	Fetch individual transaction by productId
-//	@Tags			ItemTransaction
+//	@Tags			Transactions
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path		string	true	"product Id"
@@ -73,10 +72,7 @@ func (h *TransactionHandler) GetAll(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/by-product/{productId}	[get]
-//
-//	@Security		ApiKeyAuth
-//
+//	@Router			/api/transactions/by-product/{productId} [get]
 //	@Security		Bearer
 func (h *TransactionHandler) GetTransactionsByProductId(c *fiber.Ctx) error {
 	productId := c.Params("productId")
@@ -107,7 +103,7 @@ func (h *TransactionHandler) GetTransactionsByProductId(c *fiber.Ctx) error {
 //
 //	@Summary		Fetch individual transaction by transactionType
 //	@Description	Fetch individual transaction by protransactionType
-//	@Tags			ItemTransaction
+//	@Tags			Transactions
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path		string	true	"transactionType"
@@ -115,10 +111,7 @@ func (h *TransactionHandler) GetTransactionsByProductId(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/transactions/by-type/{tranType}	[get]
-//
-//	@Security		ApiKeyAuth
-//
+//	@Router			/api/transactions/by-type/{tranType} [get]
 //	@Security		Bearer
 func (h *TransactionHandler) GetTransactionsByTransactionType(c *fiber.Ctx) error {
 	tranType := c.Params("tranType")
@@ -149,7 +142,7 @@ func (h *TransactionHandler) GetTransactionsByTransactionType(c *fiber.Ctx) erro
 //
 //	@Summary		Fetch individual transaction by productId and tranType
 //	@Description	Fetch individual transaction by productId and tranType
-//	@Tags			ItemTransaction
+//	@Tags			Transactions
 //	@Accept			json
 //	@Produce		json
 //	@Param			productId					path		string	true	"Product ID"
@@ -158,10 +151,7 @@ func (h *TransactionHandler) GetTransactionsByTransactionType(c *fiber.Ctx) erro
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/transactions/by-product-type/{productId}/{tranType}	[get]
-//
-//	@Security		ApiKeyAuth
-//
+//	@Router			/api/transactions/by-product-type/{productId}/{tranType} [get]
 //	@Security		Bearer
 func (h *TransactionHandler) GetByProductIdAndTranType(c *fiber.Ctx) error {
 	tranType := c.Params("tranType")
@@ -189,6 +179,21 @@ func (h *TransactionHandler) GetByProductIdAndTranType(c *fiber.Ctx) error {
 	})
 }
 
+// CreateAdjustmentTransaction godoc
+// @Summary      Create adjustment transaction
+// @Description  Create
+// @Tags         Transactions
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header   string                      true  "Bearer token"
+// @Param        transaction      body      ResquestAdjustInventoryDTO     true  "Product input data"
+// @Success      200          {object}  models.ItemTransaction
+// @Failure      400          {object}  httputil.HttpError400
+// @Failure      401          {object}  httputil.HttpError401
+// @Failure      500          {object}  httputil.HttpError500
+// @Router       /api/transactions/adjustment [post]
+//
+//	@Security		Bearer
 func (h *TransactionHandler) CreateAdjustmentTransaction(c *fiber.Ctx) error {
 	var transaction ResquestAdjustInventoryDTO
 	if err := c.BodyParser(&transaction); err != nil {
@@ -212,5 +217,3 @@ func (h *TransactionHandler) CreateAdjustmentTransaction(c *fiber.Ctx) error {
 		"data":    createdTransaction,
 	})
 }
-
-// CreateAdjustmentTransaction godoc

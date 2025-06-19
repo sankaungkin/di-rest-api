@@ -45,7 +45,7 @@ func NewCategoryHandler(svc CategoryServiceInterface) *CategoryHandler {
 //	@Failure		401			{object}	httputil.HttpError401
 //	@Failure		500			{object}	httputil.HttpError500
 //	@Failure		401			{object}	httputil.HttpError401
-//	@Router			/api/category [post]
+//	@Router			/api/categories [post]
 //
 //	@Security		ApiKeyAuth
 //
@@ -88,7 +88,7 @@ func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
-//	@Router			/api/category	[get]
+//	@Router			/api/categories	[get]
 //
 //	@Security		ApiKeyAuth
 //
@@ -123,7 +123,7 @@ func (h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/category/{id}	[get]
+//	@Router			/api/categories/{id}	[get]
 //
 //	@Security		ApiKeyAuth
 //
@@ -166,7 +166,7 @@ func (h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/category/{id}	[put]
+//	@Router			/api/categories/{id}	[put]
 //
 //	@Security		ApiKeyAuth
 //
@@ -234,7 +234,7 @@ func (h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/category/{id}	[delete]
+//	@Router			/api/categories/{id}	[delete]
 //
 //	@Security		ApiKeyAuth
 //

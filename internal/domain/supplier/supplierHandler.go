@@ -16,19 +16,18 @@ type SupplierHandler struct {
 	svc SupplierServiceInterface
 }
 
-var(
+var (
 	hdlInstance *SupplierHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
 
-func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler{
+func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler {
 	log.Println(util.Green + "SupplierHandler constructor is called" + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &SupplierHandler{svc: svc}
 	})
 	return hdlInstance
 }
-
 
 // CreateSupplier 	godoc
 //
@@ -42,14 +41,9 @@ func NewSupplierHandler(svc SupplierServiceInterface) *SupplierHandler{
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/supplier [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
+//	@Router			/api/suppliers [post]
+//	@Security		Bearer
+func (h *SupplierHandler) CreateSupplier(c *fiber.Ctx) error {
 	newSupplier := new(models.Supplier)
 	if err := c.BodyParser(newSupplier); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -84,15 +78,12 @@ func(h *SupplierHandler)CreateSupplier(c *fiber.Ctx) error {
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
-//	@Router			/api/supplier	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
+//	@Router			/api/suppliers	[get]
+//	@Security		Bearer
+func (h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
 	Suppliers, err := h.svc.GetAllSuppliers()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
@@ -114,13 +105,10 @@ func(h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/supplier/{id}	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+//	@Router			/api/suppliers/{id}	[get]
+//	@Security		Bearer
+func (h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -144,7 +132,6 @@ func(h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 	})
 }
 
-
 // UpdateSupplier godoc
 //
 //	@Summary		Update individual supplier
@@ -158,13 +145,10 @@ func(h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/supplier/{id}	[put]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+//	@Router			/api/suppliers/{id}	[put]
+//	@Security		Bearer
+func (h *SupplierHandler) UpdateSupplier(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -191,10 +175,10 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 	}
 
 	updateSupplier := models.Supplier{
-		ID: foundSupplier.ID,
-		Name: input.Name,
+		ID:      foundSupplier.ID,
+		Name:    input.Name,
 		Address: input.Address,
-		Phone: input.Phone,
+		Phone:   input.Phone,
 	}
 	log.Println("updateCustomer: ", &updateSupplier)
 	if err := c.BodyParser(&updateSupplier); err != nil {
@@ -202,9 +186,9 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 			"status":  400,
 			"message": "Invalid JSON format",
 		})
-	}	
+	}
 
-	result, err :=	h.svc.UpdateSupplier(&updateSupplier)
+	result, err := h.svc.UpdateSupplier(&updateSupplier)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -214,7 +198,6 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 		"data":    result,
 	})
 }
-
 
 // DeleteSupplier godoc
 //
@@ -228,13 +211,10 @@ func(h *SupplierHandler)UpdateSupplier(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/supplier/{id}	[delete]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *SupplierHandler)DeleteSupplier(c *fiber.Ctx) error{
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+//	@Router			/api/suppliers/{id}	[delete]
+//	@Security		Bearer
+func (h *SupplierHandler) DeleteSupplier(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -253,8 +233,8 @@ func(h *SupplierHandler)DeleteSupplier(c *fiber.Ctx) error{
 	h.svc.DeleteSupplier(uint(Supplier.ID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status" : "FAIL",
-			"message" : "Internal server error",
+			"status":  "FAIL",
+			"message": "Internal server error",
 		})
 	}
 	return c.JSON(fiber.Map{

@@ -15,23 +15,25 @@ import (
 type CustomerHandler struct {
 	svc CustomerServiceInterface
 }
-//! singleton pattern
+
+// ! singleton pattern
 var (
 	hdlInstance *CustomerHandler
-	hdlOnce sync.Once
+	hdlOnce     sync.Once
 )
+
 // constructor
-func NewCustomerHandler(svc CustomerServiceInterface) *CustomerHandler{
-	log.Println(util.Gray + "CustomerHandler constructor is called " +util.Reset)
-	hdlOnce.Do(func(){
+func NewCustomerHandler(svc CustomerServiceInterface) *CustomerHandler {
+	log.Println(util.Gray + "CustomerHandler constructor is called " + util.Reset)
+	hdlOnce.Do(func() {
 		hdlInstance = &CustomerHandler{svc: svc}
 	})
 	return hdlInstance
 }
+
 // func NewCustomerHandler(svc CustomerServiceInterface) *CustomerHandler{
 // 	return &CustomerHandler{srv: svc}
 // }
-
 
 // CreateCustomer 	godoc
 //
@@ -45,15 +47,10 @@ func NewCustomerHandler(svc CustomerServiceInterface) *CustomerHandler{
 //	@Failure		401		{object}	httputil.HttpError401
 //	@Failure		500		{object}	httputil.HttpError500
 //	@Failure		401		{object}	httputil.HttpError401
-//	@Router			/api/customer [post]
-//
-//	@Security		ApiKeyAuth
-//
-//	@param			Authorization	header	string	true	"Authorization"
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CustomerHandler)CreateCustomer(c *fiber.Ctx) error {
-	
+//	@Router			/api/customers [post]
+//	@Security		Bearer
+func (h *CustomerHandler) CreateCustomer(c *fiber.Ctx) error {
+
 	input := new(CreateCustomerRequestDTO)
 	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -63,18 +60,17 @@ func(h *CustomerHandler)CreateCustomer(c *fiber.Ctx) error {
 	}
 
 	newCustomer := models.Customer{
-		Name: input.Name,
+		Name:    input.Name,
 		Address: input.Address,
-		Phone: input.Phone,
+		Phone:   input.Phone,
 	}
 
-	err := c.BodyParser(&newCustomer) 
-		if err != nil {
-			c.Status(http.StatusUnprocessableEntity).JSON(
-				&fiber.Map{"message": "request failed"})
-			return err
-		}
-	
+	err := c.BodyParser(&newCustomer)
+	if err != nil {
+		c.Status(http.StatusUnprocessableEntity).JSON(
+			&fiber.Map{"message": "request failed"})
+		return err
+	}
 
 	errors := models.ValidateStruct(newCustomer)
 	if errors != nil {
@@ -88,10 +84,9 @@ func(h *CustomerHandler)CreateCustomer(c *fiber.Ctx) error {
 		&fiber.Map{
 			"status":  "SUCCESS",
 			"message": "category has been created successfully",
-			"data" : newCustomer,
+			"data":    newCustomer,
 		})
 }
-
 
 // GetAllCustomers godoc
 //
@@ -104,15 +99,12 @@ func(h *CustomerHandler)CreateCustomer(c *fiber.Ctx) error {
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
 //	@Failure		500				{object}	httputil.HttpError500
-//	@Router			/api/customer	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CustomerHandler) GetAllCustomers(c *fiber.Ctx) error {
+//	@Router			/api/customers	[get]
+//	@Security		Bearer
+func (h *CustomerHandler) GetAllCustomers(c *fiber.Ctx) error {
 	customers, err := h.svc.GetAllCustomers()
 	if err != nil {
-		return  c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
@@ -134,13 +126,10 @@ func(h *CustomerHandler) GetAllCustomers(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/customer/{id}	[get]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CustomerHandler) GetCustomerById(c *fiber.Ctx) error {
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+//	@Router			/api/customers/{id}	[get]
+//	@Security		Bearer
+func (h *CustomerHandler) GetCustomerById(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -178,14 +167,11 @@ func(h *CustomerHandler) GetCustomerById(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/customer/{id}	[put]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CustomerHandler)UpdateCustomer(c *fiber.Ctx) error {
-	
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+//	@Router			/api/customers/{id}	[put]
+//	@Security		Bearer
+func (h *CustomerHandler) UpdateCustomer(c *fiber.Ctx) error {
+
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -214,10 +200,10 @@ func(h *CustomerHandler)UpdateCustomer(c *fiber.Ctx) error {
 	}
 
 	updateCustomer := models.Customer{
-		ID: foundCustomer.ID,
-		Name: input.Name,
+		ID:      foundCustomer.ID,
+		Name:    input.Name,
 		Address: input.Address,
-		Phone: input.Phone,
+		Phone:   input.Phone,
 	}
 	log.Println("updateCustomer: ", &updateCustomer)
 	if err := c.BodyParser(&updateCustomer); err != nil {
@@ -225,11 +211,11 @@ func(h *CustomerHandler)UpdateCustomer(c *fiber.Ctx) error {
 			"status":  400,
 			"message": "Invalid JSON format",
 		})
-	}	
+	}
 
-	result, err :=	h.svc.UpdateCustomer(&updateCustomer)
+	result, err := h.svc.UpdateCustomer(&updateCustomer)
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
@@ -251,13 +237,10 @@ func(h *CustomerHandler)UpdateCustomer(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/customer/{id}	[delete]
-//
-//	@Security		ApiKeyAuth
-//
-//	@Security		Bearer  <-----------------------------------------add this in all controllers that need authentication
-func(h *CustomerHandler)DeleteCustomer(c *fiber.Ctx) error{
-	id, err := strconv.ParseUint(c.Params("id"), 10,32)
+//	@Router			/api/customers/{id}	[delete]
+//	@Security		Bearer
+func (h *CustomerHandler) DeleteCustomer(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -276,8 +259,8 @@ func(h *CustomerHandler)DeleteCustomer(c *fiber.Ctx) error{
 	err = h.svc.DeleteCustomer(uint(customer.ID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status" : "FAIL",
-			"message" : "Internal server error",
+			"status":  "FAIL",
+			"message": "Internal server error",
 		})
 	}
 	return c.JSON(fiber.Map{

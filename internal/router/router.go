@@ -54,20 +54,6 @@ func Initialize(app *fiber.App) {
 	if err != nil {
 		log.Fatalf("Failed to initialize product service: %v", err)
 	}
-	// product route
-	// products := api.Group("/products")
-	// products.Use(middleware.Protected())
-	// products.Post("/", productService.CreateProduct)
-	// products.Get("/", productService.GetAllProducts)
-	// products.Get("/stocks", productService.GetAllProductStocks)
-	// products.Get("/stocks/:id", productService.GetProductStocksById)
-	// products.Get("/prices", productService.GetAllProductPrices)
-	// products.Get("/:id", productService.GetProductById)
-	// products.Get("/prices/:id", productService.GetProductUnitPricesById)
-	// products.Get("/conversions/:id", productService.GetUnitConversionsById)
-	// products.Get("/units", productService.GetAllUnitConversions)
-	// products.Put("/:id", productService.UpdateProduct)
-	// products.Delete("/:id", productService.DeleteProduct)
 
 	products := api.Group("/products")
 	products.Use(middleware.Protected())
@@ -94,6 +80,7 @@ func Initialize(app *fiber.App) {
 	}
 	// item transactions route
 	transactions := api.Group("/transactions")
+	transactions.Use(middleware.Protected())
 	transactions.Get("/", transactionService.GetAll)
 	transactions.Get("/by-product/:productId", transactionService.GetTransactionsByProductId)
 	transactions.Get("/by-type/:tranType", transactionService.GetTransactionsByTransactionType)

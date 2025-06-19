@@ -133,18 +133,16 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 
 }
 
-// Refresh	godoc
+// / RefreshToken godoc
 //
-//	@Summary		Get refresh token
-//	@Description	Get refresh token
-//
+//	@Summary		Refresh access token
+//	@Description	Get new access token using refresh token
 //	@Tags			Auth
 //	@Accept			json
-//	@Success		200
-//	@Failure		400	{object}	httputil.HttpError400
-//	@Failure		401	{object}	httputil.HttpError401
-//	@Failure		500	{object}	httputil.HttpError500
-//	@Failure		401	{object}	httputil.HttpError401
+//	@Produce		json
+//	@Param			body	body	RefreshRequestDTO	true	"Refresh token request"
+//	@Success		200		{object}	RefreshResponseDTO
+//	@Failure		400		{object}	httputil.HttpError400
 //	@Router			/api/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 
