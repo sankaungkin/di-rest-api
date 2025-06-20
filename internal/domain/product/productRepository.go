@@ -2,6 +2,7 @@ package product
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"sync"
@@ -133,8 +134,7 @@ func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]Respon
 	return results, nil
 }
 
-func (r *ProductRepository) Update(input *models.Product) (*models.Product, error) {
-
+func (r *ProductRepository) UpdateOld(input *models.Product) (*models.Product, error) {
 	var existingProduct *models.Product
 	err := r.db.Where("id = ?", input.ID).First(&existingProduct).Error
 	if err != nil {
@@ -142,7 +142,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 		return nil, err
 	}
 
-	log.Println("input: ", input)
+	log.Println("input from Repository: ", input)
 	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.SellPriceLevel2 == 0 {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	// existingProduct.ReorderLvl = input.ReorderLvl
 
 	// Save the updated customer data
-	log.Println("existingCustomer: ", existingProduct)
+	log.Println("existingProduct: ", existingProduct)
 	err = r.db.Updates(&existingProduct).Error
 	if err != nil {
 		// Handle error if update fails
@@ -167,6 +167,37 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	// Return the updated customer object
 	return existingProduct, nil
 }
+
+func (r *ProductRepository) Update(input *models.Product) (*models.Product, error) {
+	var existingProduct models.Product
+	err := r.db.Where("id = ?", input.ID).First(&existingProduct).Error
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("input from Repository: ", input)
+	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.SellPriceLevel2 == 0 {
+		return nil, fmt.Errorf("missing required fields")
+	}
+
+	existingProduct.BrandName = input.BrandName
+	existingProduct.ProductName = input.ProductName
+	existingProduct.Uom = input.Uom
+	existingProduct.BuyPrice = input.BuyPrice
+	existingProduct.CategoryId = input.CategoryId
+	existingProduct.SellPriceLevel1 = input.SellPriceLevel1
+	existingProduct.SellPriceLevel2 = input.SellPriceLevel2
+	// existingProduct.ReorderLvl = input.ReorderLvl
+
+	log.Println("existingProduct to update: ", existingProduct)
+	err = r.db.Save(&existingProduct).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingProduct, nil
+}
+
 func (r *ProductRepository) Delete(id string) error {
 	// return r.db.Delete(&User{}, id).Error
 

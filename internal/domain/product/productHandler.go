@@ -222,6 +222,60 @@ func (h *ProductHandler) GetProductUnitPricesById(c *fiber.Ctx) error {
 //
 //	@Security		Bearer
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// Step 1: Get the existing product
+	foundProduct, err := h.svc.GetByIdSerive(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+
+	// Step 2: Parse incoming update fields
+	input := new(UpdateProductRequstDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+
+	// Step 3: Manually update only intended fields
+	foundProduct.ProductName = input.ProductName
+	foundProduct.CategoryId = input.CategoryId
+	foundProduct.Uom = input.Uom
+	foundProduct.BuyPrice = input.BuyPrice
+	foundProduct.SellPriceLevel1 = input.SellPriceLevel1
+	foundProduct.SellPriceLevel2 = input.SellPriceLevel2
+	foundProduct.BrandName = input.BrandName
+	// foundProduct.ReorderLvl = input.ReorderLvl // if needed
+
+	log.Println("updateProduct(Handler): ", foundProduct)
+
+	// Step 4: Update and return
+	result, err := h.svc.Update(foundProduct)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
+	})
+}
+
+func (h *ProductHandler) UpdateProductOld(c *fiber.Ctx) error {
 
 	foundProduct, err := h.svc.GetByIdSerive(c.Params("id"))
 	if err != nil {
@@ -235,16 +289,14 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-
 	input := new(UpdateProductRequstDTO)
-	log.Println("input: ", input)
+	log.Println("inputProduct(Handler): ", input)
 	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  400,
 			"message": "Invalid JSON format",
 		})
 	}
-
 	updateProduct := models.Product{
 		ID:              foundProduct.ID,
 		ProductName:     foundProduct.ProductName,
@@ -256,14 +308,13 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 		// ReorderLvl:      foundProduct.ReorderLvl,
 		IsActive: foundProduct.IsActive,
 	}
-	log.Println("updateCustomer: ", &updateProduct)
+	log.Println("updateProduct(Handler): ", &updateProduct)
 	if err := c.BodyParser(&updateProduct); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  400,
 			"message": "Invalid JSON format",
 		})
 	}
-
 	result, err := h.svc.Update(&updateProduct)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
