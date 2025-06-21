@@ -30,12 +30,12 @@ type Product struct {
 	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"-"`
 	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"-"`
 	ItemTransactions []ItemTransaction `gorm:"foreignKey:ProductId;"  json:"-"`
-	Uom              string            `json:"uom" validate:"required,min=3"`
-	UomId            uint              `json:"uomId" validate:"required,min=3"`
+	Uom              string            `json:"uom" `
+	UomId            uint              `json:"uomId" validate:"required"`
 	BuyPrice         int64             `json:"buyPrice" validate:"required,min=1"`
 	SellPriceLevel1  int64             `json:"sellPricelvl1" validate:"required,min=1"`
 	SellPriceLevel2  int64             `json:"sellPricelvl2" validate:"required,min=1"`
-	BrandName        string            `json:"brand"`
+	BrandName        string            `json:"brandName"`
 	IsActive         bool              `json:"isActive" gorm:"default:true"`
 	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`

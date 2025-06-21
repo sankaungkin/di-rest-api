@@ -17,9 +17,10 @@ type ProductServiceInterface interface {
 	GetAllProductPrices() ([]ResponseProductUnitPriceDTO, error)
 	GetProductUnitPricesByIdSerive(productId string) ([]ResponseProductUnitPriceDTO, error)
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
+	GetAllUnitConversions() ([]models.UnitConversion, error)
 	Update(product *models.Product) (*models.Product, error)
 	DeleteSerive(id string) error
-	GetAllUnitConversions() ([]models.UnitOfMeasure, error)
+	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
 }
 
 type ProductService struct {
@@ -85,6 +86,10 @@ func (s *ProductService) GetUnitConversionsById(id string) (models.UnitConversio
 	return s.repo.GetUnitConversionsById(id)
 }
 
-func (s *ProductService) GetAllUnitConversions() ([]models.UnitOfMeasure, error) {
+func (s *ProductService) GetAllUnitConversions() ([]models.UnitConversion, error) {
 	return s.repo.GetAllUnitConversions()
+}
+
+func (s *ProductService) GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error) {
+	return s.repo.GetAllUnitOfMeasurement()
 }

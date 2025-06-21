@@ -145,18 +145,7 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 //	@Failure		400		{object}	httputil.HttpError400
 //	@Router			/api/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
-
-	// tokenString := c.Cookies("refreshToken")
-	// rt, err := h.svc.Refresh(tokenString)
-
-	// if err != nil {
-	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-	// 		"status": "fail",
-	// 		"errors": err.Error(),
-	// 	})
-	// }
-
-	var body RefreshRequestDTO
+	var body RefreshResponseDTO
 
 	if err := c.BodyParser(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -164,15 +153,13 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 			"error":  "Invalid body",
 		})
 	}
-
-	rt, err := h.svc.Refresh(body.RefreshToken)
+	at, rt, err := h.svc.Refresh(body.RefreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status": "fail",
 			"error":  err.Error(),
 		})
 	}
-
 	c.Cookie(&fiber.Cookie{
 		Name:     "accessToken",
 		Value:    "",
@@ -189,11 +176,11 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		HTTPOnly: true,
 		Domain:   "localhost",
 	})
-
 	return c.Status(http.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
-		"message": "login success",
+		"message": "Token refreshed successfully",
 		"data": RefreshResponseDTO{
+			AccessToken:  at,
 			RefreshToken: rt,
 		}})
 }

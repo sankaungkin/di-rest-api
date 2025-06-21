@@ -23,9 +23,10 @@ type ProductRepositoryInterface interface {
 	GetAllProductPrices() ([]ResponseProductUnitPriceDTO, error)
 	GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error)
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
+	GetAllUnitConversions() ([]models.UnitConversion, error)
 	Update(product *models.Product) (*models.Product, error)
 	Delete(id string) error
-	GetAllUnitConversions() ([]models.UnitOfMeasure, error)
+	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
 }
 
 type ProductRepository struct {
@@ -58,15 +59,6 @@ func (r *ProductRepository) Create(product *models.Product) (*models.Product, er
 	return product, err
 }
 
-// func (r *ProductRepository)GetAll() ([]models.Product, error){
-// 	products := []models.Product{}
-// 	r.db.Model(&models.Product{}).Order("ID asc").Find(&products)
-// 	if len(products) == 0 {
-// 		return nil, errors.New("NO records found")
-// 	}
-// 	return products, nil
-// }
-
 func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 	var products []models.Product
 	err := r.db.Model(&models.Product{}).Order("id DESC").Find(&products).Error
@@ -80,10 +72,11 @@ func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 	var dtos []ResponseProductDTO
 	for _, p := range products {
 		dto := ResponseProductDTO{
-			ID:              p.ID,
-			ProductName:     p.ProductName,
-			CategoryId:      p.CategoryId,
-			Uom:             p.Uom,
+			ID:          p.ID,
+			ProductName: p.ProductName,
+			CategoryId:  p.CategoryId,
+			// Uom:             p.Uom,
+			UomId:           p.UomId,
 			BuyPrice:        p.BuyPrice,
 			SellPriceLevel1: p.SellPriceLevel1,
 			SellPriceLevel2: p.SellPriceLevel2,
@@ -134,40 +127,6 @@ func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]Respon
 	return results, nil
 }
 
-func (r *ProductRepository) UpdateOld(input *models.Product) (*models.Product, error) {
-	var existingProduct *models.Product
-	err := r.db.Where("id = ?", input.ID).First(&existingProduct).Error
-	if err != nil {
-		// Handle error if customer not found or other issue
-		return nil, err
-	}
-
-	log.Println("input from Repository: ", input)
-	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.SellPriceLevel2 == 0 {
-		return nil, err
-	}
-	// Update relevant fields from input data
-	existingProduct.BrandName = input.BrandName
-	existingProduct.ProductName = input.ProductName
-	existingProduct.Uom = input.Uom
-	existingProduct.BuyPrice = input.BuyPrice
-	existingProduct.CategoryId = input.CategoryId
-	existingProduct.SellPriceLevel1 = input.SellPriceLevel1
-	existingProduct.SellPriceLevel2 = input.SellPriceLevel2
-	// existingProduct.ReorderLvl = input.ReorderLvl
-
-	// Save the updated customer data
-	log.Println("existingProduct: ", existingProduct)
-	err = r.db.Updates(&existingProduct).Error
-	if err != nil {
-		// Handle error if update fails
-		return nil, err
-	}
-
-	// Return the updated customer object
-	return existingProduct, nil
-}
-
 func (r *ProductRepository) Update(input *models.Product) (*models.Product, error) {
 	var existingProduct models.Product
 	err := r.db.Where("id = ?", input.ID).First(&existingProduct).Error
@@ -182,7 +141,8 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 
 	existingProduct.BrandName = input.BrandName
 	existingProduct.ProductName = input.ProductName
-	existingProduct.Uom = input.Uom
+	// existingProduct.Uom = input.Uom
+	existingProduct.UomId = input.UomId
 	existingProduct.BuyPrice = input.BuyPrice
 	existingProduct.CategoryId = input.CategoryId
 	existingProduct.SellPriceLevel1 = input.SellPriceLevel1
@@ -208,7 +168,8 @@ func (r *ProductRepository) Delete(id string) error {
 		return err
 	}
 
-	return r.db.Delete(&product).Error
+	// return r.db.Delete(&product).Error
+	return r.db.Unscoped().Delete(&product).Error
 
 }
 
@@ -216,10 +177,27 @@ func (r *ProductRepository) GetAllProductStocks() ([]ResponseProductStockDTO, er
 	var results []ResponseProductStockDTO
 
 	// Perform the join and select necessary fields
+	// err := r.db.
+	// 	Table("product_stocks").
+	// 	Select("product_stocks.product_id, products.product_name, product_stocks.base_qty as base_uom_in_stock, product_stocks.derived_qty as derived_uom_in_stock, product_stocks.reorder_lvl as reorder").
+	// 	Joins("JOIN products ON products.id = product_stocks.product_id").
+	// 	Scan(&results).Error
+
 	err := r.db.
-		Table("product_stocks").
-		Select("product_stocks.product_id, products.product_name, product_stocks.base_qty as base_uom_in_stock, product_stocks.derived_qty as derived_uom_in_stock, product_stocks.reorder_lvl as reorder").
-		Joins("JOIN products ON products.id = product_stocks.product_id").
+		Table("product_stocks AS p").
+		Select(`
+			p.product_id,
+			item.product_name,
+			uc.base_unit,
+			p.base_qty,
+			uc.derive_unit,
+			p.derived_qty,
+			p.reorder_lvl,
+			uc.factor
+		`).
+		Joins("JOIN unit_conversions uc ON p.product_id = uc.product_id").
+		Joins("JOIN products item ON p.product_id = item.id").
+		Order("p.product_id").
 		Scan(&results).Error
 
 	if err != nil {
@@ -234,7 +212,7 @@ func (r *ProductRepository) GetProductStocksById(productId string) (*ResponsePro
 
 	err := r.db.
 		Table("product_stocks").
-		Select("product_stocks.product_id, products.product_name, product_stocks.base_qty as base_uom_in_stock, product_stocks.derived_qty as derived_uom_in_stock, product_stocks.reorder_lvl as reorder").
+		Select("product_stocks.product_id, products.product_name, product_stocks.base_qty as base_uom_in_stock, product_stocks.derived_qty as derived_uom_in_stock, product_stocks.reorder_lvl").
 		Joins("JOIN products ON products.id = product_stocks.product_id").
 		Where("product_stocks.product_id = ?", strings.ToUpper(productId)).
 		Scan(&result).Error
@@ -285,7 +263,16 @@ func (r *ProductRepository) GetUnitConversionsById(id string) (models.UnitConver
 	return unitConversions, nil
 }
 
-func (r *ProductRepository) GetAllUnitConversions() ([]models.UnitOfMeasure, error) {
+func (r *ProductRepository) GetAllUnitConversions() ([]models.UnitConversion, error) {
+	var unitConversions []models.UnitConversion
+	err := r.db.Model(&models.UnitConversion{}).Order("ID asc").Limit(100).Find(&unitConversions).Error
+	if err != nil {
+		return nil, err
+	}
+	return unitConversions, nil
+}
+
+func (r *ProductRepository) GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error) {
 	var unitOfMeasures []models.UnitOfMeasure
 	err := r.db.Model(&models.UnitOfMeasure{}).Order("ID asc").Limit(100).Find(&unitOfMeasures).Error
 	if err != nil {

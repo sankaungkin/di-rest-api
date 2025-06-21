@@ -67,7 +67,8 @@ func Initialize(app *fiber.App) {
 	products.Get("/prices/:id", productService.GetProductUnitPricesById)
 
 	products.Get("/conversions/:id", productService.GetUnitConversionsById)
-	products.Get("/units", productService.GetAllUnitConversions) // ✅ Move this BEFORE `/:id`
+	products.Get("/conversions", productService.GetAllUnitConversions) // ✅ Move this BEFORE `/:id`
+	products.Get("/units", productService.GetAllUnitOfMeasurement)     // ✅ Move this BEFORE `/:id`
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)

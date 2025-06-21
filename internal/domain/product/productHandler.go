@@ -63,6 +63,7 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 		ProductName:     input.ProductName,
 		CategoryId:      input.CategoryId,
 		Uom:             input.Uom,
+		UomId:           input.UomId,
 		BuyPrice:        input.BuyPrice,
 		SellPriceLevel1: input.SellPriceLevel1,
 		SellPriceLevel2: input.SellPriceLevel2,
@@ -251,7 +252,8 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	// Step 3: Manually update only intended fields
 	foundProduct.ProductName = input.ProductName
 	foundProduct.CategoryId = input.CategoryId
-	foundProduct.Uom = input.Uom
+	// foundProduct.Uom = input.Uom
+	foundProduct.UomId = input.UomId
 	foundProduct.BuyPrice = input.BuyPrice
 	foundProduct.SellPriceLevel1 = input.SellPriceLevel1
 	foundProduct.SellPriceLevel2 = input.SellPriceLevel2
@@ -519,6 +521,36 @@ func (h *ProductHandler) GetUnitConversionsById(c *fiber.Ctx) error {
 
 // GetAllUnitConversions godoc
 //
+//	@Summary		Get all unit conversions
+//	@Description	Get all unit conversions
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	models.UnitConversion
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//
+// @Router			/api/products/conversions/ [get]
+// @Security		Bearer
+func (h *ProductHandler) GetAllUnitConversions(c *fiber.Ctx) error {
+	unitConversions, err := h.svc.GetAllUnitConversions()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(unitConversions)) + " records found",
+			"data":    unitConversions,
+			"count":   len(unitConversions),
+		})
+}
+
+// GetAllUnitConversions godoc
+//
 //	@Summary		Get unit conversions
 //	@Description	Get unit conversions
 //	@Tags			Products
@@ -532,8 +564,8 @@ func (h *ProductHandler) GetUnitConversionsById(c *fiber.Ctx) error {
 //
 // @Router			/api/products/conversions/ [get]
 // @Security		Bearer
-func (h *ProductHandler) GetAllUnitConversions(c *fiber.Ctx) error {
-	unitConversions, err := h.svc.GetAllUnitConversions()
+func (h *ProductHandler) GetAllUnitOfMeasurement(c *fiber.Ctx) error {
+	unitConversions, err := h.svc.GetAllUnitOfMeasurement()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

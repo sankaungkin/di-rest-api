@@ -38,7 +38,7 @@ type CreateProductRequstDTO struct {
 	SellPriceLevel2 int64  `json:"sellPricelvl2" validate:"required,min=1"`
 	ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
-	BrandName       string `json:"brand"`
+	BrandName       string `json:"brandName"`
 	IsActive        bool   `json:"isActive" gorm:"default:true"`
 }
 
@@ -51,7 +51,7 @@ type UpdateProductRequstDTO struct {
 	SellPriceLevel2 int64  `json:"sellPricelvl2" validate:"required,min=1"`
 	ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	// QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
-	BrandName string `json:"brand"`
+	BrandName string `json:"brandName"`
 	IsActive  bool   `json:"isActive" gorm:"default:true"`
 }
 

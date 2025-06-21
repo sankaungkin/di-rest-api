@@ -2533,11 +2533,10 @@ const docTemplate = `{
                 "productName",
                 "sellPricelvl1",
                 "sellPricelvl2",
-                "uom",
                 "uomId"
             ],
             "properties": {
-                "brand": {
+                "brandName": {
                     "type": "string"
                 },
                 "buyPrice": {
@@ -2572,12 +2571,10 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "uom": {
-                    "type": "string",
-                    "minLength": 3
+                    "type": "string"
                 },
                 "uomId": {
-                    "type": "integer",
-                    "minimum": 3
+                    "type": "integer"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2943,6 +2940,9 @@ const docTemplate = `{
         "internal_auth.RefreshResponseDTO": {
             "type": "object",
             "properties": {
+                "accessToken": {
+                    "type": "string"
+                },
                 "refreshToken": {
                     "type": "string"
                 }
@@ -3121,10 +3121,10 @@ const docTemplate = `{
                 "reorderlvl",
                 "sellPriceLevel1",
                 "sellPriceLevel2",
-                "uom"
+                "uomId"
             ],
             "properties": {
-                "brand": {
+                "brandName": {
                     "type": "string"
                 },
                 "buyPrice": {
@@ -3160,8 +3160,10 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "uom": {
-                    "type": "string",
-                    "minLength": 3
+                    "type": "string"
+                },
+                "uomId": {
+                    "type": "integer"
                 }
             }
         },
@@ -3171,17 +3173,16 @@ const docTemplate = `{
                 "buyPrice",
                 "categoryId",
                 "productName",
-                "reorderlvl",
-                "sellPriceLevel1",
-                "sellPriceLevel2",
-                "uom"
+                "sellPricelvl1",
+                "uomId"
             ],
             "properties": {
-                "brand": {
-                    "description": "QtyOnHand       int    ` + "`" + `json:\"qtyOhHand\" validate:\"required\"` + "`" + `",
+                "brandName": {
+                    "description": "ReorderLvl      uint   ` + "`" + `json:\"reorderlvl\" gorm:\"default:1\" validate:\"required,min=1\"` + "`" + `\nQtyOnHand       int    ` + "`" + `json:\"qtyOhHand\" validate:\"required\"` + "`" + `",
                     "type": "string"
                 },
                 "buyPrice": {
+                    "description": "Uom             string ` + "`" + `json:\"uom\" validate:\"required,min=2\"` + "`" + `",
                     "type": "integer",
                     "minimum": 1
                 },
@@ -3195,21 +3196,15 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 3
                 },
-                "reorderlvl": {
+                "sellPricelvl1": {
                     "type": "integer",
                     "minimum": 1
                 },
-                "sellPriceLevel1": {
-                    "type": "integer",
-                    "minimum": 1
+                "sellPricelvl2": {
+                    "type": "integer"
                 },
-                "sellPriceLevel2": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "uom": {
-                    "type": "string",
-                    "minLength": 2
+                "uomId": {
+                    "type": "integer"
                 }
             }
         },

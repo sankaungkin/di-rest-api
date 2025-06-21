@@ -17,7 +17,7 @@ type AuthServiceInterface interface {
 	Signup(user *models.User) (*models.User, error)
 	Signin(username, password string) (string, string, string, string, error)
 	FindUserByEmail(email string) (*models.User, error)
-	Refresh(refreshToken string) (string, error)
+	Refresh(refreshToken string) (string, string, error)
 	Signout(accessToken string) error
 }
 
@@ -91,7 +91,54 @@ func (s *AuthService) Signin(email, password string) (string, string, string, st
 	return at, rt, userName, role, nil
 }
 
-func (s *AuthService) Refresh(refreshToken string) (string, error) {
+func (s *AuthService) Refresh(refreshToken string) (string, string, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(refreshToken, claims, func(t *jwt.Token) (interface{}, error) {
+		return []byte(util.SecreteKey), nil
+	})
+	if err != nil || !token.Valid {
+		return "", "", fmt.Errorf("invalid token: %w", err)
+	}
+
+	// Extract claims
+	email := claims["email"].(string)
+	found, err := s.repo.GetUserByName(email)
+	if err != nil {
+		return "", "", err
+	}
+
+	// ✅ Create Access Token
+	accessClaims := jwt.MapClaims{
+		"id":    found.ID,
+		"email": found.Email,
+		"admin": found.IsAdmin,
+		"role":  found.Role,
+		"exp":   time.Now().Add(time.Minute * 15).Unix(), // short-lived
+	}
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	at, err := accessToken.SignedString([]byte(util.SecreteKey))
+	if err != nil {
+		return "", "", err
+	}
+
+	// ✅ Create Refresh Token
+	refreshClaims := jwt.MapClaims{
+		"id":    found.ID,
+		"email": found.Email,
+		"admin": found.IsAdmin,
+		"role":  found.Role,
+		"exp":   time.Now().Add(time.Hour * 1).Unix(), // longer-lived
+	}
+	refreshTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	rt, err := refreshTokenObj.SignedString([]byte(util.SecreteKey))
+	if err != nil {
+		return "", "", err
+	}
+
+	return at, rt, nil
+}
+
+func (s *AuthService) RefreshOld(refreshToken string) (string, error) {
 
 	claims := jwt.MapClaims{}
 
