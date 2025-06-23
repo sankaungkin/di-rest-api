@@ -70,3 +70,13 @@ type UpdateProductStockDTO struct {
 	DerivedQty int    `json:"derivedQty"`
 	Reorder    int    `json:"reorder"`
 }
+
+type UnitConversionWithProductDTO struct {
+	ID          uint   `json:"id"`
+	ProductID   string `json:"productId"`
+	ProductName string `json:"productName"`
+	Description string `json:"description"`
+	BaseUnit    string `json:"baseUnit"`
+	DeriveUnit  string `json:"deriveUnit"`
+	Factor      int    `json:"factor"`
+}

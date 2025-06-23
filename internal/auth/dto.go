@@ -30,6 +30,9 @@ type SignInResponseDTO struct {
 type RefreshResponseDTO struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
+	UserName     string `json:"userName"`
+	Email        string `json:"email"`
+	Role         string `json:"role"`
 }
 
 type RefreshRequestDTO struct {

@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	mylog "github.com/sirupsen/logrus"
 )
@@ -153,8 +155,9 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 			"error":  "Invalid body",
 		})
 	}
-	at, rt, err := h.svc.Refresh(body.RefreshToken)
+	at, rt, userName, email, role, err := h.svc.Refresh(body.RefreshToken)
 	if err != nil {
+		log.Println(util.Red + err.Error() + util.Reset)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status": "fail",
 			"error":  err.Error(),
@@ -182,6 +185,9 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 		"data": RefreshResponseDTO{
 			AccessToken:  at,
 			RefreshToken: rt,
+			UserName:     userName,
+			Email:        email,
+			Role:         role,
 		}})
 }
 

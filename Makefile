@@ -10,6 +10,9 @@ run:
 product:
 	@wire ./internal/domain/product/di/wire.go
 
+productstock:
+	@wire ./internal/domain/productstock/di/wire.go
+
 itemtransactions:
 	@wire ./internal/domain/itemtransactions/di/wire.go
 

@@ -17,7 +17,7 @@ type AuthServiceInterface interface {
 	Signup(user *models.User) (*models.User, error)
 	Signin(username, password string) (string, string, string, string, error)
 	FindUserByEmail(email string) (*models.User, error)
-	Refresh(refreshToken string) (string, string, error)
+	Refresh(refreshToken string) (string, string, string, string, string, error)
 	Signout(accessToken string) error
 }
 
@@ -91,7 +91,7 @@ func (s *AuthService) Signin(email, password string) (string, string, string, st
 	return at, rt, userName, role, nil
 }
 
-func (s *AuthService) Refresh(refreshToken string) (string, string, error) {
+func (s *AuthService) RefreshWithoutUsernameEmailRole(refreshToken string) (string, string, error) {
 	claims := jwt.MapClaims{}
 	token, err := jwt.ParseWithClaims(refreshToken, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(util.SecreteKey), nil
@@ -136,6 +136,62 @@ func (s *AuthService) Refresh(refreshToken string) (string, string, error) {
 	}
 
 	return at, rt, nil
+}
+
+func (s *AuthService) Refresh(refreshToken string) (string, string, string, string, string, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(refreshToken, claims, func(t *jwt.Token) (interface{}, error) {
+		return []byte(util.SecreteKey), nil
+	})
+	if err != nil || !token.Valid {
+		// Check if the error is because of expiration
+		if ve, ok := err.(*jwt.ValidationError); ok && ve.Errors == jwt.ValidationErrorExpired {
+			return "", "", "", "", "", fmt.Errorf("refresh token expired")
+		}
+		return "", "", "", "", "", fmt.Errorf("invalid token: %w", err)
+	}
+
+	// Extract email from token claims
+	email, ok := claims["email"].(string)
+	if !ok {
+		return "", "", "", "", "", fmt.Errorf("invalid email in token")
+	}
+
+	// Get user from DB
+	found, err := s.repo.GetUserByName(email)
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+
+	// Create new access token
+	accessClaims := jwt.MapClaims{
+		"id":       found.ID,
+		"email":    found.Email,
+		"username": found.UserName,
+		"role":     found.Role,
+		"exp":      time.Now().Add(time.Minute * 15).Unix(),
+	}
+	accessTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessToken, err := accessTokenObj.SignedString([]byte(util.SecreteKey))
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+
+	// Create new refresh token
+	refreshClaims := jwt.MapClaims{
+		"id":       found.ID,
+		"email":    found.Email,
+		"username": found.UserName,
+		"role":     found.Role,
+		"exp":      time.Now().Add(time.Hour * 24 * 7).Unix(),
+	}
+	refreshTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	newRefreshToken, err := refreshTokenObj.SignedString([]byte(util.SecreteKey))
+	if err != nil {
+		return "", "", "", "", "", err
+	}
+
+	return accessToken, newRefreshToken, found.Email, found.UserName, string(found.Role), nil
 }
 
 func (s *AuthService) RefreshOld(refreshToken string) (string, error) {
@@ -202,7 +258,7 @@ func generateTokens(user *models.User, secretKey string) (string, string, string
 		"userName": user.UserName,
 		"admin":    true,
 		"role":     user.Role,
-		"exp":      time.Now().Add(time.Minute * 3).Unix(),
+		"exp":      time.Now().Add(time.Minute * 30).Unix(),
 	}
 
 	// Create access token
@@ -220,9 +276,9 @@ func generateTokens(user *models.User, secretKey string) (string, string, string
 		"userName": user.UserName,
 		"admin":    true,
 		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 3).Unix(),
+		// "exp":      time.Now().Add(time.Hour * 12).Unix(),
 		//   "user_id": userID,
-		//   "exp":    time.Now().Add(time.Hour * 24 * 7).Unix(), // Refresh token expires in 7 days
+		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(), // Refresh token expires in 7 days
 	}
 
 	// Create refresh token

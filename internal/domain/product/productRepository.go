@@ -23,7 +23,7 @@ type ProductRepositoryInterface interface {
 	GetAllProductPrices() ([]ResponseProductUnitPriceDTO, error)
 	GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error)
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
-	GetAllUnitConversions() ([]models.UnitConversion, error)
+	GetAllUnitConversionsWithProductName() ([]UnitConversionWithProductDTO, error)
 	Update(product *models.Product) (*models.Product, error)
 	Delete(id string) error
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
@@ -270,6 +270,22 @@ func (r *ProductRepository) GetAllUnitConversions() ([]models.UnitConversion, er
 		return nil, err
 	}
 	return unitConversions, nil
+}
+
+func (r *ProductRepository) GetAllUnitConversionsWithProductName() ([]UnitConversionWithProductDTO, error) {
+	var result []UnitConversionWithProductDTO
+
+	err := r.db.
+		Table("unit_conversions as uc").
+		Select("uc.id, uc.product_id, p.product_name, uc.description, uc.base_unit, uc.derive_unit, uc.factor").
+		Joins("join products p on uc.product_id = p.id").
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (r *ProductRepository) GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error) {

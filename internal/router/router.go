@@ -10,6 +10,7 @@ import (
 	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
 	transactionDi "github.com/sankangkin/di-rest-api/internal/domain/itemtransactions/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
+	productStockDi "github.com/sankangkin/di-rest-api/internal/domain/productstock/di"
 	purchaseDi "github.com/sankangkin/di-rest-api/internal/domain/purchase/di"
 	saleDi "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
 	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
@@ -61,8 +62,8 @@ func Initialize(app *fiber.App) {
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
 
-	products.Get("/stocks", productService.GetAllProductStocks)
-	products.Get("/stocks/:id", productService.GetProductStocksById)
+	// products.Get("/stocks", productService.GetAllProductStocks)
+	// products.Get("/stocks/:id", productService.GetProductStocksById)
 	products.Get("/prices", productService.GetAllProductPrices)
 	products.Get("/prices/:id", productService.GetProductUnitPricesById)
 
@@ -73,6 +74,17 @@ func Initialize(app *fiber.App) {
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
 	products.Get("/:id", productService.GetProductById) // ❗️Keep this at the BOTTOM
+
+	// productstock di
+	productStockService, err := productStockDi.InitProductStockDI()
+	if err != nil {
+		log.Fatalf("Failed to initialize product stock service: %v", err)
+	}
+	productstocks := api.Group("/productstocks")
+	productstocks.Use(middleware.Protected())
+	productstocks.Get("/", productStockService.GetAllProductStocks)
+	productstocks.Get("/:id", productStockService.GetProductStocksById)
+	productstocks.Put("/:id", productStockService.UpdateProductStocksById)
 
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()

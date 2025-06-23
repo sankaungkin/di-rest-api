@@ -26,6 +26,7 @@ type Product struct {
 	ID               string            `gorm:"primaryKey" json:"id"`
 	ProductName      string            `json:"productName" validate:"required,min=3"`
 	CategoryId       uint              `json:"categoryId"`
+	UnitConversion   []UnitConversion  `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	Inventories      []Inventory       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"-"`
 	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"-"`
@@ -69,12 +70,13 @@ type ProductStock struct {
 type UnitConversion struct {
 	gorm.Model
 	ID           uint   `gorm:"primaryKey" json:"id"`
-	ProductId    string `json:"productId" validate:"required"`
+	Description  string `gorm:"type:varchar(20)" json:"description"`
+	ProductId    string `gorm:"type:varchar(20)" json:"productId" validate:"required"`
 	BaseUnit     string `json:"baseUnit" validate:"required"`
 	DeriveUnit   string `json:"deriveUnit" validate:"required"`
-	BaseUnitId   uint   `json:"baseUnitId" validate:"required"`
-	DeriveUnitId uint   `json:"deriveUnitId" validate:"required"`
-	Factor       uint   `json:"factor" validate:"required,min=1"`
+	BaseUnitId   int    `json:"baseUnitId" validate:"required"`
+	DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
+	Factor       int    `json:"factor" validate:"required,min=1"`
 }
 
 type Inventory struct {
