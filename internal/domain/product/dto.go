@@ -80,3 +80,19 @@ type UnitConversionWithProductDTO struct {
 	DeriveUnit  string `json:"deriveUnit"`
 	Factor      int    `json:"factor"`
 }
+
+type UpdateUnitConversionRequestDTO struct {
+	ID           uint   `json:"id"`
+	ProductId    string `json:"productId"`
+	BaseUnit     string `json:"baseUnit"`
+	DeriveUnit   string `json:"deriveUnit"`
+	BaseUnitId   int    `json:"baseUnitId"`
+	DeriveUnitId int    `json:"deriveUnitId"`
+	Factor       int    `json:"factor"`
+	Description  string `json:"description"`
+}
+
+type UpdateUnitRequstDTO struct {
+	ID       uint   `json:"id"`
+	UnitName string `json:"unitName"`
+}

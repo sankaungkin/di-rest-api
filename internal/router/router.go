@@ -14,6 +14,7 @@ import (
 	purchaseDi "github.com/sankangkin/di-rest-api/internal/domain/purchase/di"
 	saleDi "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
 	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
+	unitconversionDi "github.com/sankangkin/di-rest-api/internal/domain/unitconversion/di"
 	"github.com/sankangkin/di-rest-api/internal/middleware"
 )
 
@@ -67,13 +68,27 @@ func Initialize(app *fiber.App) {
 	products.Get("/prices", productService.GetAllProductPrices)
 	products.Get("/prices/:id", productService.GetProductUnitPricesById)
 
-	products.Get("/conversions/:id", productService.GetUnitConversionsById)
-	products.Get("/conversions", productService.GetAllUnitConversions) // ✅ Move this BEFORE `/:id`
-	products.Get("/units", productService.GetAllUnitOfMeasurement)     // ✅ Move this BEFORE `/:id`
+	products.Get("/units", productService.GetAllUnitOfMeasurement)
+	products.Get("/units/:id", productService.GetUniofMeasurementById)
+	products.Put("/units/:id", productService.UpdateUnit)
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
 	products.Get("/:id", productService.GetProductById) // ❗️Keep this at the BOTTOM
+
+	// unitconversion di
+	unitConversionService, err := unitconversionDi.InitUnitConversionDI()
+	if err != nil {
+		log.Fatalf("Failed to initialize unit conversion service: %v", err)
+	}
+	unitconversion := api.Group("/unitconversions")
+	unitconversion.Use(middleware.Protected())
+	unitconversion.Post("/", unitConversionService.CreateUnitConversion)
+	unitconversion.Get("/", unitConversionService.GetAllUnitConversions)
+	unitconversion.Get("/:id", unitConversionService.GetUnitConversionById)
+	unitconversion.Put("/:id", unitConversionService.UpdateUnitConversion)
+	unitconversion.Delete("/:id", unitConversionService.DeleteUnitConversion)
+	// unit conversion route
 
 	// productstock di
 	productStockService, err := productStockDi.InitProductStockDI()

@@ -17,10 +17,13 @@ type ProductServiceInterface interface {
 	GetAllProductPrices() ([]ResponseProductUnitPriceDTO, error)
 	GetProductUnitPricesByIdSerive(productId string) ([]ResponseProductUnitPriceDTO, error)
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
-	GetAllUnitConversions() ([]UnitConversionWithProductDTO, error)
+	GetAllUnitConversions() ([]models.UnitConversion, error)
 	Update(product *models.Product) (*models.Product, error)
 	DeleteSerive(id string) error
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
+	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
+	UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error)
+	UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error)
 }
 
 type ProductService struct {
@@ -86,10 +89,22 @@ func (s *ProductService) GetUnitConversionsById(id string) (models.UnitConversio
 	return s.repo.GetUnitConversionsById(id)
 }
 
-func (s *ProductService) GetAllUnitConversions() ([]UnitConversionWithProductDTO, error) {
-	return s.repo.GetAllUnitConversionsWithProductName()
+func (s *ProductService) GetAllUnitConversions() ([]models.UnitConversion, error) {
+	return s.repo.GetAllUnitConversions()
+}
+
+func (s *ProductService) UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error) {
+	return s.repo.UpdateUnitConversion(input)
 }
 
 func (s *ProductService) GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error) {
 	return s.repo.GetAllUnitOfMeasurement()
+}
+
+func (s *ProductService) GetUniofMeasurementById(id string) (models.UnitOfMeasure, error) {
+	return s.repo.GetUniofMeasurementById(id)
+}
+
+func (s *ProductService) UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error) {
+	return s.repo.UpdateUnit(input)
 }

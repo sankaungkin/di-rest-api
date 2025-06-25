@@ -72,8 +72,8 @@ type UnitConversion struct {
 	ID           uint   `gorm:"primaryKey" json:"id"`
 	Description  string `gorm:"type:varchar(20)" json:"description"`
 	ProductId    string `gorm:"type:varchar(20)" json:"productId" validate:"required"`
-	BaseUnit     string `json:"baseUnit" validate:"required"`
-	DeriveUnit   string `json:"deriveUnit" validate:"required"`
+	BaseUnit     string `json:"baseUnit"`
+	DeriveUnit   string `json:"deriveUnit" `
 	BaseUnitId   int    `json:"baseUnitId" validate:"required"`
 	DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
 	Factor       int    `json:"factor" validate:"required,min=1"`

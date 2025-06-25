@@ -24,9 +24,13 @@ type ProductRepositoryInterface interface {
 	GetProductUnitPricesById(productId string) ([]ResponseProductUnitPriceDTO, error)
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
 	GetAllUnitConversionsWithProductName() ([]UnitConversionWithProductDTO, error)
+	GetAllUnitConversions() ([]models.UnitConversion, error)
+	UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error)
 	Update(product *models.Product) (*models.Product, error)
 	Delete(id string) error
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
+	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
+	UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error)
 }
 
 type ProductRepository struct {
@@ -156,6 +160,46 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	}
 
 	return &existingProduct, nil
+}
+
+func (r *ProductRepository) UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error) {
+	var existingUnit models.UnitOfMeasure
+	err := r.db.Where("id = ?", input.ID).First(&existingUnit).Error
+	if err != nil {
+		return nil, err
+	}
+
+	existingUnit.UnitName = input.UnitName
+
+	log.Println("existingUnit to update: ", existingUnit)
+	err = r.db.Save(&existingUnit).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingUnit, nil
+}
+
+func (r *ProductRepository) UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error) {
+	var existingUnit models.UnitConversion
+	err := r.db.Where("id = ?", input.ID).First(&existingUnit).Error
+	if err != nil {
+		return nil, err
+	}
+
+	existingUnit.BaseUnit = input.BaseUnit
+	existingUnit.DeriveUnit = input.DeriveUnit
+	existingUnit.BaseUnitId = input.BaseUnitId
+	existingUnit.DeriveUnitId = input.DeriveUnitId
+	existingUnit.Factor = input.Factor
+
+	log.Println("existingUnit to update: ", existingUnit)
+	err = r.db.Save(&existingUnit).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingUnit, nil
 }
 
 func (r *ProductRepository) Delete(id string) error {
@@ -295,4 +339,17 @@ func (r *ProductRepository) GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, e
 		return nil, err
 	}
 	return unitOfMeasures, nil
+}
+
+func (r *ProductRepository) GetUniofMeasurementById(id string) (models.UnitOfMeasure, error) {
+	var unitOfMeasure models.UnitOfMeasure
+	err := r.db.Where("id = ?", strings.ToUpper(id)).Find(&unitOfMeasure).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return models.UnitOfMeasure{}, errors.New("no unit of measurement found for this id")
+		}
+		return models.UnitOfMeasure{}, err
+	}
+
+	return unitOfMeasure, nil
 }

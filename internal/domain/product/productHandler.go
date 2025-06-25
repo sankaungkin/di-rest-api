@@ -549,6 +549,46 @@ func (h *ProductHandler) GetAllUnitConversions(c *fiber.Ctx) error {
 		})
 }
 
+func (h *ProductHandler) UpdateUnitConversion(c *fiber.Ctx) error {
+	input := new(UpdateUnitConversionRequestDTO)
+	if err := c.BodyParser(input); err != nil {
+		log.Println("BodyParser error:", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format" + err.Error(),
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+	if input.BaseUnit == "" || input.DeriveUnit == "" || input.BaseUnitId == 0 || input.DeriveUnitId == 0 || input.Factor == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Unit Name is required",
+		})
+	}
+	unitConversion := models.UnitConversion{
+		ID:           input.ID,
+		ProductId:    input.ProductId,
+		BaseUnit:     input.BaseUnit,
+		DeriveUnit:   input.DeriveUnit,
+		BaseUnitId:   input.BaseUnitId,
+		DeriveUnitId: input.DeriveUnitId,
+		Factor:       input.Factor,
+		Description:  input.Description,
+	}
+	result, err := h.svc.UpdateUnitConversion(&unitConversion)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
+	})
+}
+
 // GetAllUnitConversions godoc
 //
 //	@Summary		Get unit conversions
@@ -578,4 +618,64 @@ func (h *ProductHandler) GetAllUnitOfMeasurement(c *fiber.Ctx) error {
 			"data":    unitConversions,
 			"count":   len(unitConversions),
 		})
+}
+
+func (h *ProductHandler) GetUniofMeasurementById(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "ID is required",
+		})
+	}
+	unitOfMeasure, err := h.svc.GetUniofMeasurementById(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "No unit of measurement found for this ID",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": " unit of measurement found",
+		"data":    unitOfMeasure,
+	})
+}
+
+func (h *ProductHandler) UpdateUnit(c *fiber.Ctx) error {
+	input := new(UpdateUnitRequstDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+	if input.UnitName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Unit Name is required",
+		})
+	}
+	unitOfMeasure := models.UnitOfMeasure{
+		ID:       input.ID,
+		UnitName: input.UnitName,
+	}
+	result, err := h.svc.UpdateUnit(&unitOfMeasure)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
+	})
 }

@@ -16,7 +16,7 @@ var ProductWireSet = wire.NewSet(
 	product.NewProductHandler,
 )
 
-func InitProductDI() (*product.ProductHandler,error) {
+func InitProductDI() (*product.ProductHandler, error) {
 	wire.Build(ProductWireSet)
 	return &product.ProductHandler{}, nil
 }

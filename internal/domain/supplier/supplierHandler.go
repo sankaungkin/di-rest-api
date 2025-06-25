@@ -110,7 +110,11 @@ func (h *SupplierHandler) GetAllSuppliers(c *fiber.Ctx) error {
 func (h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		log.Fatal(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
 	}
 
 	Supplier, err := h.svc.GetSupplierById(uint(id))
@@ -150,7 +154,11 @@ func (h *SupplierHandler) GetSupplierById(c *fiber.Ctx) error {
 func (h *SupplierHandler) UpdateSupplier(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		log.Fatal(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
 	}
 	foundSupplier, err := h.svc.GetSupplierById(uint(id))
 	if err != nil {
@@ -216,7 +224,11 @@ func (h *SupplierHandler) UpdateSupplier(c *fiber.Ctx) error {
 func (h *SupplierHandler) DeleteSupplier(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		log.Fatal(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
 	}
 	Supplier, err := h.svc.GetSupplierById(uint(id))
 	if err != nil {

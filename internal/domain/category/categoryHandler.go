@@ -131,7 +131,11 @@ func (h *CategoryHandler) GetAllCategorie(c *fiber.Ctx) error {
 func (h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		log.Fatal(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
 	}
 
 	category, err := h.Svc.GetCategoryById(uint(id))
@@ -174,7 +178,11 @@ func (h *CategoryHandler) GetCategoryById(c *fiber.Ctx) error {
 func (h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		log.Fatal(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
 	}
 
 	foundCategory, err := h.Svc.GetCategoryById(uint(id))
@@ -242,7 +250,11 @@ func (h *CategoryHandler) UpdateCatagory(c *fiber.Ctx) error {
 func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {
-		log.Fatal(err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
 	}
 	category, err := h.Svc.GetCategoryById(uint(id))
 	if err != nil {

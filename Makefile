@@ -5,7 +5,10 @@ compile:
 	@go build -o bin/min cmd/main.go
 
 run:
-	@go run cmd/main.go
+	@go run cmd/main.go 
+
+unitconversion:
+	@wire ./internal/domain/unitconversion/di/wire.go
 
 product:
 	@wire ./internal/domain/product/di/wire.go
