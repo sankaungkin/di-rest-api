@@ -10,6 +10,9 @@ run:
 unitconversion:
 	@wire ./internal/domain/unitconversion/di/wire.go
 
+uom:
+	@wire ./internal/domain/unitofmeasurement/di/wire.go
+
 product:
 	@wire ./internal/domain/product/di/wire.go
 

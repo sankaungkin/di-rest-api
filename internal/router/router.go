@@ -15,6 +15,7 @@ import (
 	saleDi "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
 	supplierDi "github.com/sankangkin/di-rest-api/internal/domain/supplier/di"
 	unitconversionDi "github.com/sankangkin/di-rest-api/internal/domain/unitconversion/di"
+	unitofmeasurementDi "github.com/sankangkin/di-rest-api/internal/domain/unitofmeasurement/di"
 	"github.com/sankangkin/di-rest-api/internal/middleware"
 )
 
@@ -68,10 +69,6 @@ func Initialize(app *fiber.App) {
 	products.Get("/prices", productService.GetAllProductPrices)
 	products.Get("/prices/:id", productService.GetProductUnitPricesById)
 
-	products.Get("/units", productService.GetAllUnitOfMeasurement)
-	products.Get("/units/:id", productService.GetUniofMeasurementById)
-	products.Put("/units/:id", productService.UpdateUnit)
-
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
 	products.Get("/:id", productService.GetProductById) // ❗️Keep this at the BOTTOM
@@ -89,6 +86,20 @@ func Initialize(app *fiber.App) {
 	unitconversion.Put("/:id", unitConversionService.UpdateUnitConversion)
 	unitconversion.Delete("/:id", unitConversionService.DeleteUnitConversion)
 	// unit conversion route
+
+	//unit of measurement di
+	unitOfMeasurementService, err := unitofmeasurementDi.InitUnitOfMeasurementDI()
+	if err != nil {
+		log.Fatalf("Failed to initialize unit of measurement service: %v", err)
+	}
+	unitofmeasurement := api.Group("/uoms")
+	unitofmeasurement.Use(middleware.Protected())
+	unitofmeasurement.Post("/", unitOfMeasurementService.CreateUnitOfMeasurement)
+	unitofmeasurement.Get("/", unitOfMeasurementService.GetAllUnitOfMeasurement)
+	unitofmeasurement.Get("/:id", unitOfMeasurementService.GetUnitOfMeasurementById)
+	unitofmeasurement.Put("/:id", unitOfMeasurementService.UpdateUnitOfMeasurement)
+	unitofmeasurement.Delete("/:id", unitOfMeasurementService.DeleteUnitOfMeasurement)
+	// unit of measurement route
 
 	// productstock di
 	productStockService, err := productStockDi.InitProductStockDI()
