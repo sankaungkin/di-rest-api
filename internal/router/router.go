@@ -10,6 +10,7 @@ import (
 	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
 	transactionDi "github.com/sankangkin/di-rest-api/internal/domain/itemtransactions/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
+	productpriceDi "github.com/sankangkin/di-rest-api/internal/domain/productprice/di"
 	productStockDi "github.com/sankangkin/di-rest-api/internal/domain/productstock/di"
 	purchaseDi "github.com/sankangkin/di-rest-api/internal/domain/purchase/di"
 	saleDi "github.com/sankangkin/di-rest-api/internal/domain/sale/di"
@@ -111,6 +112,17 @@ func Initialize(app *fiber.App) {
 	productstocks.Get("/", productStockService.GetAllProductStocks)
 	productstocks.Get("/:id", productStockService.GetProductStocksById)
 	productstocks.Put("/:id", productStockService.UpdateProductStocksById)
+
+	//productprice di
+	productPriceService, err := productpriceDi.InitProductPriceDI()
+	if err != nil {
+		log.Fatalf("Failed to initialize product price service: %v", err)
+	}
+	productprices := api.Group("/productprices")
+	productprices.Use(middleware.Protected())
+	productprices.Post("/", productPriceService.CreateProductPrice)
+	productprices.Get("/", productPriceService.GetAllProductPrices)
+	productprices.Get("/:id", productPriceService.GetProductPriceById)
 
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()

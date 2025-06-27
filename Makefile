@@ -16,6 +16,9 @@ uom:
 product:
 	@wire ./internal/domain/product/di/wire.go
 
+productprice:	
+	@wire ./internal/domain/productprice/di/wire.go
+
 productstock:
 	@wire ./internal/domain/productstock/di/wire.go
 
