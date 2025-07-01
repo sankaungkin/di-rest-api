@@ -80,10 +80,14 @@ func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 			ProductName: p.ProductName,
 			CategoryId:  p.CategoryId,
 			// Uom:             p.Uom,
-			UomId:           p.UomId,
+			UomId:       p.UomId,
+			BaseUnit:    p.Uom,
+			DeriveUnit:  p.DeriveUom,
+			DeriveUomId: p.DeriveUomId,
+
 			BuyPrice:        p.BuyPrice,
 			SellPriceLevel1: p.SellPriceLevel1,
-			SellPriceLevel2: p.SellPriceLevel2,
+			DeriveUnitPrice: p.DeriveUnitPrice,
 			// ReorderLvl:      p.ReorderLvl,
 			// QtyOnHand:       p.QtyOnHand,
 			BrandName: p.BrandName,
@@ -139,7 +143,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	}
 
 	log.Println("input from Repository: ", input)
-	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.SellPriceLevel2 == 0 {
+	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.DeriveUnitPrice == 0 || input.UomId == 0 {
 		return nil, fmt.Errorf("missing required fields")
 	}
 
@@ -150,7 +154,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	existingProduct.BuyPrice = input.BuyPrice
 	existingProduct.CategoryId = input.CategoryId
 	existingProduct.SellPriceLevel1 = input.SellPriceLevel1
-	existingProduct.SellPriceLevel2 = input.SellPriceLevel2
+	existingProduct.DeriveUnitPrice = input.DeriveUnitPrice
 	// existingProduct.ReorderLvl = input.ReorderLvl
 
 	log.Println("existingProduct to update: ", existingProduct)

@@ -64,9 +64,11 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 		CategoryId:      input.CategoryId,
 		Uom:             input.Uom,
 		UomId:           input.UomId,
+		DeriveUom:       input.DeriveUom,
+		DeriveUomId:     input.DeriveUomId,
 		BuyPrice:        input.BuyPrice,
 		SellPriceLevel1: input.SellPriceLevel1,
-		SellPriceLevel2: input.SellPriceLevel2,
+		DeriveUnitPrice: input.DeriveUnitPrice,
 		// ReorderLvl:      input.ReorderLvl,
 		IsActive: input.IsActive,
 	}
@@ -256,7 +258,7 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	foundProduct.UomId = input.UomId
 	foundProduct.BuyPrice = input.BuyPrice
 	foundProduct.SellPriceLevel1 = input.SellPriceLevel1
-	foundProduct.SellPriceLevel2 = input.SellPriceLevel2
+	foundProduct.DeriveUnitPrice = input.DeriveUnitPrice
 	foundProduct.BrandName = input.BrandName
 	// foundProduct.ReorderLvl = input.ReorderLvl // if needed
 
@@ -306,7 +308,7 @@ func (h *ProductHandler) UpdateProductOld(c *fiber.Ctx) error {
 		Uom:             foundProduct.Uom,
 		BuyPrice:        foundProduct.BuyPrice,
 		SellPriceLevel1: foundProduct.SellPriceLevel1,
-		SellPriceLevel2: foundProduct.SellPriceLevel2,
+		DeriveUnitPrice: foundProduct.DeriveUnitPrice,
 		// ReorderLvl:      foundProduct.ReorderLvl,
 		IsActive: foundProduct.IsActive,
 	}

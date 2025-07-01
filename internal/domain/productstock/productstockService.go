@@ -9,6 +9,7 @@ import (
 )
 
 type ProductStockServiceInterface interface {
+	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
@@ -37,6 +38,10 @@ func NewProductStockService(repo ProductStockRepositoryInterface) ProductStockSe
 		svcInstance = &ProductStockService{repo: repo}
 	})
 	return svcInstance
+}
+
+func (s *ProductStockService) CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error) {
+	return s.repo.CreateProductStocks(productStock)
 }
 
 func (s *ProductStockService) GetAllProductStocks() ([]ResponseProductStockDTO, error) {

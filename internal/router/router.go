@@ -109,6 +109,7 @@ func Initialize(app *fiber.App) {
 	}
 	productstocks := api.Group("/productstocks")
 	productstocks.Use(middleware.Protected())
+	productstocks.Post("/", productStockService.CreateProductStocks)
 	productstocks.Get("/", productStockService.GetAllProductStocks)
 	productstocks.Get("/:id", productStockService.GetProductStocksById)
 	productstocks.Put("/:id", productStockService.UpdateProductStocksById)
@@ -123,6 +124,7 @@ func Initialize(app *fiber.App) {
 	productprices.Post("/", productPriceService.CreateProductPrice)
 	productprices.Get("/", productPriceService.GetAllProductPrices)
 	productprices.Get("/:id", productPriceService.GetProductPriceById)
+	productprices.Put("/:id", productPriceService.UpdateProductPrice)
 
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()

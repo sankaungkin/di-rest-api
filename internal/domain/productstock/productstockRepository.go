@@ -11,6 +11,7 @@ import (
 )
 
 type ProductStockRepositoryInterface interface {
+	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
@@ -73,6 +74,11 @@ func (r *ProductStockRepository) GetAllProductStocks() ([]ResponseProductStockDT
 	}
 
 	return results, nil
+}
+
+func (r *ProductStockRepository) CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error) {
+	err := r.db.Create(&productStock).Error
+	return productStock, err
 }
 
 func (r *ProductStockRepository) GetProductStocksById(productId string) (*ResponseProductStockDTO, error) {

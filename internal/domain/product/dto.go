@@ -6,9 +6,11 @@ type CreateProductRequstDTO struct {
 	CategoryId      uint   `json:"categoryId" validate:"required"`
 	Uom             string `json:"uom"`
 	UomId           uint   `json:"uomId" validate:"required"`
+	DeriveUom       string `json:"deriveUom"`
+	DeriveUomId     uint   `json:"deriveUomId" validate:"required"`
 	BuyPrice        int64  `json:"buyPrice" validate:"required,min=1"`
 	SellPriceLevel1 int64  `json:"sellPriceLevel1" validate:"required,min=1"`
-	SellPriceLevel2 int64  `json:"sellPriceLevel2" validate:"required,min=1"`
+	DeriveUnitPrice int64  `json:"deriveUnitPrice" validate:"required,min=1"`
 	ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
 	BrandName       string `json:"brandName"`
@@ -22,7 +24,7 @@ type UpdateProductRequstDTO struct {
 	// Uom             string `json:"uom" validate:"required,min=2"`
 	BuyPrice        int64 `json:"buyPrice" validate:"required,min=1"`
 	SellPriceLevel1 int64 `json:"sellPricelvl1" validate:"required,min=1"`
-	SellPriceLevel2 int64 `json:"sellPricelvl2"`
+	DeriveUnitPrice int64 `json:"deriveUnitPrice" validate:"required,min=1"`
 	// ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	// QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
 	BrandName string `json:"brandName"`
@@ -34,10 +36,13 @@ type ResponseProductDTO struct {
 	ProductName string `json:"productName" validate:"required,min=3"`
 	CategoryId  uint   `json:"categoryId"`
 	// Uom             string `json:"uom" validate:"required,min=3"`
+	BaseUnit        string `json:"baseUnit"`
+	DeriveUnit      string `json:"deriveUnit"`
 	UomId           uint   `json:"uomId"`
+	DeriveUomId     uint   `json:"deriveUomId"`
 	BuyPrice        int64  `json:"buyPrice" validate:"required,min=1"`
-	SellPriceLevel1 int64  `json:"sellPricelvl1" validate:"required,min=1"`
-	SellPriceLevel2 int64  `json:"sellPricelvl2" validate:"required,min=1"`
+	SellPriceLevel1 int64  `json:"sellPricelvl1" `
+	DeriveUnitPrice int64  `json:"deriveUnitPrice"`
 	ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	QtyOnHand       int    `json:"qtyOnHand" validate:"required"`
 	BrandName       string `json:"brandName"`

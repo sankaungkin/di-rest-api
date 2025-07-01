@@ -87,11 +87,11 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 			ProductId:   newPurchase.PurchaseDetails[i].ProductId,
 			TranType:    "DEBIT",
 			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)),
-			Uom:         newPurchase.PurchaseDetails[i].Uom,
+			Uom:         newPurchase.PurchaseDetails[i].UnitName,
 			// Remark:      "PurchaseID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].Uom,
 			Remark: fmt.Sprintf(
 				"PurchaseID:%s, line item id:%d, decrease %d %s ",
-				newPurchase.ID, newPurchase.PurchaseDetails[i].ID, newPurchase.PurchaseDetails[i].Qty, newPurchase.PurchaseDetails[i].Uom,
+				newPurchase.ID, newPurchase.PurchaseDetails[i].ID, newPurchase.PurchaseDetails[i].Qty, newPurchase.PurchaseDetails[i].UnitName,
 			),
 		}
 		tx.Save(&newItemTransaction)

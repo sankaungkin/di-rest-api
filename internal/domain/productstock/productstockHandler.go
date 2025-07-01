@@ -37,6 +37,39 @@ func NewProductStockHandler(svc ProductStockRepositoryInterface) *ProductStockHa
 	return handlerInstance
 }
 
+func (h *ProductStockHandler) CreateProductStocks(c *fiber.Ctx) error {
+	input := new(models.ProductStock)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+
+	productStockToCreate := &models.ProductStock{
+		ProductId:  input.ProductId,
+		BaseQty:    input.BaseQty,
+		DerivedQty: input.DerivedQty,
+		ReorderLvl: input.ReorderLvl,
+		// Add other fields as necessary
+	}
+
+	// Step 4: Create and return
+	result, err := h.svc.CreateProductStocks(productStockToCreate)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Create Successfully",
+		"data":    result,
+	})
+}
+
 // GetAllProductStocks godoc
 //
 //	@Summary		Get all product stocks

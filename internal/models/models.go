@@ -31,11 +31,13 @@ type Product struct {
 	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"-"`
 	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"-"`
 	ItemTransactions []ItemTransaction `gorm:"foreignKey:ProductId;"  json:"-"`
-	Uom              string            `json:"uom" `
+	Uom              string            `json:"uom"`
+	DeriveUom        string            `json:"deriveUom"`
 	UomId            uint              `json:"uomId" validate:"required"`
+	DeriveUomId      uint              `json:"deriveUomId" validate:"required"`
 	BuyPrice         int64             `json:"buyPrice" validate:"required,min=1"`
 	SellPriceLevel1  int64             `json:"sellPricelvl1" validate:"required,min=1"`
-	SellPriceLevel2  int64             `json:"sellPricelvl2" validate:"required,min=1"`
+	DeriveUnitPrice  int64             `json:"deriveUnitPrice" validate:"required,min=1"`
 	BrandName        string            `json:"brandName"`
 	IsActive         bool              `json:"isActive" gorm:"default:true"`
 	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
@@ -50,21 +52,44 @@ type UnitOfMeasure struct {
 	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 }
 
+// type ProductPrice struct {
+// 	gorm.Model
+// 	ID        uint   `gorm:"primaryKey" json:"id"`
+// 	ProductId string `json:"productId" validate:"required"`
+// 	UnitId    uint   `json:"unitId" validate:"required"`
+// 	PriceType string `json:"priceType" validate:"required,min=1"` // "BUY"	or "SELL"
+// 	UnitPrice int64  `json:"price" validate:"required,min=1"`
+// }
+
 type ProductPrice struct {
 	gorm.Model
 	ID        uint   `gorm:"primaryKey" json:"id"`
-	ProductId string `json:"productId" validate:"required"`
-	UnitId    uint   `json:"unitId" validate:"required"`
+	ProductId string `gorm:"index:idx_product_unit_type,unique" json:"productId" validate:"required"`
+	UnitId    uint   `gorm:"index:idx_product_unit_type,unique" json:"unitId" validate:"required"`
+	PriceType string `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
 	UnitPrice int64  `json:"price" validate:"required,min=1"`
+}
+
+type ProductPriceHistory struct {
+	gorm.Model
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	ProductId     string    `json:"productId" validate:"required"`
+	UnitId        uint      `json:"unitId" validate:"required"`
+	PriceType     string    `json:"priceType" validate:"required,min=1"` // "BUY"	or "SELL"
+	UnitPrice     int64     `json:"price" validate:"required,min=1"`
+	EffectiveDate time.Time `gorm:"not null"`
+	CreatedAt     time.Time
 }
 
 type ProductStock struct {
 	gorm.Model
-	ID         uint   `gorm:"primaryKey" json:"id"`
-	ProductId  string `gorm:"type:varchar(20)" json:"productId"`
-	BaseQty    int    `json:"baseQty" validate:"required,min=1"`
-	DerivedQty int    `json:"derivedQty" validate:"required,min=1"`
-	ReorderLvl int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	ID           uint   `gorm:"primaryKey" json:"id"`
+	ProductId    string `gorm:"type:varchar(20)" json:"productId"`
+	BaseUnitId   int    `json:"baseUnitId" validate:"required"`
+	DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
+	BaseQty      int    `json:"baseQty" validate:"required,min=1"`
+	DerivedQty   int    `json:"derivedQty" validate:"required,min=1"`
+	ReorderLvl   int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 }
 
 type UnitConversion struct {
@@ -168,7 +193,7 @@ type PurchaseDetail struct {
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
 	Price       int64  `json:"price"`
-	Uom         string `json:"uom"`
+	UnitName    string `json:"unitName"`
 	Total       int64  `json:"total"`
 	PurchaseId  string `json:"purchaseId"`
 }

@@ -57,6 +57,7 @@ func (h *ProductPriceHandler) CreateProductPrice(c *fiber.Ctx) error {
 		ProductId: input.ProductId,
 		UnitId:    input.UnitId,
 		UnitPrice: input.UnitPrice,
+		PriceType: input.PriceType,
 	}
 
 	errors := models.ValidateStruct(newProductPrice)
@@ -146,5 +147,67 @@ func (h *ProductPriceHandler) GetProductPriceById(c *fiber.Ctx) error {
 		"status":  "SUCCESS",
 		"message": "Record found",
 		"data":    productPrice,
+	})
+}
+
+func (h *ProductPriceHandler) UpdateProductPrice(c *fiber.Ctx) error {
+	idUint64, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Invalid product price ID",
+		})
+	}
+	id := int(idUint64)
+
+	// Step 1: Get the existing product
+	foundProductPrice, err := h.svc.GetById(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+	input := new(UpdateProductPriceRequestDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+
+	// Step 3: Manually update only intended fields
+	foundProductPrice.ProductId = input.ProductId
+	foundProductPrice.UnitId = input.UnitId
+	foundProductPrice.UnitPrice = input.UnitPrice
+
+	log.Println("updateProduct(Handler): ", foundProductPrice)
+
+	// Convert foundProductPrice to *models.ProductPrice
+	updatedProductPrice := &models.ProductPrice{
+		ID:        foundProductPrice.ID,
+		ProductId: foundProductPrice.ProductId,
+		UnitId:    foundProductPrice.UnitId,
+		UnitPrice: foundProductPrice.UnitPrice,
+	}
+
+	// Step 4: Update and return
+	result, err := h.svc.UpdateProductPrice(updatedProductPrice)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
 	})
 }
