@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "San KaungKin",
+            "name": "SanKaungKin",
             "email": "sankaungkin@gmail.com"
         },
         "license": {
@@ -970,6 +970,227 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/productprices": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all product prices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductPrice"
+                ],
+                "summary": "Fetch all product prices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create a new product price with productId, unitId, and unitPrice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductPrice"
+                ],
+                "summary": "Create new product price",
+                "parameters": [
+                    {
+                        "description": "Product Price Input Data",
+                        "name": "productPrice",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/productprices/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual product price by Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductPrice"
+                ],
+                "summary": "Fetch individual product price by Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product price Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Update individual product price",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductPrice"
+                ],
+                "summary": "Update individual product price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product price Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Product Price Data",
+                        "name": "productPrice",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_productprice.UpdateProductPriceRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
         "/api/products": {
             "get": {
                 "security": [
@@ -996,116 +1217,6 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
                             }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError400"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError401"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError500"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/products/conversions/": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Get unit conversions",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get unit conversions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "product Id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError400"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError401"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/httputil.HttpError500"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/products/conversions/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Get unit conversions by Id",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get unit conversions by Id",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "product Id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
                         }
                     },
                     "400": {
@@ -1478,6 +1589,224 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/productstocks": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get all product stocks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductStocks"
+                ],
+                "summary": "Get all product stocks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create a new product stock with productId, baseQty, derivedQty, and reorderLvl",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductStocks"
+                ],
+                "summary": "Create new product stock",
+                "parameters": [
+                    {
+                        "description": "Product Stock Input Data",
+                        "name": "productStock",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/productstocks/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual productstock by Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductStocks"
+                ],
+                "summary": "Fetch individual productstock by Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Update individual products",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductStocks"
+                ],
+                "summary": "Update individual productstock",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ProductStock Data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_productstock.UpdateProductStockDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock"
                         }
                     },
                     "400": {
@@ -2377,6 +2706,548 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/unitconversions": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all unit conversions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitConversions"
+                ],
+                "summary": "Fetch all unit conversions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create new unit conversion based on parameters",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitConversions"
+                ],
+                "summary": "Create new unit conversion based on parameters",
+                "parameters": [
+                    {
+                        "description": "Product Data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_unitconversion.CreateUnitConversionDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unitconversions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual unit conversion by Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitConversions"
+                ],
+                "summary": "Fetch individual unit conversion by Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "unit conversion Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Update individual unit conversion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitConversions"
+                ],
+                "summary": "Update individual unit conversion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "unit conversion Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Product Data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_unitconversion.UpdateUnitConversionRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Delete individual unit conversion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitConversions"
+                ],
+                "summary": "Delete individual unit conversion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "unit conversion Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unitofmeasurements": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all unit of measurement",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitOfMeasurements"
+                ],
+                "summary": "Fetch all unit of measurement",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Create new unit of measurement based on parameters",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitOfMeasurements"
+                ],
+                "summary": "Create new unit of measurement based on parameters",
+                "parameters": [
+                    {
+                        "description": "Product Data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unitofmeasurements/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual unit of measurement by Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitOfMeasurements"
+                ],
+                "summary": "Fetch individual unit of measurement by Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "unit of measurement Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Update individual unit of measurement",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitOfMeasurements"
+                ],
+                "summary": "Update individual unit of measurement",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "unit of measurement Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Product Data",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Delete individual unit of measurement",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitOfMeasurements"
+                ],
+                "summary": "Delete individual unit of measurement",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "unit of measurement Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -2530,9 +3401,10 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "buyPrice",
+                "deriveUnitPrice",
+                "deriveUomId",
                 "productName",
                 "sellPricelvl1",
-                "sellPricelvl2",
                 "uomId"
             ],
             "properties": {
@@ -2552,6 +3424,16 @@ const docTemplate = `{
                 "deletedAt": {
                     "$ref": "#/definitions/gorm.DeletedAt"
                 },
+                "deriveUnitPrice": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "deriveUom": {
+                    "type": "string"
+                },
+                "deriveUomId": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2566,15 +3448,94 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
-                "sellPricelvl2": {
-                    "type": "integer",
-                    "minimum": 1
-                },
                 "uom": {
                     "type": "string"
                 },
                 "uomId": {
                     "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_sankangkin_di-rest-api_internal_models.ProductPrice": {
+            "type": "object",
+            "required": [
+                "price",
+                "priceType",
+                "productId",
+                "unitId"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "priceType": {
+                    "description": "\"BUY\" or \"SELL\"",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "unitId": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_sankangkin_di-rest-api_internal_models.ProductStock": {
+            "type": "object",
+            "required": [
+                "baseQty",
+                "baseUnitId",
+                "deriveUnitId",
+                "derivedQty",
+                "reorderlvl"
+            ],
+            "properties": {
+                "baseQty": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "baseUnitId": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "deriveUnitId": {
+                    "type": "integer"
+                },
+                "derivedQty": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "reorderlvl": {
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2655,7 +3616,7 @@ const docTemplate = `{
                 "total": {
                     "type": "integer"
                 },
-                "uom": {
+                "unitName": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -2796,9 +3757,7 @@ const docTemplate = `{
         "github_com_sankangkin_di-rest-api_internal_models.UnitConversion": {
             "type": "object",
             "required": [
-                "baseUnit",
                 "baseUnitId",
-                "deriveUnit",
                 "deriveUnitId",
                 "factor",
                 "productId"
@@ -2822,6 +3781,9 @@ const docTemplate = `{
                 "deriveUnitId": {
                     "type": "integer"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "factor": {
                     "type": "integer",
                     "minimum": 1
@@ -2831,6 +3793,30 @@ const docTemplate = `{
                 },
                 "productId": {
                     "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure": {
+            "type": "object",
+            "required": [
+                "unitName"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "unitName": {
+                    "type": "string",
+                    "minLength": 3
                 },
                 "updatedAt": {
                     "type": "string"
@@ -2943,7 +3929,16 @@ const docTemplate = `{
                 "accessToken": {
                     "type": "string"
                 },
+                "email": {
+                    "type": "string"
+                },
                 "refreshToken": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "userName": {
                     "type": "string"
                 }
             }
@@ -3116,11 +4111,12 @@ const docTemplate = `{
             "required": [
                 "buyPrice",
                 "categoryId",
+                "deriveUnitPrice",
+                "deriveUomId",
                 "productName",
                 "qtyOhHand",
                 "reorderlvl",
                 "sellPriceLevel1",
-                "sellPriceLevel2",
                 "uomId"
             ],
             "properties": {
@@ -3132,6 +4128,16 @@ const docTemplate = `{
                     "minimum": 1
                 },
                 "categoryId": {
+                    "type": "integer"
+                },
+                "deriveUnitPrice": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "deriveUom": {
+                    "type": "string"
+                },
+                "deriveUomId": {
                     "type": "integer"
                 },
                 "id": {
@@ -3155,10 +4161,6 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
-                "sellPriceLevel2": {
-                    "type": "integer",
-                    "minimum": 1
-                },
                 "uom": {
                     "type": "string"
                 },
@@ -3172,6 +4174,7 @@ const docTemplate = `{
             "required": [
                 "buyPrice",
                 "categoryId",
+                "deriveUnitPrice",
                 "productName",
                 "sellPricelvl1",
                 "uomId"
@@ -3189,6 +4192,10 @@ const docTemplate = `{
                 "categoryId": {
                     "type": "integer"
                 },
+                "deriveUnitPrice": {
+                    "type": "integer",
+                    "minimum": 1
+                },
                 "isActive": {
                     "type": "boolean"
                 },
@@ -3200,10 +4207,53 @@ const docTemplate = `{
                     "type": "integer",
                     "minimum": 1
                 },
-                "sellPricelvl2": {
+                "uomId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_domain_productprice.UpdateProductPriceRequestDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
                     "type": "integer"
                 },
-                "uomId": {
+                "price": {
+                    "type": "integer"
+                },
+                "priceType": {
+                    "type": "string"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "unitId": {
+                    "type": "integer"
+                },
+                "unitName": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_domain_productstock.UpdateProductStockDTO": {
+            "type": "object",
+            "properties": {
+                "baseQty": {
+                    "type": "integer"
+                },
+                "derivedQty": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "reorderlvl": {
                     "type": "integer"
                 }
             }
@@ -3296,6 +4346,49 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_domain_unitconversion.CreateUnitConversionDTO": {
+            "type": "object",
+            "properties": {
+                "baseUnitId": {
+                    "type": "integer"
+                },
+                "deriveUnitId": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "factor": {
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_domain_unitconversion.UpdateUnitConversionRequestDTO": {
+            "type": "object",
+            "properties": {
+                "baseUnitId": {
+                    "type": "integer"
+                },
+                "deriveUnitId": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "factor": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "productId": {
                     "type": "string"
                 }
             }

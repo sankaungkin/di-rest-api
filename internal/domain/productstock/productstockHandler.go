@@ -37,6 +37,20 @@ func NewProductStockHandler(svc ProductStockRepositoryInterface) *ProductStockHa
 	return handlerInstance
 }
 
+// CreateProductStocks godoc
+//
+//	@Summary		Create new product stock
+//	@Description	Create a new product stock with productId, baseQty, derivedQty, and reorderLvl
+//	@Tags			ProductStocks
+//	@Accept			json
+//	@Produce		json
+//	@Param			productStock		body		models.ProductStock	true	"Product Stock Input Data"
+//	@Success		200				{object}	models.ProductStock
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/productstocks [post]
+//	@Security		Bearer
 func (h *ProductStockHandler) CreateProductStocks(c *fiber.Ctx) error {
 	input := new(models.ProductStock)
 	if err := c.BodyParser(input); err != nil {
@@ -74,7 +88,7 @@ func (h *ProductStockHandler) CreateProductStocks(c *fiber.Ctx) error {
 //
 //	@Summary		Get all product stocks
 //	@Description	Get all product stocks
-//	@Tags			Productstocks
+//	@Tags			ProductStocks
 //	@Accept			json
 //	@Produce		json
 //	@Success		200					{object}	models.ProductStock
@@ -103,11 +117,11 @@ func (h *ProductStockHandler) GetAllProductStocks(c *fiber.Ctx) error {
 //
 //	@Summary		Fetch individual productstock by Id
 //	@Description	Fetch individual productstock by Id
-//	@Tags			Productstocks
+//	@Tags			ProductStocks
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path		string	true	"product Id"
-//	@Success		200					{object}	models.Productstock
+//	@Success		200					{object}	models.ProductStock
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
@@ -145,12 +159,12 @@ func (h *ProductStockHandler) GetProductStocksById(c *fiber.Ctx) error {
 //
 //	@Summary		Update individual productstock
 //	@Description	Update individual products
-//	@Tags			Productstocks
+//	@Tags			ProductStocks
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path		string						true	"product Id"
 //	@Param			product				body		UpdateProductStockDTO	true	"ProductStock Data"
-//	@Success		200					{object}	models.Productstock
+//	@Success		200					{object}	models.ProductStock
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500

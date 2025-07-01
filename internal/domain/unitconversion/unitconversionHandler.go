@@ -78,7 +78,7 @@ func (h *UnitConversionHandler) CreateUnitConversion(c *fiber.Ctx) error {
 }
 
 // GetAllUnitConversions godoc
-
+//
 // @Summary		Fetch all unit conversions
 // @Description	Fetch all unit conversions
 // @Tags			UnitConversions

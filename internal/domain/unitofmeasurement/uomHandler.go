@@ -35,7 +35,7 @@ func NewUnitOfMeasurementHandler(svc UnitOfMeasurementServiceInterface) *UnitOfM
 //	@Description	Create new unit of measurement based on parameters
 //	@Tags			UnitOfMeasurements
 //	@Accept			json
-//	@Param			product	body		CreateUnitOfMeasurementDTO	true	"Product Data"
+//	@Param			product	body		models.UnitOfMeasure	true	"Product Data"
 //	@Success		200		{object}	models.UnitOfMeasure
 //	@Failure		400		{object}	httputil.HttpError400
 //	@Failure		401		{object}	httputil.HttpError401
@@ -113,7 +113,7 @@ func (h *UnitOfMeasurementHandler) GetAllUnitOfMeasurement(c *fiber.Ctx) error {
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
 //	@Router			/api/unitofmeasurements/{id}	[get]
-
+//
 // @Security       Bearer
 func (h *UnitOfMeasurementHandler) GetUnitOfMeasurementById(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
@@ -153,7 +153,7 @@ func (h *UnitOfMeasurementHandler) GetUnitOfMeasurementById(c *fiber.Ctx) error 
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path		string						true	"unit of measurement Id"
-//	@Param			product				body		UpdateUnitOfMeasurementDTO	true	"Product Data"
+//	@Param			product				body		models.UnitOfMeasure	true	"Product Data"
 //	@Success		200					{object}	models.UnitOfMeasure
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401

@@ -110,6 +110,13 @@ definitions:
         type: string
       deletedAt:
         $ref: '#/definitions/gorm.DeletedAt'
+      deriveUnitPrice:
+        minimum: 1
+        type: integer
+      deriveUom:
+        type: string
+      deriveUomId:
+        type: integer
       id:
         type: string
       isActive:
@@ -120,9 +127,6 @@ definitions:
       sellPricelvl1:
         minimum: 1
         type: integer
-      sellPricelvl2:
-        minimum: 1
-        type: integer
       uom:
         type: string
       uomId:
@@ -131,10 +135,70 @@ definitions:
         type: string
     required:
     - buyPrice
+    - deriveUnitPrice
+    - deriveUomId
     - productName
     - sellPricelvl1
-    - sellPricelvl2
     - uomId
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.ProductPrice:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      price:
+        minimum: 1
+        type: integer
+      priceType:
+        description: '"BUY" or "SELL"'
+        minLength: 1
+        type: string
+      productId:
+        type: string
+      unitId:
+        type: integer
+      updatedAt:
+        type: string
+    required:
+    - price
+    - priceType
+    - productId
+    - unitId
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.ProductStock:
+    properties:
+      baseQty:
+        minimum: 1
+        type: integer
+      baseUnitId:
+        type: integer
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      deriveUnitId:
+        type: integer
+      derivedQty:
+        minimum: 1
+        type: integer
+      id:
+        type: integer
+      productId:
+        type: string
+      reorderlvl:
+        minimum: 1
+        type: integer
+      updatedAt:
+        type: string
+    required:
+    - baseQty
+    - baseUnitId
+    - deriveUnitId
+    - derivedQty
+    - reorderlvl
     type: object
   github_com_sankangkin_di-rest-api_internal_models.Purchase:
     properties:
@@ -185,7 +249,7 @@ definitions:
         type: integer
       total:
         type: integer
-      uom:
+      unitName:
         type: string
       updatedAt:
         type: string
@@ -292,6 +356,8 @@ definitions:
         type: string
       deriveUnitId:
         type: integer
+      description:
+        type: string
       factor:
         minimum: 1
         type: integer
@@ -302,12 +368,26 @@ definitions:
       updatedAt:
         type: string
     required:
-    - baseUnit
     - baseUnitId
-    - deriveUnit
     - deriveUnitId
     - factor
     - productId
+    type: object
+  github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      unitName:
+        minLength: 3
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - unitName
     type: object
   github_com_sankangkin_di-rest-api_internal_models.User:
     properties:
@@ -382,7 +462,13 @@ definitions:
     properties:
       accessToken:
         type: string
+      email:
+        type: string
       refreshToken:
+        type: string
+      role:
+        type: string
+      userName:
         type: string
     type: object
   internal_auth.SignInRequestDTO:
@@ -503,6 +589,13 @@ definitions:
         type: integer
       categoryId:
         type: integer
+      deriveUnitPrice:
+        minimum: 1
+        type: integer
+      deriveUom:
+        type: string
+      deriveUomId:
+        type: integer
       id:
         type: string
       isActive:
@@ -518,9 +611,6 @@ definitions:
       sellPriceLevel1:
         minimum: 1
         type: integer
-      sellPriceLevel2:
-        minimum: 1
-        type: integer
       uom:
         type: string
       uomId:
@@ -528,11 +618,12 @@ definitions:
     required:
     - buyPrice
     - categoryId
+    - deriveUnitPrice
+    - deriveUomId
     - productName
     - qtyOhHand
     - reorderlvl
     - sellPriceLevel1
-    - sellPriceLevel2
     - uomId
     type: object
   internal_domain_product.UpdateProductRequstDTO:
@@ -548,6 +639,9 @@ definitions:
         type: integer
       categoryId:
         type: integer
+      deriveUnitPrice:
+        minimum: 1
+        type: integer
       isActive:
         type: boolean
       productName:
@@ -556,16 +650,45 @@ definitions:
       sellPricelvl1:
         minimum: 1
         type: integer
-      sellPricelvl2:
-        type: integer
       uomId:
         type: integer
     required:
     - buyPrice
     - categoryId
+    - deriveUnitPrice
     - productName
     - sellPricelvl1
     - uomId
+    type: object
+  internal_domain_productprice.UpdateProductPriceRequestDTO:
+    properties:
+      id:
+        type: integer
+      price:
+        type: integer
+      priceType:
+        type: string
+      productId:
+        type: string
+      productName:
+        type: string
+      unitId:
+        type: integer
+      unitName:
+        type: string
+    type: object
+  internal_domain_productstock.UpdateProductStockDTO:
+    properties:
+      baseQty:
+        type: integer
+      derivedQty:
+        type: integer
+      id:
+        type: integer
+      productId:
+        type: string
+      reorderlvl:
+        type: integer
     type: object
   internal_domain_purchase.PurchaseInvoiceRequestDTO:
     properties:
@@ -627,11 +750,39 @@ definitions:
       phone:
         type: string
     type: object
+  internal_domain_unitconversion.CreateUnitConversionDTO:
+    properties:
+      baseUnitId:
+        type: integer
+      deriveUnitId:
+        type: integer
+      description:
+        type: string
+      factor:
+        type: integer
+      productId:
+        type: string
+    type: object
+  internal_domain_unitconversion.UpdateUnitConversionRequestDTO:
+    properties:
+      baseUnitId:
+        type: integer
+      deriveUnitId:
+        type: integer
+      description:
+        type: string
+      factor:
+        type: integer
+      id:
+        type: integer
+      productId:
+        type: string
+    type: object
 host: localhost:5555
 info:
   contact:
     email: sankaungkin@gmail.com
-    name: San KaungKin
+    name: SanKaungKin
   description: This is an auto-generated API docs.
   license:
     name: Apache 2.0
@@ -1241,6 +1392,147 @@ paths:
       summary: Create new product
       tags:
       - Products
+  /api/productprices:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all product prices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all product prices
+      tags:
+      - ProductPrice
+    post:
+      consumes:
+      - application/json
+      description: Create a new product price with productId, unitId, and unitPrice
+      parameters:
+      - description: Product Price Input Data
+        in: body
+        name: productPrice
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Create new product price
+      tags:
+      - ProductPrice
+  /api/productprices/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual product price by Id
+      parameters:
+      - description: product price Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual product price by Id
+      tags:
+      - ProductPrice
+    put:
+      consumes:
+      - application/json
+      description: Update individual product price
+      parameters:
+      - description: product price Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Price Data
+        in: body
+        name: productPrice
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_productprice.UpdateProductPriceRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Update individual product price
+      tags:
+      - ProductPrice
   /api/products:
     get:
       consumes:
@@ -1381,76 +1673,6 @@ paths:
       summary: Update individual product
       tags:
       - Products
-  /api/products/conversions/:
-    get:
-      consumes:
-      - application/json
-      description: Get unit conversions
-      parameters:
-      - description: product Id
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputil.HttpError400'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httputil.HttpError401'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputil.HttpError500'
-      security:
-      - Bearer: []
-      summary: Get unit conversions
-      tags:
-      - Products
-  /api/products/conversions/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get unit conversions by Id
-      parameters:
-      - description: product Id
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httputil.HttpError400'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httputil.HttpError401'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httputil.HttpError500'
-      security:
-      - Bearer: []
-      summary: Get unit conversions by Id
-      tags:
-      - Products
   /api/products/prices/:
     get:
       consumes:
@@ -1579,6 +1801,146 @@ paths:
       summary: Get all product stocks By Id
       tags:
       - Products
+  /api/productstocks:
+    get:
+      consumes:
+      - application/json
+      description: Get all product stocks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get all product stocks
+      tags:
+      - ProductStocks
+    post:
+      consumes:
+      - application/json
+      description: Create a new product stock with productId, baseQty, derivedQty,
+        and reorderLvl
+      parameters:
+      - description: Product Stock Input Data
+        in: body
+        name: productStock
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Create new product stock
+      tags:
+      - ProductStocks
+  /api/productstocks/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual productstock by Id
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual productstock by Id
+      tags:
+      - ProductStocks
+    put:
+      consumes:
+      - application/json
+      description: Update individual products
+      parameters:
+      - description: product Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: ProductStock Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_productstock.UpdateProductStockDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Update individual productstock
+      tags:
+      - ProductStocks
   /api/purchases:
     get:
       consumes:
@@ -2138,6 +2500,352 @@ paths:
       summary: Fetch individual transaction by transactionType
       tags:
       - Transactions
+  /api/unitconversions:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all unit conversions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all unit conversions
+      tags:
+      - UnitConversions
+    post:
+      consumes:
+      - application/json
+      description: Create new unit conversion based on parameters
+      parameters:
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_unitconversion.CreateUnitConversionDTO'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Create new unit conversion based on parameters
+      tags:
+      - UnitConversions
+  /api/unitconversions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete individual unit conversion
+      parameters:
+      - description: unit conversion Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Delete individual unit conversion
+      tags:
+      - UnitConversions
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual unit conversion by Id
+      parameters:
+      - description: unit conversion Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual unit conversion by Id
+      tags:
+      - UnitConversions
+    put:
+      consumes:
+      - application/json
+      description: Update individual unit conversion
+      parameters:
+      - description: unit conversion Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/internal_domain_unitconversion.UpdateUnitConversionRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Update individual unit conversion
+      tags:
+      - UnitConversions
+  /api/unitofmeasurements:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all unit of measurement
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all unit of measurement
+      tags:
+      - UnitOfMeasurements
+    post:
+      consumes:
+      - application/json
+      description: Create new unit of measurement based on parameters
+      parameters:
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Create new unit of measurement based on parameters
+      tags:
+      - UnitOfMeasurements
+  /api/unitofmeasurements/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete individual unit of measurement
+      parameters:
+      - description: unit of measurement Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Delete individual unit of measurement
+      tags:
+      - UnitOfMeasurements
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual unit of measurement by Id
+      parameters:
+      - description: unit of measurement Id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual unit of measurement by Id
+      tags:
+      - UnitOfMeasurements
+    put:
+      consumes:
+      - application/json
+      description: Update individual unit of measurement
+      parameters:
+      - description: unit of measurement Id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Data
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Update individual unit of measurement
+      tags:
+      - UnitOfMeasurements
 securityDefinitions:
   Bearer:
     description: Type "Bearer" followed by a space and JWT token.

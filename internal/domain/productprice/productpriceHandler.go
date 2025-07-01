@@ -35,7 +35,7 @@ func NewProductPriceHandler(svc ProductPriceServiceInterface) *ProductPriceHandl
 //	@Tags			ProductPrice
 //	@Accept			json
 //	@Produce		json
-//	@Param			productPrice		body		CreateProductPriceRequestDTO	true	"Product Price Input Data"
+//	@Param			productPrice		body		models.ProductPrice	true	"Product Price Input Data"
 //	@Success		200				{object}	models.ProductPrice
 //	@Failure		400				{object}	httputil.HttpError400
 //	@Failure		401				{object}	httputil.HttpError401
@@ -150,6 +150,21 @@ func (h *ProductPriceHandler) GetProductPriceById(c *fiber.Ctx) error {
 	})
 }
 
+// UpdateProductPrice godoc
+//
+//	@Summary		Update individual product price
+//	@Description	Update individual product price
+//	@Tags			ProductPrice
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"product price Id"
+//	@Param			productPrice		body		UpdateProductPriceRequestDTO	true	"Product Price Data"
+//	@Success		200					{object}	models.ProductPrice
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/productprices/{id}	[put]
+//	@Security		Bearer
 func (h *ProductPriceHandler) UpdateProductPrice(c *fiber.Ctx) error {
 	idUint64, err := strconv.ParseUint(c.Params("id"), 10, 32)
 	if err != nil {

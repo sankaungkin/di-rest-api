@@ -113,7 +113,7 @@ func (h *PurchaseHandler) GetAllPurchases(c *fiber.Ctx) error {
 		})
 }
 
-// GetPurchaseById godoc
+// GetById godoc
 //
 //	@Summary		Fetch individual purchase by Id
 //	@Description	Fetch individual purchase by Id

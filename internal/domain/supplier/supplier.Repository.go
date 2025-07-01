@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type SupplierRepositoryInterface interface{
+type SupplierRepositoryInterface interface {
 	Create(supplier *models.Supplier) (*models.Supplier, error)
 	GetAll() ([]models.Supplier, error)
 	GetById(id uint) (*models.Supplier, error)
@@ -24,39 +24,52 @@ type SupplierRepository struct {
 
 var (
 	repoInstance *SupplierRepository
-	repoOnce sync.Once 
+	repoOnce     sync.Once
 )
 
-func NewSupplierRepository(db *gorm.DB) SupplierRepositoryInterface{
+func NewSupplierRepository(db *gorm.DB) SupplierRepositoryInterface {
 	log.Println(util.Green + "SupplierRepository constructor is called" + util.Reset)
-	repoOnce.Do(func ()  {
+	repoOnce.Do(func() {
 		repoInstance = &SupplierRepository{db: db}
 	})
 
 	return repoInstance
 }
 
-func(r *SupplierRepository)Create(supplier *models.Supplier) (*models.Supplier, error){
-	// input := new(CreateSupplierRequestDTO)
-	// newSupplier := &models.Supplier{
-	// 	Name: input.Name,
-	// 	Address: input.Address,
-	// 	Phone: input.Phone,
-	// }
-
-	// err := r.db.Create(newSupplier)
-	// if err != nil {
-	// 	return nil, err.Error
-	// }
-
-	// return newSupplier, nil
-
+// Create godoc
+//
+//	@Summary		Create new supplier
+//	@Description	Create a new supplier with name, address, and phone
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Param			supplier		body		CreateSupplierRequestDTO	true	"Supplier Input Data"
+//	@Success		200			{object}	models.Supplier
+//	@Failure		400			{object}	httputil.HttpError400
+//	@Failure		401			{object}	httputil.HttpError401
+//	@Failure		500			{object}	httputil.HttpError500
+//	@Router			/api/suppliers [post]
+//	@Security		Bearer
+func (r *SupplierRepository) Create(supplier *models.Supplier) (*models.Supplier, error) {
 	err := r.db.Create(&supplier).Error
 
 	return supplier, err
 }
 
-func(r *SupplierRepository)GetAll() ([]models.Supplier, error){
+// GetAll godoc
+//
+//	@Summary		Fetch all suppliers
+//	@Description	Fetch all suppliers
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Supplier
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/suppliers	[get]
+//	@Security		Bearer
+func (r *SupplierRepository) GetAll() ([]models.Supplier, error) {
 	suppliers := []models.Supplier{}
 	r.db.Model(&models.Supplier{}).Order("ID asc").Find(&suppliers)
 	if len(suppliers) == 0 {
@@ -65,9 +78,9 @@ func(r *SupplierRepository)GetAll() ([]models.Supplier, error){
 	return suppliers, nil
 }
 
-func(r *SupplierRepository)GetById(id uint) (*models.Supplier, error){
+func (r *SupplierRepository) GetById(id uint) (*models.Supplier, error) {
 	var supplier models.Supplier
-	result := r.db.First(&supplier, "id = ?",id)
+	result := r.db.First(&supplier, "id = ?", id)
 	if err := result.Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, err
@@ -76,43 +89,64 @@ func(r *SupplierRepository)GetById(id uint) (*models.Supplier, error){
 	return &supplier, nil
 }
 
-
-func(r *SupplierRepository)Update(input *models.Supplier) (*models.Supplier, error){
-	// var updateSupplier *models.Supplier
-	// err := r.db.First(&updateSupplier,"id = ?",Supplier.ID)
-	// if err != nil {
-	// 	return nil, err.Error
-	// }
-	// r.db.Save(&updateSupplier)
-	// return updateSupplier, nil
+// Update godoc
+//
+//	@Summary		Update individual supplier
+//	@Description	Update individual supplier
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"supplier Id"
+//	@Param			supplier				body		models.Supplier	true	"Supplier Data"
+//	@Success		200					{object}	models.Supplier
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/suppliers/{id}	[put]
+//	@Security		Bearer
+func (r *SupplierRepository) Update(input *models.Supplier) (*models.Supplier, error) {
 	var existingSupplier *models.Supplier
-		err := r.db.Where("id = ?", input.ID).First(&existingSupplier).Error
-		if err != nil {
-			// Handle error if customer not found or other issue
-			return nil, err
-		}
+	err := r.db.Where("id = ?", input.ID).First(&existingSupplier).Error
+	if err != nil {
+		// Handle error if customer not found or other issue
+		return nil, err
+	}
 
-		log.Println("input: ", input)
-		if input.Name == "" || input.Address == "" || input.Phone == ""  {
-			return nil, err
-		}
-		// Update relevant fields from input data
-		existingSupplier.Name = input.Name
-		existingSupplier.Address = input.Address
-		existingSupplier.Phone = input.Phone
-		// Save the updated customer data
-		err = r.db.Updates(&existingSupplier).Error
-		if err != nil {
-			// Handle error if update fails
-			return nil, err
-		}
+	log.Println("input: ", input)
+	if input.Name == "" || input.Address == "" || input.Phone == "" {
+		return nil, err
+	}
+	// Update relevant fields from input data
+	existingSupplier.Name = input.Name
+	existingSupplier.Address = input.Address
+	existingSupplier.Phone = input.Phone
+	// Save the updated customer data
+	err = r.db.Updates(&existingSupplier).Error
+	if err != nil {
+		// Handle error if update fails
+		return nil, err
+	}
 
-		// Return the updated customer object
-		return existingSupplier, nil
+	// Return the updated customer object
+	return existingSupplier, nil
 }
 
-func(r *SupplierRepository)Delete(id uint) error {
+// Delete godoc
+//
+//	@Summary		Delete individual supplier
+//	@Description	Delete individual supplier
+//	@Tags			Suppliers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"supplier Id"
+//	@Success		200					{object}	models.Supplier
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/suppliers/{id}	[delete]
+//	@Security		Bearer
+func (r *SupplierRepository) Delete(id uint) error {
 
 	return r.db.Delete(&models.Supplier{}, id).Error
-	
+
 }

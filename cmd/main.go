@@ -13,7 +13,7 @@ import (
 // @version					1.0
 // @description				This is an auto-generated API docs.
 // @termsOfService				http://swagger.io/terms/
-// @contact.name				San KaungKin
+// @contact.name				SanKaungKin
 // @contact.email				sankaungkin@gmail.com
 // @license.name				Apache 2.0
 // @license.url				http://www.apache.org/licenses/LICENSE-2.0.html

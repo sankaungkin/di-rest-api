@@ -52,15 +52,6 @@ type UnitOfMeasure struct {
 	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 }
 
-// type ProductPrice struct {
-// 	gorm.Model
-// 	ID        uint   `gorm:"primaryKey" json:"id"`
-// 	ProductId string `json:"productId" validate:"required"`
-// 	UnitId    uint   `json:"unitId" validate:"required"`
-// 	PriceType string `json:"priceType" validate:"required,min=1"` // "BUY"	or "SELL"
-// 	UnitPrice int64  `json:"price" validate:"required,min=1"`
-// }
-
 type ProductPrice struct {
 	gorm.Model
 	ID        uint   `gorm:"primaryKey" json:"id"`
