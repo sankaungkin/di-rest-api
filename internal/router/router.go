@@ -67,8 +67,8 @@ func Initialize(app *fiber.App) {
 
 	// products.Get("/stocks", productService.GetAllProductStocks)
 	// products.Get("/stocks/:id", productService.GetProductStocksById)
-	products.Get("/prices", productService.GetAllProductPrices)
-	products.Get("/prices/:id", productService.GetProductUnitPricesById)
+	// products.Get("/prices", productService.GetAllProductPrices)
+	// products.Get("/prices/:id", productService.GetProductUnitPricesById)
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
