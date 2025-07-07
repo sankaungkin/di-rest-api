@@ -27,35 +27,35 @@ services:
     networks:
       - pos-networks
 
-  backend-dev:
-    build:
-      context: . # adjust this if your Dockerfile is elsewhere
-      dockerfile: Dockerfile # make sure the file is named correctly
-    container_name: backend-dev
-    restart: always
-    ports:
-      - "5555:5555" # or whatever your Go server uses
-    env_file:
-      - .env # make sure this exists
-    depends_on:
-      - posdb
-    networks:
-      - pos-networks
+  # backend-dev:
+  #   build:
+  #     context: . # adjust this if your Dockerfile is elsewhere
+  #     dockerfile: Dockerfile # make sure the file is named correctly
+  #   container_name: backend-dev
+  #   restart: always
+  #   ports:
+  #     - "5555:5555" # or whatever your Go server uses
+  #   env_file:
+  #     - .env # make sure this exists
+  #   depends_on:
+  #     - posdb
+  #   networks:
+  #     - pos-networks
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    restart: always
-    ports:
-      - "4200:80"
-    depends_on:
-      - backend-dev
-    networks:
-      - pos-networks
-    volumes:
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: frontend
+  #   restart: always
+  #   ports:
+  #     - "4200:80"
+  #   depends_on:
+  #     - backend-dev
+  #   networks:
+  #     - pos-networks
+  #   volumes:
+  #     - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   posdb:
