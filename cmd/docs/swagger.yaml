@@ -102,7 +102,6 @@ definitions:
       brandName:
         type: string
       buyPrice:
-        minimum: 1
         type: integer
       categoryId:
         type: integer
@@ -111,7 +110,6 @@ definitions:
       deletedAt:
         $ref: '#/definitions/gorm.DeletedAt'
       deriveUnitPrice:
-        minimum: 1
         type: integer
       deriveUom:
         type: string
@@ -125,7 +123,6 @@ definitions:
         minLength: 3
         type: string
       sellPricelvl1:
-        minimum: 1
         type: integer
       uom:
         type: string
@@ -134,11 +131,8 @@ definitions:
       updatedAt:
         type: string
     required:
-    - buyPrice
-    - deriveUnitPrice
     - deriveUomId
     - productName
-    - sellPricelvl1
     - uomId
     type: object
   github_com_sankangkin_di-rest-api_internal_models.ProductPrice:
@@ -584,17 +578,13 @@ definitions:
     properties:
       brandName:
         type: string
-      buyPrice:
-        minimum: 1
-        type: integer
       categoryId:
-        type: integer
-      deriveUnitPrice:
-        minimum: 1
         type: integer
       deriveUom:
         type: string
       deriveUomId:
+        type: integer
+      factor:
         type: integer
       id:
         type: string
@@ -603,27 +593,13 @@ definitions:
       productName:
         minLength: 3
         type: string
-      qtyOhHand:
-        type: integer
-      reorderlvl:
-        minimum: 1
-        type: integer
-      sellPriceLevel1:
-        minimum: 1
-        type: integer
       uom:
         type: string
       uomId:
         type: integer
     required:
-    - buyPrice
     - categoryId
-    - deriveUnitPrice
-    - deriveUomId
     - productName
-    - qtyOhHand
-    - reorderlvl
-    - sellPriceLevel1
     - uomId
     type: object
   internal_domain_product.UpdateProductRequstDTO:
@@ -1671,6 +1647,35 @@ paths:
       security:
       - Bearer: []
       summary: Update individual product
+      tags:
+      - Products
+  /api/products/without-stock:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all products without stock
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all products without stock
       tags:
       - Products
   /api/productstocks:

@@ -11,6 +11,7 @@ import (
 type ProductServiceInterface interface {
 	CreateSerive(product *models.Product) (*models.Product, error)
 	GetAllSerive() ([]ResponseProductDTO, error)
+	GetAllWithoutStock() ([]ResponseProductDTO, error)
 	GetByIdSerive(id string) (*models.Product, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
@@ -58,6 +59,10 @@ func (s *ProductService) CreateSerive(product *models.Product) (*models.Product,
 func (s *ProductService) GetAllSerive() ([]ResponseProductDTO, error) {
 	return s.repo.GetAll()
 }
+func (s *ProductService) GetAllWithoutStock() ([]ResponseProductDTO, error) {
+	return s.repo.GetAllWithoutStock()
+}
+
 func (s *ProductService) GetByIdSerive(id string) (*models.Product, error) {
 	return s.repo.GetById(id)
 }

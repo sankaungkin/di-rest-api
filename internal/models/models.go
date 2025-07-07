@@ -35,9 +35,9 @@ type Product struct {
 	DeriveUom        string            `json:"deriveUom"`
 	UomId            uint              `json:"uomId" validate:"required"`
 	DeriveUomId      uint              `json:"deriveUomId" validate:"required"`
-	BuyPrice         int64             `json:"buyPrice" validate:"required,min=1"`
-	SellPriceLevel1  int64             `json:"sellPricelvl1" validate:"required,min=1"`
-	DeriveUnitPrice  int64             `json:"deriveUnitPrice" validate:"required,min=1"`
+	BuyPrice         int64             `json:"buyPrice"`
+	SellPriceLevel1  int64             `json:"sellPricelvl1" `
+	DeriveUnitPrice  int64             `json:"deriveUnitPrice" `
 	BrandName        string            `json:"brandName"`
 	IsActive         bool              `json:"isActive" gorm:"default:true"`
 	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`

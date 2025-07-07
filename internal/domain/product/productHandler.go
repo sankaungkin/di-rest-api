@@ -59,18 +59,15 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 
 	log.Println("New product input: ", input)
 	newProduct := models.Product{
-		ID:              input.ID,
-		ProductName:     input.ProductName,
-		CategoryId:      input.CategoryId,
-		Uom:             input.Uom,
-		UomId:           input.UomId,
-		DeriveUom:       input.DeriveUom,
-		DeriveUomId:     input.DeriveUomId,
-		BuyPrice:        input.BuyPrice,
-		SellPriceLevel1: input.SellPriceLevel1,
-		DeriveUnitPrice: input.DeriveUnitPrice,
-		// ReorderLvl:      input.ReorderLvl,
-		IsActive: input.IsActive,
+		ID:          input.ID,
+		ProductName: input.ProductName,
+		CategoryId:  input.CategoryId,
+		Uom:         input.Uom,
+		UomId:       input.UomId,
+		DeriveUom:   input.DeriveUom,
+		DeriveUomId: input.DeriveUomId,
+		BrandName:   input.BrandName,
+		IsActive:    input.IsActive,
 	}
 
 	err := c.BodyParser(&newProduct)
@@ -113,6 +110,36 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 //	@Security		Bearer
 func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllSerive()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(products)) + " records found",
+			"data":    products,
+			"count":   len(products),
+		})
+
+}
+
+// GetAllProductsWithoutStock godoc
+//
+//	@Summary		Fetch all products without stock
+//	@Description	Fetch all products without stock
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/products/without-stock [get]
+//	@Security		Bearer
+func (h *ProductHandler) GetAllProductsWithoutStock(c *fiber.Ctx) error {
+	products, err := h.svc.GetAllWithoutStock()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

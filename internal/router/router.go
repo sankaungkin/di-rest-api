@@ -64,6 +64,7 @@ func Initialize(app *fiber.App) {
 
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
+	products.Get("/without-stock", productService.GetAllProductsWithoutStock) // New route to get products without stock
 
 	// products.Get("/stocks", productService.GetAllProductStocks)
 	// products.Get("/stocks/:id", productService.GetProductStocksById)

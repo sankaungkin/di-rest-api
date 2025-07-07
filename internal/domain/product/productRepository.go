@@ -17,6 +17,7 @@ type ProductRepositoryInterface interface {
 	Create(product *models.Product) (*models.Product, error)
 	// GetAll() ([]models.Product, error)
 	GetAll() ([]ResponseProductDTO, error)
+	GetAllWithoutStock() ([]ResponseProductDTO, error)
 	GetById(id string) (*models.Product, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
@@ -93,6 +94,47 @@ func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 			BrandName: p.BrandName,
 			IsActive:  p.IsActive,
 			CreatedAt: time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
+		}
+		dtos = append(dtos, dto)
+	}
+
+	return dtos, nil
+}
+
+func (r *ProductRepository) GetAllWithoutStock() ([]ResponseProductDTO, error) {
+	var products []models.Product
+
+	err := r.db.
+		Model(&models.Product{}).
+		Select("products.*").
+		Joins("LEFT JOIN product_stocks ON products.id = product_stocks.product_id").
+		Where("product_stocks.product_id IS NULL").
+		Order("products.id DESC").
+		Find(&products).Error
+
+	if err != nil {
+		return nil, err
+	}
+	if len(products) == 0 {
+		return nil, errors.New("no records found")
+	}
+
+	var dtos []ResponseProductDTO
+	for _, p := range products {
+		dto := ResponseProductDTO{
+			ID:              p.ID,
+			ProductName:     p.ProductName,
+			CategoryId:      p.CategoryId,
+			UomId:           p.UomId,
+			BaseUnit:        p.Uom,
+			DeriveUnit:      p.DeriveUom,
+			DeriveUomId:     p.DeriveUomId,
+			BuyPrice:        p.BuyPrice,
+			SellPriceLevel1: p.SellPriceLevel1,
+			DeriveUnitPrice: p.DeriveUnitPrice,
+			BrandName:       p.BrandName,
+			IsActive:        p.IsActive,
+			CreatedAt:       time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
 		}
 		dtos = append(dtos, dto)
 	}

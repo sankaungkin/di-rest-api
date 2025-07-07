@@ -1240,6 +1240,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/products/without-stock": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all products without stock",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Fetch all products without stock",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
         "/api/products/{id}": {
             "get": {
                 "security": [
@@ -3198,11 +3244,8 @@ const docTemplate = `{
         "github_com_sankangkin_di-rest-api_internal_models.Product": {
             "type": "object",
             "required": [
-                "buyPrice",
-                "deriveUnitPrice",
                 "deriveUomId",
                 "productName",
-                "sellPricelvl1",
                 "uomId"
             ],
             "properties": {
@@ -3210,8 +3253,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "buyPrice": {
-                    "type": "integer",
-                    "minimum": 1
+                    "type": "integer"
                 },
                 "categoryId": {
                     "type": "integer"
@@ -3223,8 +3265,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/gorm.DeletedAt"
                 },
                 "deriveUnitPrice": {
-                    "type": "integer",
-                    "minimum": 1
+                    "type": "integer"
                 },
                 "deriveUom": {
                     "type": "string"
@@ -3243,8 +3284,7 @@ const docTemplate = `{
                     "minLength": 3
                 },
                 "sellPricelvl1": {
-                    "type": "integer",
-                    "minimum": 1
+                    "type": "integer"
                 },
                 "uom": {
                     "type": "string"
@@ -3907,35 +3947,24 @@ const docTemplate = `{
         "internal_domain_product.CreateProductRequstDTO": {
             "type": "object",
             "required": [
-                "buyPrice",
                 "categoryId",
-                "deriveUnitPrice",
-                "deriveUomId",
                 "productName",
-                "qtyOhHand",
-                "reorderlvl",
-                "sellPriceLevel1",
                 "uomId"
             ],
             "properties": {
                 "brandName": {
                     "type": "string"
                 },
-                "buyPrice": {
-                    "type": "integer",
-                    "minimum": 1
-                },
                 "categoryId": {
                     "type": "integer"
-                },
-                "deriveUnitPrice": {
-                    "type": "integer",
-                    "minimum": 1
                 },
                 "deriveUom": {
                     "type": "string"
                 },
                 "deriveUomId": {
+                    "type": "integer"
+                },
+                "factor": {
                     "type": "integer"
                 },
                 "id": {
@@ -3947,17 +3976,6 @@ const docTemplate = `{
                 "productName": {
                     "type": "string",
                     "minLength": 3
-                },
-                "qtyOhHand": {
-                    "type": "integer"
-                },
-                "reorderlvl": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "sellPriceLevel1": {
-                    "type": "integer",
-                    "minimum": 1
                 },
                 "uom": {
                     "type": "string"

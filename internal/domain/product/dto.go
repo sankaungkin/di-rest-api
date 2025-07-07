@@ -1,20 +1,16 @@
 package product
 
 type CreateProductRequstDTO struct {
-	ID              string `gorm:"primaryKey" json:"id"`
-	ProductName     string `json:"productName" validate:"required,min=3"`
-	CategoryId      uint   `json:"categoryId" validate:"required"`
-	Uom             string `json:"uom"`
-	UomId           uint   `json:"uomId" validate:"required"`
-	DeriveUom       string `json:"deriveUom"`
-	DeriveUomId     uint   `json:"deriveUomId" validate:"required"`
-	BuyPrice        int64  `json:"buyPrice" validate:"required,min=1"`
-	SellPriceLevel1 int64  `json:"sellPriceLevel1" validate:"required,min=1"`
-	DeriveUnitPrice int64  `json:"deriveUnitPrice" validate:"required,min=1"`
-	ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
-	BrandName       string `json:"brandName"`
-	IsActive        bool   `json:"isActive" gorm:"default:true"`
+	ID          string `gorm:"primaryKey" json:"id"`
+	ProductName string `json:"productName" validate:"required,min=3"`
+	CategoryId  uint   `json:"categoryId" validate:"required"`
+	Uom         string `json:"uom"`
+	UomId       uint   `json:"uomId" validate:"required"`
+	DeriveUom   string `json:"deriveUom"`
+	DeriveUomId uint   `json:"deriveUomId" gorm:"default:1"`
+	BrandName   string `json:"brandName"`
+	IsActive    bool   `json:"isActive" gorm:"default:true"`
+	Facor       int    `json:"factor" gorm:"default:1"`
 }
 
 type UpdateProductRequstDTO struct {
