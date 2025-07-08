@@ -64,7 +64,8 @@ func Initialize(app *fiber.App) {
 
 	products.Post("/", productService.CreateProduct)
 	products.Get("/", productService.GetAllProducts)
-	products.Get("/without-stock", productService.GetAllProductsWithoutStock) // New route to get products without stock
+	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
+	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
 
 	// products.Get("/stocks", productService.GetAllProductStocks)
 	// products.Get("/stocks/:id", productService.GetProductStocksById)
@@ -85,6 +86,7 @@ func Initialize(app *fiber.App) {
 	unitconversion.Post("/", unitConversionService.CreateUnitConversion)
 	unitconversion.Get("/", unitConversionService.GetAllUnitConversions)
 	unitconversion.Get("/:id", unitConversionService.GetUnitConversionById)
+	unitconversion.Get("/by-product/:productId", unitConversionService.GetUnitConversionByProductId)
 	unitconversion.Put("/:id", unitConversionService.UpdateUnitConversion)
 	unitconversion.Delete("/:id", unitConversionService.DeleteUnitConversion)
 	// unit conversion route

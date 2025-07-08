@@ -12,6 +12,7 @@ type UnitConversionServiceInterface interface {
 	CreateUnitConversion(unitConversion *models.UnitConversion) (*models.UnitConversion, error)
 	GetAllUnitConversions() ([]models.UnitConversion, error)
 	GetUnitConversionById(id int) (*models.UnitConversion, error)
+	GetUnitConversionByProductId(productId string) (*models.UnitConversion, error)
 	UpdateUnitConversion(unitConversion *models.UnitConversion) (*models.UnitConversion, error)
 	DeleteUnitConversion(id int) error
 }
@@ -49,6 +50,10 @@ func (s *UnitConversionService) GetAllUnitConversions() ([]models.UnitConversion
 
 func (s *UnitConversionService) GetUnitConversionById(id int) (*models.UnitConversion, error) {
 	return s.repo.GetById(id)
+}
+
+func (s *UnitConversionService) GetUnitConversionByProductId(productId string) (*models.UnitConversion, error) {
+	return s.repo.GetByProductId(productId)
 }
 
 func (s *UnitConversionService) UpdateUnitConversion(unitConversion *models.UnitConversion) (*models.UnitConversion, error) {

@@ -115,6 +115,46 @@ func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+
+	// Handle "not found" case if no products exist
+	if len(products) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status":  "SUCCESS with empty data",
+			"message": "No products found",
+			"data":    []interface{}{},
+			"count":   0,
+		})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(products)) + " records found",
+			"data":    products,
+			"count":   len(products),
+		})
+
+}
+
+// GetProductsWithoutPrices godoc
+//
+//	@Summary		Fetch all products without prices
+//	@Description	Fetch all products without prices
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/products/without-prices [get]
+//	@Security		Bearer
+func (h *ProductHandler) GetProductsWithoutPrices(c *fiber.Ctx) error {
+	products, err := h.svc.GetProductsWithoutPrices()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 	return c.Status(http.StatusOK).JSON(
 		&fiber.Map{
 			"status":  "SUCCESS",
@@ -136,7 +176,7 @@ func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/products/without-stock [get]
+//	@Router			/api/products/without-stocks [get]
 //	@Security		Bearer
 func (h *ProductHandler) GetAllProductsWithoutStock(c *fiber.Ctx) error {
 	products, err := h.svc.GetAllWithoutStock()

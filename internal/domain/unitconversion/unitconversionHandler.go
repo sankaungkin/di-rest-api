@@ -147,6 +147,48 @@ func (h *UnitConversionHandler) GetUnitConversionById(c *fiber.Ctx) error {
 	})
 }
 
+// GetUnitConversionByProductId godoc
+//
+//	@Summary		Fetch individual unit conversion by product Id
+//	@Description	Fetch individual unit conversion by product Id
+//	@Tags			UnitConversions
+//	@Accept			json
+//	@Produce		json
+//	@Param			productId					path		string	true	"product Id"
+//	@Success		200					{object}	models.UnitConversion
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/unitconversions/by-product/{productId}	[get]
+//	@Security		Bearer
+func (h *UnitConversionHandler) GetUnitConversionByProductId(c *fiber.Ctx) error {
+	productId := c.Params("productId")
+	if productId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Product ID is required",
+		})
+	}
+
+	unitConversion, err := h.svc.GetUnitConversionByProductId(productId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Record found",
+		"data":    unitConversion,
+	})
+}
+
 // UpdateUnitConversion godoc
 //
 //	@Summary		Update individual unit conversion

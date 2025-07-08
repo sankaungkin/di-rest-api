@@ -1649,7 +1649,36 @@ paths:
       summary: Update individual product
       tags:
       - Products
-  /api/products/without-stock:
+  /api/products/without-prices:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all products without prices
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch all products without prices
+      tags:
+      - Products
+  /api/products/without-stocks:
     get:
       consumes:
       - application/json
@@ -2548,6 +2577,41 @@ paths:
       security:
       - Bearer: []
       summary: Update individual unit conversion
+      tags:
+      - UnitConversions
+  /api/unitconversions/by-product/{productId}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch individual unit conversion by product Id
+      parameters:
+      - description: product Id
+        in: path
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch individual unit conversion by product Id
       tags:
       - UnitConversions
   /api/unitofmeasurements:

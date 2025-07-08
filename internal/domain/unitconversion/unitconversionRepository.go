@@ -15,6 +15,7 @@ type UnitConversionRepositoryInterface interface {
 	Create(unitConversion *models.UnitConversion) (*models.UnitConversion, error)
 	GetAll() ([]models.UnitConversion, error)
 	GetById(id int) (*models.UnitConversion, error)
+	GetByProductId(productId string) (*models.UnitConversion, error)
 	Update(unitConversion *models.UnitConversion) (*models.UnitConversion, error)
 	Delete(id int) error
 }
@@ -70,6 +71,19 @@ func (r *UnitConversionRepository) GetById(id int) (*models.UnitConversion, erro
 		if err == gorm.ErrRecordNotFound {
 			return nil, err
 		}
+	}
+	return &unitConversion, nil
+}
+
+func (r *UnitConversionRepository) GetByProductId(productId string) (*models.UnitConversion, error) {
+	var unitConversion models.UnitConversion
+	result := r.db.First(&unitConversion, "product_id = ?", productId)
+	if err := result.Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		// You might want to return other errors as well
+		return nil, err
 	}
 	return &unitConversion, nil
 }

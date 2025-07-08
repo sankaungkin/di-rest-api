@@ -1240,7 +1240,53 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/products/without-stock": {
+        "/api/products/without-prices": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all products without prices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Fetch all products without prices",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/without-stocks": {
             "get": {
                 "security": [
                     {
@@ -2622,6 +2668,61 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_domain_unitconversion.CreateUnitConversionDTO"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/unitconversions/by-product/{productId}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch individual unit conversion by product Id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "UnitConversions"
+                ],
+                "summary": "Fetch individual unit conversion by product Id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "productId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
