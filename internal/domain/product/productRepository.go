@@ -227,18 +227,18 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	}
 
 	log.Println("input from Repository: ", input)
-	if input.BrandName == "" || input.ProductName == "" || input.Uom == "" || input.BuyPrice == 0 || input.CategoryId == 0 || input.SellPriceLevel1 == 0 || input.DeriveUnitPrice == 0 || input.UomId == 0 {
+	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
 		return nil, fmt.Errorf("missing required fields")
 	}
 
 	existingProduct.BrandName = input.BrandName
 	existingProduct.ProductName = input.ProductName
 	// existingProduct.Uom = input.Uom
-	existingProduct.UomId = input.UomId
-	existingProduct.BuyPrice = input.BuyPrice
+	// existingProduct.UomId = input.UomId
+	// existingProduct.BuyPrice = input.BuyPrice
 	existingProduct.CategoryId = input.CategoryId
-	existingProduct.SellPriceLevel1 = input.SellPriceLevel1
-	existingProduct.DeriveUnitPrice = input.DeriveUnitPrice
+	// existingProduct.SellPriceLevel1 = input.SellPriceLevel1
+	// existingProduct.DeriveUnitPrice = input.DeriveUnitPrice
 	// existingProduct.ReorderLvl = input.ReorderLvl
 
 	log.Println("existingProduct to update: ", existingProduct)

@@ -321,13 +321,8 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	// Step 3: Manually update only intended fields
 	foundProduct.ProductName = input.ProductName
 	foundProduct.CategoryId = input.CategoryId
-	// foundProduct.Uom = input.Uom
-	foundProduct.UomId = input.UomId
-	foundProduct.BuyPrice = input.BuyPrice
-	foundProduct.SellPriceLevel1 = input.SellPriceLevel1
-	foundProduct.DeriveUnitPrice = input.DeriveUnitPrice
 	foundProduct.BrandName = input.BrandName
-	// foundProduct.ReorderLvl = input.ReorderLvl // if needed
+	foundProduct.IsActive = input.IsActive
 
 	log.Println("updateProduct(Handler): ", foundProduct)
 

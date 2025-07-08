@@ -16,11 +16,11 @@ type CreateProductRequstDTO struct {
 type UpdateProductRequstDTO struct {
 	ProductName string `json:"productName" validate:"required,min=3"`
 	CategoryId  uint   `json:"categoryId" validate:"required"`
-	UomId       uint   `json:"uomId" validate:"required"`
+	// UomId       uint   `json:"uomId" `
 	// Uom             string `json:"uom" validate:"required,min=2"`
-	BuyPrice        int64 `json:"buyPrice" validate:"required,min=1"`
-	SellPriceLevel1 int64 `json:"sellPricelvl1" validate:"required,min=1"`
-	DeriveUnitPrice int64 `json:"deriveUnitPrice" validate:"required,min=1"`
+	// BuyPrice        int64 `json:"buyPrice" `
+	// SellPriceLevel1 int64 `json:"sellPricelvl1" `
+	// DeriveUnitPrice int64 `json:"deriveUnitPrice" `
 	// ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	// QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
 	BrandName string `json:"brandName"`

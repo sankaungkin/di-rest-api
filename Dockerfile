@@ -26,7 +26,7 @@ WORKDIR /app
 COPY --from=builder /app/server .
 
 # Copy static frontend files (optional)
-COPY --from=builder /app/public ./public
+# COPY --from=builder /app/public ./public
 
 # Copy production env file
 COPY .env .env
