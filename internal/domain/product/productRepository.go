@@ -233,8 +233,10 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 
 	existingProduct.BrandName = input.BrandName
 	existingProduct.ProductName = input.ProductName
-	// existingProduct.Uom = input.Uom
-	// existingProduct.UomId = input.UomId
+	existingProduct.Uom = input.Uom
+	existingProduct.UomId = input.UomId
+	existingProduct.DeriveUom = input.DeriveUom
+	existingProduct.DeriveUomId = input.DeriveUomId
 	// existingProduct.BuyPrice = input.BuyPrice
 	existingProduct.CategoryId = input.CategoryId
 	// existingProduct.SellPriceLevel1 = input.SellPriceLevel1
@@ -307,13 +309,6 @@ func (r *ProductRepository) Delete(id string) error {
 
 func (r *ProductRepository) GetAllProductStocks() ([]ResponseProductStockDTO, error) {
 	var results []ResponseProductStockDTO
-
-	// Perform the join and select necessary fields
-	// err := r.db.
-	// 	Table("product_stocks").
-	// 	Select("product_stocks.product_id, products.product_name, product_stocks.base_qty as base_uom_in_stock, product_stocks.derived_qty as derived_uom_in_stock, product_stocks.reorder_lvl as reorder").
-	// 	Joins("JOIN products ON products.id = product_stocks.product_id").
-	// 	Scan(&results).Error
 
 	err := r.db.
 		Table("product_stocks AS p").

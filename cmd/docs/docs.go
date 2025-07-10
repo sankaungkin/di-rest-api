@@ -1634,7 +1634,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock"
+                            "$ref": "#/definitions/internal_domain_productstock.ResponseProductStockDTO"
                         }
                     },
                     "400": {
@@ -4089,29 +4089,23 @@ const docTemplate = `{
         "internal_domain_product.UpdateProductRequstDTO": {
             "type": "object",
             "required": [
-                "buyPrice",
                 "categoryId",
-                "deriveUnitPrice",
                 "productName",
-                "sellPricelvl1",
-                "uomId"
+                "uom"
             ],
             "properties": {
                 "brandName": {
-                    "description": "ReorderLvl      uint   ` + "`" + `json:\"reorderlvl\" gorm:\"default:1\" validate:\"required,min=1\"` + "`" + `\nQtyOnHand       int    ` + "`" + `json:\"qtyOhHand\" validate:\"required\"` + "`" + `",
+                    "description": "UomId          uint   ` + "`" + `json:\"uomId\"\nBuyPrice        int64 ` + "`" + `json:\"buyPrice\" ` + "`" + `\nSellPriceLevel1 int64 ` + "`" + `json:\"sellPricelvl1\" ` + "`" + `\nDeriveUnitPrice int64 ` + "`" + `json:\"deriveUnitPrice\" ` + "`" + `\nReorderLvl      uint   ` + "`" + `json:\"reorderlvl\" gorm:\"default:1\" validate:\"required,min=1\"` + "`" + `\nQtyOnHand       int    ` + "`" + `json:\"qtyOhHand\" validate:\"required\"` + "`" + `",
                     "type": "string"
-                },
-                "buyPrice": {
-                    "description": "Uom             string ` + "`" + `json:\"uom\" validate:\"required,min=2\"` + "`" + `",
-                    "type": "integer",
-                    "minimum": 1
                 },
                 "categoryId": {
                     "type": "integer"
                 },
-                "deriveUnitPrice": {
-                    "type": "integer",
-                    "minimum": 1
+                "deriveUom": {
+                    "type": "string"
+                },
+                "deriveUomId": {
+                    "type": "integer"
                 },
                 "isActive": {
                     "type": "boolean"
@@ -4120,9 +4114,9 @@ const docTemplate = `{
                     "type": "string",
                     "minLength": 3
                 },
-                "sellPricelvl1": {
-                    "type": "integer",
-                    "minimum": 1
+                "uom": {
+                    "type": "string",
+                    "minLength": 2
                 },
                 "uomId": {
                     "type": "integer"
@@ -4152,6 +4146,32 @@ const docTemplate = `{
                 },
                 "unitName": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_domain_productstock.ResponseProductStockDTO": {
+            "type": "object",
+            "properties": {
+                "baseQty": {
+                    "type": "integer"
+                },
+                "baseUnitId": {
+                    "type": "integer"
+                },
+                "deriveUnitId": {
+                    "type": "integer"
+                },
+                "derivedQty": {
+                    "type": "integer"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "reorderlvl": {
+                    "type": "integer"
                 }
             }
         },

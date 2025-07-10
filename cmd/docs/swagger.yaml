@@ -606,35 +606,33 @@ definitions:
     properties:
       brandName:
         description: |-
+          UomId          uint   `json:"uomId"
+          BuyPrice        int64 `json:"buyPrice" `
+          SellPriceLevel1 int64 `json:"sellPricelvl1" `
+          DeriveUnitPrice int64 `json:"deriveUnitPrice" `
           ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
           QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
         type: string
-      buyPrice:
-        description: Uom             string `json:"uom" validate:"required,min=2"`
-        minimum: 1
-        type: integer
       categoryId:
         type: integer
-      deriveUnitPrice:
-        minimum: 1
+      deriveUom:
+        type: string
+      deriveUomId:
         type: integer
       isActive:
         type: boolean
       productName:
         minLength: 3
         type: string
-      sellPricelvl1:
-        minimum: 1
-        type: integer
+      uom:
+        minLength: 2
+        type: string
       uomId:
         type: integer
     required:
-    - buyPrice
     - categoryId
-    - deriveUnitPrice
     - productName
-    - sellPricelvl1
-    - uomId
+    - uom
     type: object
   internal_domain_productprice.UpdateProductPriceRequestDTO:
     properties:
@@ -652,6 +650,23 @@ definitions:
         type: integer
       unitName:
         type: string
+    type: object
+  internal_domain_productstock.ResponseProductStockDTO:
+    properties:
+      baseQty:
+        type: integer
+      baseUnitId:
+        type: integer
+      deriveUnitId:
+        type: integer
+      derivedQty:
+        type: integer
+      productId:
+        type: string
+      productName:
+        type: string
+      reorderlvl:
+        type: integer
     type: object
   internal_domain_productstock.UpdateProductStockDTO:
     properties:
@@ -1789,7 +1804,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+            $ref: '#/definitions/internal_domain_productstock.ResponseProductStockDTO'
         "400":
           description: Bad Request
           schema:

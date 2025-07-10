@@ -230,51 +230,6 @@ func (h *ProductHandler) GetProductById(c *fiber.Ctx) error {
 	})
 }
 
-// // GetProductUnitPricesById godoc
-// //
-// //	@Summary		Fetch individual product price by Id
-// //	@Description	Fetch individual product price by Id
-// //	@Tags			Products
-// //	@Accept			json
-// //	@Produce		json
-// //	@Param			id					path		string	true	"product Id"
-// //	@Success		200					{object}	models.Product
-// //	@Failure		400					{object}	httputil.HttpError400
-// //	@Failure		401					{object}	httputil.HttpError401
-// //	@Failure		500					{object}	httputil.HttpError500
-// //	@Router			/api/products/prices/{id} [get]
-// //
-// // @Security       Bearer
-// func (h *ProductHandler) GetProductUnitPricesById(c *fiber.Ctx) error {
-// 	productId := c.Params("id")
-// 	if productId == "" {
-// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-// 			"status":  "FAIL",
-// 			"message": "Product ID is required",
-// 		})
-// 	}
-
-// 	unitPrices, err := h.svc.GetProductUnitPricesByIdSerive(c.Params("id"))
-// 	if err != nil {
-// 		if err == gorm.ErrRecordNotFound {
-// 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-// 				"status":  "FAIL",
-// 				"message": "No unit prices found for this product",
-// 			})
-// 		}
-// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-// 			"status": "FAIL", "message": err.Error(),
-// 		})
-// 	}
-
-// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-// 		"status":  "SUCCESS",
-// 		"message": strconv.Itoa(len(unitPrices)) + " unit prices found",
-// 		"data":    unitPrices,
-// 		"count":   len(unitPrices),
-// 	})
-// }
-
 // UpdateProduct godoc
 //
 //	@Summary		Update individual product
@@ -323,6 +278,10 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	foundProduct.CategoryId = input.CategoryId
 	foundProduct.BrandName = input.BrandName
 	foundProduct.IsActive = input.IsActive
+	foundProduct.Uom = input.Uom
+	foundProduct.UomId = input.UomId
+	foundProduct.DeriveUom = input.DeriveUom
+	foundProduct.DeriveUomId = input.DeriveUomId
 
 	log.Println("updateProduct(Handler): ", foundProduct)
 

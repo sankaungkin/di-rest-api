@@ -121,7 +121,7 @@ func (h *ProductStockHandler) GetAllProductStocks(c *fiber.Ctx) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id					path		string	true	"product Id"
-//	@Success		200					{object}	models.ProductStock
+//	@Success		200					{object}	ResponseProductStockDTO
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500

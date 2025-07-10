@@ -58,6 +58,8 @@ func (r *ProductStockRepository) GetAllProductStocks() ([]ResponseProductStockDT
 			p.product_id,
 			item.product_name,
 			uc.base_unit,
+			p.base_unit_id,
+			p.derive_unit_id,
 			p.base_qty,
 			uc.derive_unit,
 			p.derived_qty,
@@ -86,7 +88,15 @@ func (r *ProductStockRepository) GetProductStocksById(productId string) (*Respon
 
 	err := r.db.
 		Table("product_stocks").
-		Select("product_stocks.product_id, products.product_name, product_stocks.base_qty , product_stocks.derived_qty, product_stocks.reorder_lvl").
+		Select(
+			`product_stocks.product_id, 
+			products.product_name, 
+			product_stocks.base_unit_id, 
+			product_stocks.base_qty, 
+			product_stocks.derived_qty, 
+			product_stocks.reorder_lvl,
+			product_stocks.derive_unit_id 
+			`).
 		Joins("JOIN products ON products.id = product_stocks.product_id").
 		Where("product_stocks.product_id = ?", strings.ToUpper(productId)).
 		Scan(&result).Error

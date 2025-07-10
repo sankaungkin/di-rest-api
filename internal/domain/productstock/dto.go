@@ -1,14 +1,13 @@
 package productstock
 
 type ResponseProductStockDTO struct {
-	ProductID   string `json:"productId"`
-	ProductName string `json:"productName"`
-	BaseQty     int    `json:"baseQty"`
-	DerivedQty  int    `json:"derivedQty"`
-	ReorderLvl  int    `json:"reorderlvl"`
-	Factor      int    `json:"factor"`
-	BaseUnit    string `json:"baseUnit"`
-	DeriveUnit  string `json:"deriveUnit"`
+	ProductID    string `json:"productId"`
+	ProductName  string `json:"productName"`
+	BaseQty      int    `json:"baseQty"`
+	DerivedQty   int    `json:"derivedQty"`
+	ReorderLvl   int    `json:"reorderlvl"`
+	BaseUnitId   int    `json:"baseUnitId"`
+	DeriveUnitId int    `json:"deriveUnitId"`
 }
 
 type UpdateProductStockDTO struct {
