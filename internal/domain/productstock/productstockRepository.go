@@ -13,6 +13,8 @@ import (
 type ProductStockRepositoryInterface interface {
 	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
+	GetLowStockProducts() ([]models.ProductStock, error)
+	GetOutOfStockProducts() ([]models.ProductStock, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
 }
@@ -40,6 +42,34 @@ func NewProductStockRepository(db *gorm.DB) ProductStockRepositoryInterface {
 		repoInstance = &ProductStockRepository{db: db}
 	})
 	return repoInstance
+}
+
+func (r *ProductStockRepository) GetLowStockProducts() ([]models.ProductStock, error) {
+	var results []models.ProductStock
+
+	err := r.db.
+		Where("base_qty <= reorder_lvl").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (r *ProductStockRepository) GetOutOfStockProducts() ([]models.ProductStock, error) {
+	var results []models.ProductStock
+
+	err := r.db.
+		Where("base_qty = 0").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (r *ProductStockRepository) GetAllProductStocks() ([]ResponseProductStockDTO, error) {

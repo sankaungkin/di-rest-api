@@ -1524,6 +1524,25 @@ paths:
       summary: Update individual product price
       tags:
       - ProductPrice
+  /api/productprices/inventory-total-value:
+    get:
+      consumes:
+      - application/json
+      description: Fetch inventory total value
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+      summary: Fetch inventory total value
+      tags:
+      - ProductPrice
   /api/products:
     get:
       consumes:
@@ -1860,6 +1879,64 @@ paths:
       security:
       - Bearer: []
       summary: Update individual productstock
+      tags:
+      - ProductStocks
+  /api/productstocks/low-stock-products:
+    get:
+      consumes:
+      - application/json
+      description: Get low stock products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get low stock products
+      tags:
+      - ProductStocks
+  /api/productstocks/out-of-stock-products:
+    get:
+      consumes:
+      - application/json
+      description: Get out of stock products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductStock'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Get out of stock products
       tags:
       - ProductStocks
   /api/purchases:

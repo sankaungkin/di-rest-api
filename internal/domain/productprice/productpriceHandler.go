@@ -107,6 +107,30 @@ func (h *ProductPriceHandler) GetAllProductPrices(c *fiber.Ctx) error {
 		})
 }
 
+// GetInventoryTotalValue godoc
+//
+//	@Summary		Fetch inventory total value
+//	@Description	Fetch inventory total value
+//	@Tags			ProductPrice
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	int64
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Router			/api/productprices/inventory-total-value [get]
+func (h *ProductPriceHandler) GetInventoryTotalValue(c *fiber.Ctx) error {
+	inventoryTotalValue, err := h.svc.GetInventoryTotalValue()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Inventory total value fetched successfully",
+		"data":    inventoryTotalValue,
+	})
+}
+
 // GetProductPriceById godoc
 //
 //	@Summary		Fetch individual product price by Id

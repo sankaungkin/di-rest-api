@@ -11,6 +11,7 @@ import (
 type ProductPriceServiceInterface interface {
 	Create(productPrice *models.ProductPrice) (*models.ProductPrice, error)
 	GetAll() ([]ProductPriceResponseDTO, error)
+	GetInventoryTotalValue() (int64, error)
 	GetById(id int) (*ProductPriceResponseDTO, error)
 	UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error)
 	DeleteProductPrice(id int) error
@@ -47,6 +48,11 @@ func (s *ProductPriceService) Create(productPrice *models.ProductPrice) (*models
 func (s *ProductPriceService) GetAll() ([]ProductPriceResponseDTO, error) {
 	return s.repo.GetAll()
 }
+
+func (s *ProductPriceService) GetInventoryTotalValue() (int64, error) {
+	return s.repo.GetInventoryTotalValue()
+}
+
 func (s *ProductPriceService) GetById(id int) (*ProductPriceResponseDTO, error) {
 	return s.repo.GetById(id)
 }

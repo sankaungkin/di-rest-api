@@ -15,6 +15,7 @@ import (
 type ProductPriceRepositoryInterface interface {
 	Create(productPrice *models.ProductPrice) (*models.ProductPrice, error)
 	GetAll() ([]ProductPriceResponseDTO, error)
+	GetInventoryTotalValue() (int64, error)
 	GetById(id int) (*ProductPriceResponseDTO, error)
 	UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error)
 	DeleteProductPrice(id int) error
@@ -87,6 +88,26 @@ func (r *ProductPriceRepository) GetAll() ([]ProductPriceResponseDTO, error) {
 	}
 
 	return results, nil
+}
+
+func (r *ProductPriceRepository) GetInventoryTotalValue() (int64, error) {
+	var result int64
+
+	err := r.db.
+		Raw(`
+			SELECT 
+				SUM(
+					COALESCE(ps.base_qty, 0) * COALESCE(pp.unit_price, 0)
+				) AS inventory_total_value
+			FROM product_stocks ps
+			JOIN product_prices pp ON ps.product_id = pp.product_id
+			WHERE pp.price_type = 'BUY'
+		`).Scan(&result).Error
+
+	if err != nil {
+		return 0, err
+	}
+	return result, nil
 }
 
 func (r *ProductPriceRepository) GetById(id int) (*ProductPriceResponseDTO, error) {

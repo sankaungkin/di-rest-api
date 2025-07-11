@@ -67,11 +67,6 @@ func Initialize(app *fiber.App) {
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
 
-	// products.Get("/stocks", productService.GetAllProductStocks)
-	// products.Get("/stocks/:id", productService.GetProductStocksById)
-	// products.Get("/prices", productService.GetAllProductPrices)
-	// products.Get("/prices/:id", productService.GetProductUnitPricesById)
-
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
 	products.Get("/:id", productService.GetProductById) // ❗️Keep this at the BOTTOM
@@ -114,6 +109,8 @@ func Initialize(app *fiber.App) {
 	productstocks.Use(middleware.Protected())
 	productstocks.Post("/", productStockService.CreateProductStocks)
 	productstocks.Get("/", productStockService.GetAllProductStocks)
+	productstocks.Get("/low-stock-products", productStockService.GetLowStockProduct)
+	productstocks.Get("/out-of-stock-products", productStockService.GetOutOfStockProducts)
 	productstocks.Get("/:id", productStockService.GetProductStocksById)
 	productstocks.Put("/:id", productStockService.UpdateProductStocksById)
 
@@ -126,6 +123,7 @@ func Initialize(app *fiber.App) {
 	productprices.Use(middleware.Protected())
 	productprices.Post("/", productPriceService.CreateProductPrice)
 	productprices.Get("/", productPriceService.GetAllProductPrices)
+	productprices.Get("/inventory-total-value", productPriceService.GetInventoryTotalValue)
 	productprices.Get("/:id", productPriceService.GetProductPriceById)
 	productprices.Put("/:id", productPriceService.UpdateProductPrice)
 

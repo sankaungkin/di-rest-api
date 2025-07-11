@@ -113,6 +113,62 @@ func (h *ProductStockHandler) GetAllProductStocks(c *fiber.Ctx) error {
 		})
 }
 
+// GetLowStockProductCount godoc
+//
+//	@Summary		Get low stock products
+//	@Description	Get low stock products
+//	@Tags			ProductStocks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	int64
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/productstocks/low-stock-products [get]
+//	@Security		Bearer
+func (h *ProductStockHandler) GetLowStockProduct(c *fiber.Ctx) error {
+	lowStockProductCount, err := h.svc.GetLowStockProducts()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": " Record found",
+		"data":    lowStockProductCount,
+		"count":   len(lowStockProductCount),
+	})
+}
+
+// GetOutOfStockProducts godoc
+//
+//	@Summary		Get out of stock products
+//	@Description	Get out of stock products
+//	@Tags			ProductStocks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	models.ProductStock
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/productstocks/out-of-stock-products [get]
+//	@Security		Bearer
+func (h *ProductStockHandler) GetOutOfStockProducts(c *fiber.Ctx) error {
+	outOfStockProducts, err := h.svc.GetOutOfStockProducts()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": " Record found",
+		"data":    outOfStockProducts,
+		"count":   len(outOfStockProducts),
+	})
+}
+
 // GetProductStocksById godoc
 //
 //	@Summary		Fetch individual productstock by Id
