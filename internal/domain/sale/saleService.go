@@ -8,22 +8,26 @@ import (
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
-type SaleServiceInterface interface{
+type SaleServiceInterface interface {
 	CreateService(sale *models.Sale) (*models.Sale, error)
 	GetAllService() ([]models.Sale, error)
+	GetTodaySales() ([]models.Sale, error)
 	GetById(id string) (*models.Sale, error)
+	GetTodayGrandTotal() (int64, error)
+	GetMonthlySales() ([]models.Sale, error)
+	GetMonthlyGrandTotal() (int64, error)
 }
 
-type SaleService struct{
+type SaleService struct {
 	repo SaleRepositoryInterface
 }
 
 var (
 	svcInstance *SaleService
-	svcOnce sync.Once
+	svcOnce     sync.Once
 )
 
-func NewSaleService(repo SaleRepositoryInterface) SaleServiceInterface{
+func NewSaleService(repo SaleRepositoryInterface) SaleServiceInterface {
 	log.Println(util.Blue + "SaleService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
@@ -32,14 +36,30 @@ func NewSaleService(repo SaleRepositoryInterface) SaleServiceInterface{
 	return svcInstance
 }
 
-func (s *SaleService)CreateService(sale *models.Sale) (*models.Sale, error){
+func (s *SaleService) CreateService(sale *models.Sale) (*models.Sale, error) {
 	return s.repo.Create(sale)
 }
 
-func (s *SaleService)GetAllService() ([]models.Sale, error){
+func (s *SaleService) GetAllService() ([]models.Sale, error) {
 	return s.repo.GetAll()
 }
 
-func (s *SaleService)GetById(id string) (*models.Sale, error){
+func (s *SaleService) GetTodaySales() ([]models.Sale, error) {
+	return s.repo.GetTodaySales()
+}
+
+func (s *SaleService) GetById(id string) (*models.Sale, error) {
 	return s.repo.GetById(id)
+}
+
+func (s *SaleService) GetTodayGrandTotal() (int64, error) {
+	return s.repo.GetTodayGrandTotal()
+}
+
+func (s *SaleService) GetMonthlySales() ([]models.Sale, error) {
+	return s.repo.GetMonthlySales()
+}
+
+func (s *SaleService) GetMonthlyGrandTotal() (int64, error) {
+	return s.repo.GetMonthlyGrandTotal()
 }

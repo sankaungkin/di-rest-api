@@ -1,6 +1,10 @@
 package purchase
 
-import "github.com/sankangkin/di-rest-api/internal/models"
+import (
+	"time"
+
+	"github.com/sankangkin/di-rest-api/internal/models"
+)
 
 type PurchaseInvoiceRequestDTO struct {
 	ID              string                  `gorm:"primaryKey" json:"id"`
@@ -10,5 +14,5 @@ type PurchaseInvoiceRequestDTO struct {
 	Total           int64                   `json:"total"`
 	GrandTotal      int64                   `json:"grandTotal"`
 	Remark          string                  `json:"remark"`
-	PurchaseDate    string                  `json:"purchaseDate"`
+	PurchaseDate    time.Time               `json:"purchaseDate"`
 }

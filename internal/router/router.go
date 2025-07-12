@@ -191,7 +191,11 @@ func Initialize(app *fiber.App) {
 	sale.Use(middleware.Protected())
 	sale.Post("/", saleService.CreateSale)
 	sale.Get("/", saleService.GetAllSales)
+	sale.Get("/today", saleService.GetTodaySales)
+	sale.Get("/today-grand-total", saleService.GetTodayGrandTotal)
 	sale.Get("/:id", saleService.GetById)
+	sale.Get("/monthly", saleService.GetMonthlySales)
+	sale.Get("/monthly-grand-total", saleService.GetMonthlyGrandTotal)
 
 	// purchase di
 	purchaseService, err := purchaseDi.InitPurchaseDI()
@@ -204,4 +208,8 @@ func Initialize(app *fiber.App) {
 	purchase.Post("/", purchaseService.CreatePurchase)
 	purchase.Get("/", purchaseService.GetAllPurchases)
 	purchase.Get("/:id", purchaseService.GetById)
+	purchase.Get("/today", purchaseService.GetTodayPurchases)
+	purchase.Get("/today-grand-total", purchaseService.GetTodayGrandTotal)
+	purchase.Get("/monthly", purchaseService.GetMonthlyPurchases)
+	purchase.Get("/monthly-grand-total", purchaseService.GetMonthlyGrandTotal)
 }

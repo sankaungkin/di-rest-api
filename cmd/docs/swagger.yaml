@@ -2038,6 +2038,110 @@ paths:
       summary: Fetch individual purchase by Id
       tags:
       - Purchases
+  /api/purchases/monthly:
+    get:
+      consumes:
+      - application/json
+      description: Fetch monthly purchases
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch monthly purchases
+      tags:
+      - Purchases
+  /api/purchases/monthly-grand-total:
+    get:
+      consumes:
+      - application/json
+      description: Fetch monthly grand total
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+      security:
+      - Bearer: []
+      summary: Fetch monthly grand total
+      tags:
+      - Purchases
+  /api/purchases/today:
+    get:
+      consumes:
+      - application/json
+      description: Fetch today's purchases
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch today's purchases
+      tags:
+      - Purchases
+  /api/purchases/today-grand-total:
+    get:
+      consumes:
+      - application/json
+      description: Fetch today's grand total
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+      security:
+      - Bearer: []
+      summary: Fetch today's grand total
+      tags:
+      - Purchases
   /api/sales:
     get:
       consumes:
@@ -2135,6 +2239,110 @@ paths:
       security:
       - Bearer: []
       summary: Fetch individual sale by Id
+      tags:
+      - Sales
+  /api/sales/monthly:
+    get:
+      consumes:
+      - application/json
+      description: Fetch monthly sales
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Sale'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch monthly sales
+      tags:
+      - Sales
+  /api/sales/monthly-grand-total:
+    get:
+      consumes:
+      - application/json
+      description: Fetch monthly grand total
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+      security:
+      - Bearer: []
+      summary: Fetch monthly grand total
+      tags:
+      - Sales
+  /api/sales/today:
+    get:
+      consumes:
+      - application/json
+      description: Fetch today's sales
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_sankangkin_di-rest-api_internal_models.Sale'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HttpError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HttpError500'
+      security:
+      - Bearer: []
+      summary: Fetch today's sales
+      tags:
+      - Sales
+  /api/sales/today-grand-total:
+    get:
+      consumes:
+      - application/json
+      description: Fetch today's grand total
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: integer
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HttpError400'
+      security:
+      - Bearer: []
+      summary: Fetch today's grand total
       tags:
       - Sales
   /api/suppliers:

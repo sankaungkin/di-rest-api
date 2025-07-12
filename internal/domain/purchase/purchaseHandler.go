@@ -148,3 +148,113 @@ func (h *PurchaseHandler) GetById(c *fiber.Ctx) error {
 	})
 
 }
+
+// GetTodayPurchases godoc
+//
+//	@Summary		Fetch today's purchases
+//	@Description	Fetch today's purchases
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Purchase
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases/today	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetTodayPurchases(c *fiber.Ctx) error {
+
+	purchases, err := h.svc.GetTodayPurchases()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(purchases)) + " records found",
+			"data":    purchases,
+			"count":   len(purchases),
+		})
+}
+
+// GetTodayGrandTotal godoc
+//
+//	@Summary		Fetch today's grand total
+//	@Description	Fetch today's grand total
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	int64
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Router			/api/purchases/today-grand-total	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetTodayGrandTotal(c *fiber.Ctx) error {
+	grandTotal, err := h.svc.GetTodayGrandTotal()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Today's grand total fetched successfully",
+		"data":    grandTotal,
+	})
+}
+
+// GetMonthlyPurchases godoc
+//
+//	@Summary		Fetch monthly purchases
+//	@Description	Fetch monthly purchases
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Purchase
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases/monthly	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetMonthlyPurchases(c *fiber.Ctx) error {
+
+	purchases, err := h.svc.GetMonthlyPurchases()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(purchases)) + " records found",
+			"data":    purchases,
+			"count":   len(purchases),
+		})
+}
+
+// GetMonthlyGrandTotal godoc
+//
+//	@Summary		Fetch monthly grand total
+//	@Description	Fetch monthly grand total
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200					{object}	int64
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Router			/api/purchases/monthly-grand-total	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetMonthlyGrandTotal(c *fiber.Ctx) error {
+	grandTotal, err := h.svc.GetMonthlyGrandTotal()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Monthly grand total fetched successfully",
+		"data":    grandTotal,
+	})
+}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -17,7 +18,11 @@ import (
 type PurchaseRepositoryInterface interface {
 	Create(sale *models.Purchase) (*models.Purchase, error)
 	GetAll() ([]models.Purchase, error)
+	GetTodayPurchases() ([]models.Purchase, error)
 	GetById(id string) (*models.Purchase, error)
+	GetTodayGrandTotal() (int64, error)
+	GetMonthlyPurchases() ([]models.Purchase, error)
+	GetMonthlyGrandTotal() (int64, error)
 }
 
 type PurchaseRepository struct {
@@ -113,6 +118,33 @@ func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 	return purchases, nil
 }
 
+func (r *PurchaseRepository) GetTodayPurchases() ([]models.Purchase, error) {
+	var purchases []models.Purchase
+
+	// today := time.Now().Format("2006-01-02") // e.g., "2025-07-11"
+
+	today := time.Now()
+	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	end := start.Add(24 * time.Hour)
+
+	result := r.db.
+		Preload(clause.Associations).
+		Where("purchase_date >= ? AND purchase_date < ?", start, end).
+		// Where("sale_date = ?", today).
+		Order("purchase_date DESC").
+		Find(&purchases)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if len(purchases) == 0 {
+		return nil, errors.New("NO records found for today")
+	}
+
+	return purchases, nil
+}
+
 func (r *PurchaseRepository) GetById(id string) (*models.Purchase, error) {
 
 	var purchase models.Purchase
@@ -129,4 +161,62 @@ func (r *PurchaseRepository) GetById(id string) (*models.Purchase, error) {
 	}
 
 	return &purchase, nil
+}
+
+func (r *PurchaseRepository) GetTodayGrandTotal() (int64, error) {
+	var total int64
+	today := time.Now().Format("2006-01-02")
+
+	err := r.db.Model(&models.Purchase{}).
+		Select("COALESCE(SUM(grand_total), 0)").
+		Where("purchase_date = ?", today).
+		Scan(&total).Error
+
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func (r *PurchaseRepository) GetMonthlyPurchases() ([]models.Purchase, error) {
+	var purchases []models.Purchase
+
+	// Get first day of current month
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	monthStartStr := monthStart.Format("2006-01-02")
+
+	// Get first day of next month
+	nextMonth := monthStart.AddDate(0, 1, 0)
+	nextMonthStr := nextMonth.Format("2006-01-02")
+
+	// Query sales within this month range
+	err := r.db.
+		Preload(clause.Associations).
+		Where("purchase_date >= ? AND purchase_date < ?", monthStartStr, nextMonthStr).
+		Order("purchase_date DESC").
+		Find(&purchases).Error
+
+	if err != nil {
+		return nil, err
+	}
+	if len(purchases) == 0 {
+		return nil, errors.New("NO records found for this month")
+	}
+	return purchases, nil
+}
+
+func (r *PurchaseRepository) GetMonthlyGrandTotal() (int64, error) {
+	var total int64
+
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	nextMonth := monthStart.AddDate(0, 1, 0)
+
+	err := r.db.Model(&models.Purchase{}).
+		Select("COALESCE(SUM(grand_total), 0)").
+		Where("purchase_date >= ? AND purchase_date < ?", monthStart.Format("2006-01-02"), nextMonth.Format("2006-01-02")).
+		Scan(&total).Error
+
+	return total, err
 }

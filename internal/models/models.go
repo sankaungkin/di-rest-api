@@ -172,7 +172,7 @@ type Purchase struct {
 	Total           int64            `json:"total"`
 	GrandTotal      int64            `json:"grandTotal"`
 	Remark          string           `json:"remark"`
-	PurchaseDate    string           `json:"purchaseDate"`
+	PurchaseDate    time.Time        `json:"purchaseDate"`
 	CreatedAt       int64            `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt       int64            `gorm:"autoUpdateTime:milli" json:"-"`
 }
@@ -199,7 +199,7 @@ type Sale struct {
 	Total       int64        `json:"total"`
 	GrandTotal  int64        `json:"grandTotal"`
 	Remark      string       `json:"remark"`
-	SaleDate    string       `json:"saleDate"`
+	SaleDate    time.Time    `json:"saleDate"`
 	CreatedAt   int64        `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt   int64        `gorm:"autoUpdateTime:milli" json:"-"`
 }
