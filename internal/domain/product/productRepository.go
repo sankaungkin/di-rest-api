@@ -237,6 +237,7 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 	existingProduct.UomId = input.UomId
 	existingProduct.DeriveUom = input.DeriveUom
 	existingProduct.DeriveUomId = input.DeriveUomId
+	existingProduct.IsActive = input.IsActive
 	// existingProduct.BuyPrice = input.BuyPrice
 	existingProduct.CategoryId = input.CategoryId
 	// existingProduct.SellPriceLevel1 = input.SellPriceLevel1

@@ -11,7 +11,7 @@ import (
 type ProductStockServiceInterface interface {
 	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
-	GetLowStockProducts() ([]models.ProductStock, error)
+	GetLowStockProducts() ([]ResponseProductStockDTO, error)
 	GetOutOfStockProducts() ([]models.ProductStock, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
@@ -50,7 +50,7 @@ func (s *ProductStockService) GetAllProductStocks() ([]ResponseProductStockDTO, 
 	return s.repo.GetAllProductStocks()
 }
 
-func (s *ProductStockService) GetLowStockProducts() ([]models.ProductStock, error) {
+func (s *ProductStockService) GetLowStockProducts() ([]ResponseProductStockDTO, error) {
 	return s.repo.GetLowStockProducts()
 }
 
