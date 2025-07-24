@@ -24,6 +24,20 @@ func InitProductStockDI() (*productstock.ProductStockHandler, error) {
 	return productStockHandler, nil
 }
 
+func InitProductStockRepoDI() (productstock.ProductStockRepositoryInterface, error) {
+	db, err := database.NewDB()
+	if err != nil {
+		return nil, err
+	}
+	productStockRepositoryInterface := productstock.NewProductStockRepository(db)
+	return productStockRepositoryInterface, nil
+}
+
 // wire.go:
 
 var ProductStockWireSet = wire.NewSet(database.NewDB, productstock.NewProductStockRepository, productstock.NewProductStockService, productstock.NewProductStockHandler)
+
+var (
+	ProductStockRepoSet    = wire.NewSet(database.NewDB, productstock.NewProductStockRepository)
+	ProductStockServiceSet = wire.NewSet(database.NewDB, productstock.NewProductStockService, productstock.NewProductStockHandler)
+)

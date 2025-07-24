@@ -46,7 +46,7 @@ type Product struct {
 
 type UnitOfMeasure struct {
 	gorm.Model
-	ID             uint             `gorm:"primaryKey" json:"id"`
+	ID             uint             `gorm:"primaryKey;autoIncrement" json:"id"`
 	UnitName       string           `json:"unitName" validate:"required,min=3"`
 	Product        []Product        `gorm:"foreignKey:UomId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
@@ -63,7 +63,7 @@ type ProductPrice struct {
 
 type ProductPriceHistory struct {
 	gorm.Model
-	ID            uint      `gorm:"primaryKey" json:"id"`
+	ID            uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId     string    `json:"productId" validate:"required"`
 	UnitId        uint      `json:"unitId" validate:"required"`
 	PriceType     string    `json:"priceType" validate:"required,min=1"` // "BUY"	or "SELL"
@@ -74,7 +74,7 @@ type ProductPriceHistory struct {
 
 type ProductStock struct {
 	gorm.Model
-	ID           uint   `gorm:"primaryKey" json:"id"`
+	ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId    string `gorm:"type:varchar(20)" json:"productId"`
 	BaseUnitId   int    `json:"baseUnitId" validate:"required"`
 	DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
@@ -85,7 +85,7 @@ type ProductStock struct {
 
 type UnitConversion struct {
 	gorm.Model
-	ID           uint   `gorm:"primaryKey" json:"id"`
+	ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	Description  string `gorm:"type:varchar(20)" json:"description"`
 	ProductId    string `gorm:"type:varchar(20)" json:"productId" validate:"required"`
 	BaseUnit     string `json:"baseUnit"`

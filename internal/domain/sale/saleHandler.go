@@ -172,6 +172,13 @@ func (h *SaleHandler) GetById(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
+
+	if sale == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Record not found",
+		})
+	}
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
 		"message": "Record found",
@@ -198,6 +205,7 @@ func (h *SaleHandler) GetTodayGrandTotal(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
 		"message": "Today's grand total fetched successfully",

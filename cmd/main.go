@@ -1,11 +1,16 @@
 package main
 
 import (
+	"log"
+
 	_ "github.com/sankangkin/di-rest-api/cmd/docs"
+
+	productStockDi "github.com/sankangkin/di-rest-api/internal/domain/productstock/di"
 
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/sankangkin/di-rest-api/internal/router"
+	"github.com/sankangkin/di-rest-api/internal/websocket"
 	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
@@ -29,12 +34,28 @@ func main() {
 	// log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	app := fiber.New()
-	app.Use(cors.New())
+	// app.Use(cors.New())
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://192.168.100.7:4200 ,http://localhost:4200",
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		ExposeHeaders:    "Content-Length",
+		AllowCredentials: true,
+	}))
+
+	productStockRepo, err := productStockDi.InitProductStockRepoDI()
+	if err != nil {
+		log.Fatalf("Failed to initialize product stock service: %v", err)
+	}
+
+	hub := websocket.NewHub(productStockRepo)
+	go hub.Run()
 
 	// app.Get("/swagger/*", swagger.HandlerDefault) // default
 
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)
-	router.Initialize(app)
+	router.Initialize(app, hub)
 	app.Listen(":5555")
 
 }

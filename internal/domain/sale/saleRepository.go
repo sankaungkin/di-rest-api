@@ -100,6 +100,8 @@ func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error
 		return err
 	}
 
+	//broadcast low stock message
+
 	var unitConv models.UnitConversion
 	if err := tx.First(&unitConv, "product_id = ?", sd.ProductId).Error; err != nil {
 		return fmt.Errorf("unit conversion not found for product %s", sd.ProductId)
@@ -170,10 +172,14 @@ func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error
 func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 
 	sales := []models.Sale{}
-	r.db.Preload(clause.Associations).Model(&models.Sale{}).Order("sale_date DESC").Find(&sales)
-	if len(sales) == 0 {
-		return nil, errors.New("NO records found")
+	result := r.db.Preload(clause.Associations).Model(&models.Sale{}).Order("sale_date DESC").Find(&sales)
+
+	if result.Error != nil {
+		return nil, result.Error
 	}
+	// if len(sales) == 0 {
+	// 	return nil, errors.New("NO records found")
+	// }
 
 	return sales, nil
 }
@@ -198,9 +204,12 @@ func (r *SaleRepository) GetTodaySales() ([]models.Sale, error) {
 		return nil, result.Error
 	}
 
-	if len(sales) == 0 {
-		return nil, errors.New("NO records found for today")
+	if result.Error != nil {
+		return nil, result.Error
 	}
+	// if len(sales) == 0 {
+	// 	return nil, errors.New("NO records found for today")
+	// }
 
 	return sales, nil
 }
@@ -214,10 +223,18 @@ func (r *SaleRepository) GetById(id string) (*models.Sale, error) {
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, err
+			return nil, nil
 		}
 		return nil, err
 	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		// Return nil sale, nil error to indicate "not found" gracefully
+		return nil, nil
+	}
+
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return &sale, nil
 }
@@ -259,9 +276,9 @@ func (r *SaleRepository) GetMonthlySales() ([]models.Sale, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(sales) == 0 {
-		return nil, errors.New("NO records found for this month")
-	}
+	// if len(sales) == 0 {
+	// 	return nil, errors.New("NO records found for this month")
+	// }
 	return sales, nil
 }
 

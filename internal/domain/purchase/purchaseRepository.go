@@ -1,7 +1,6 @@
 package purchase
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -110,10 +109,15 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 
 	purchases := []models.Purchase{}
-	r.db.Preload(clause.Associations).Model(&models.Purchase{}).Order("created_at DESC").Find(&purchases)
-	if len(purchases) == 0 {
-		return nil, errors.New("NO records found")
+	results := r.db.Preload(clause.Associations).Model(&models.Purchase{}).Order("created_at DESC").Find(&purchases)
+
+	if results.Error != nil {
+		return nil, results.Error
 	}
+
+	// if len(purchases) == 0 {
+	// 	return nil, errors.New("NO records found")
+	// }
 
 	return purchases, nil
 }
@@ -138,9 +142,9 @@ func (r *PurchaseRepository) GetTodayPurchases() ([]models.Purchase, error) {
 		return nil, result.Error
 	}
 
-	if len(purchases) == 0 {
-		return nil, errors.New("NO records found for today")
-	}
+	// if len(purchases) == 0 {
+	// 	return nil, errors.New("NO records found for today")
+	// }
 
 	return purchases, nil
 }
@@ -200,9 +204,10 @@ func (r *PurchaseRepository) GetMonthlyPurchases() ([]models.Purchase, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(purchases) == 0 {
-		return nil, errors.New("NO records found for this month")
-	}
+	// if len(purchases) == 0 {
+	// 	return nil, errors.New("NO records found for this month")
+	// }
+
 	return purchases, nil
 }
 

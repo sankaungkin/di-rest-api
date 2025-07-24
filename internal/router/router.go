@@ -18,9 +18,10 @@ import (
 	unitconversionDi "github.com/sankangkin/di-rest-api/internal/domain/unitconversion/di"
 	unitofmeasurementDi "github.com/sankangkin/di-rest-api/internal/domain/unitofmeasurement/di"
 	"github.com/sankangkin/di-rest-api/internal/middleware"
+	"github.com/sankangkin/di-rest-api/internal/websocket"
 )
 
-func Initialize(app *fiber.App) {
+func Initialize(app *fiber.App, hub *websocket.Hub) {
 
 	api := app.Group("/api")
 	api.Get("/", func(c *fiber.Ctx) error {
@@ -32,6 +33,9 @@ func Initialize(app *fiber.App) {
 	if err != nil {
 		log.Fatalf("Failed to initialize auth service: %v", err)
 	}
+
+	// websocket
+	app.Get("/ws", websocket.WebSocketHandler(hub))
 	// auth route
 	auth := api.Group("/auth")
 	auth.Post("/register", authService.SignUp)
@@ -193,9 +197,9 @@ func Initialize(app *fiber.App) {
 	sale.Get("/", saleService.GetAllSales)
 	sale.Get("/today", saleService.GetTodaySales)
 	sale.Get("/today-grand-total", saleService.GetTodayGrandTotal)
-	sale.Get("/:id", saleService.GetById)
 	sale.Get("/monthly", saleService.GetMonthlySales)
 	sale.Get("/monthly-grand-total", saleService.GetMonthlyGrandTotal)
+	sale.Get("/:id", saleService.GetById)
 
 	// purchase di
 	purchaseService, err := purchaseDi.InitPurchaseDI()
@@ -207,9 +211,9 @@ func Initialize(app *fiber.App) {
 	purchase.Use(middleware.Protected())
 	purchase.Post("/", purchaseService.CreatePurchase)
 	purchase.Get("/", purchaseService.GetAllPurchases)
-	purchase.Get("/:id", purchaseService.GetById)
 	purchase.Get("/today", purchaseService.GetTodayPurchases)
 	purchase.Get("/today-grand-total", purchaseService.GetTodayGrandTotal)
 	purchase.Get("/monthly", purchaseService.GetMonthlyPurchases)
 	purchase.Get("/monthly-grand-total", purchaseService.GetMonthlyGrandTotal)
+	purchase.Get("/:id", purchaseService.GetById)
 }
