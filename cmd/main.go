@@ -37,7 +37,8 @@ func main() {
 	// app.Use(cors.New())
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://192.168.100.7:4200 ,http://localhost:4200",
+		//TAKE NOTE don't put the space between the AllowOrigins *****************************
+		AllowOrigins:     "http://localhost:4200,http://192.168.100.7:4200,http://127.0.0.1:4200,http://192.168.100.7:5555,http://localhost:5555", // your frontend addresses
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		ExposeHeaders:    "Content-Length",
@@ -56,6 +57,6 @@ func main() {
 
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 	router.Initialize(app, hub)
-	app.Listen(":5555")
+	app.Listen("0.0.0.0:5555")
 
 }
