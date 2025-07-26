@@ -14,7 +14,7 @@ type ProductStockRepositoryInterface interface {
 	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
 	GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetLowStockProducts() ([]ResponseProductStockDTO, error)
-	GetOutOfStockProducts() ([]models.ProductStock, error)
+	GetOutOfStockProducts() ([]ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
 }
@@ -77,12 +77,36 @@ func (r *ProductStockRepository) GetLowStockProducts() ([]ResponseProductStockDT
 	return results, nil
 }
 
-func (r *ProductStockRepository) GetOutOfStockProducts() ([]models.ProductStock, error) {
-	var results []models.ProductStock
+func (r *ProductStockRepository) GetOutOfStockProducts() ([]ResponseProductStockDTO, error) {
+	// var results []models.ProductStock
 
+	// err := r.db.
+	// 	Where("base_qty = 0").
+	// 	Find(&results).Error
+	var results []ResponseProductStockDTO
+
+	// err := r.db.
+	// 	Where("base_qty <= reorder_lvl").
+	// 	Find(&results).Error
 	err := r.db.
-		Where("base_qty = 0").
-		Find(&results).Error
+		Table("product_stocks AS p").
+		Select(`
+			p.product_id,
+			item.product_name,
+			uc.base_unit,
+			p.base_unit_id,
+			p.derive_unit_id,
+			p.base_qty,
+			uc.derive_unit,
+			p.derived_qty,
+			p.reorder_lvl,
+			uc.factor
+		`).
+		Joins("JOIN unit_conversions uc ON p.product_id = uc.product_id").
+		Joins("JOIN products item ON p.product_id = item.id").
+		Where("p.base_qty <= 0").
+		Order("p.product_id").
+		Scan(&results).Error
 
 	if err != nil {
 		return nil, err

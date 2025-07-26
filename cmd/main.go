@@ -22,7 +22,7 @@ import (
 // @contact.email				sankaungkin@gmail.com
 // @license.name				Apache 2.0
 // @license.url				http://www.apache.org/licenses/LICENSE-2.0.html
-// @host						localhost:5555
+// @host						http://192.168.100.7:5555
 
 // @securityDefinitions.apikey Bearer
 // @in header
