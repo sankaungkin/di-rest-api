@@ -38,10 +38,15 @@ func NewDB() (*gorm.DB, error) {
 		User := os.Getenv("POSTGRES_USER")
 		DBName := os.Getenv("POSTGRES_DB")
 		SSLMode := os.Getenv("SSLMODE")
+		// Set default values if empty
+		if SSLMode == "" {
+			SSLMode = "disable" // or "prefer" depending on your requirements
+		}
+		timeZone := "Asia/Yangon"
 
 		var dsn = fmt.Sprintf(
-			"host=%s port=%s password=%s user=%s dbname=%s sslmode=%s",
-			Host, Port, Password, User, DBName, SSLMode)
+			"host=%s port=%s password=%s user=%s dbname=%s sslmode=%s timezone=%s",
+			Host, Port, Password, User, DBName, SSLMode, timeZone)
 
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {

@@ -1,8 +1,14 @@
 # Stage 1: Build
 FROM golang:1.22-alpine AS builder
 
-# Install git, needed for go modules
-RUN apk add --no-cache git
+# Install tzdata for timezone support
+# RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Yangon /etc/localtime && \
+    echo "Asia/Yangon" > /etc/timezone
+
+# Set your timezone (e.g., Asia/Yangon)
+ENV TZ=Asia/Yangon
 
 WORKDIR /app
 
@@ -16,8 +22,20 @@ COPY . .
 # Build the Go binary (adjust if your entrypoint is different)
 RUN go build -o server ./cmd
 
-# Stage 2: Minimal runtime image
+# ENV TZ=Asia/Yangon
+# RUN apk add --no-cache tzdata
 FROM alpine:latest
+
+# Install tzdata and set timezone in runtime image too
+RUN apk add --no-cache tzdata && \
+    ln -sf /usr/share/zoneinfo/Asia/Yangon /etc/localtime && \
+    echo "Asia/Yangon" > /etc/timezone
+
+ENV TZ=Asia/Yangon
+
+
+# Stage 2: Minimal runtime image
+# FROM alpine:latest
 
 
 WORKDIR /app

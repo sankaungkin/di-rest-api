@@ -210,13 +210,22 @@ func (r *SaleRepository) GetTodaySales() ([]models.Sale, error) {
 
 	// today := time.Now().Format("2006-01-02") // e.g., "2025-07-11"
 
-	today := time.Now()
-	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	loc, _ := time.LoadLocation("Asia/Yangon")
+	today := time.Now().In(loc)
+	// today := time.Now()
+	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, loc)
 	end := start.Add(24 * time.Hour)
+
+	// Convert Yangon times to UTC for database query
+	startUTC := start.UTC()
+	endUTC := end.UTC()
+
+	fmt.Println("start:", start)
+	fmt.Println("end:", end)
 
 	result := r.db.
 		Preload(clause.Associations).
-		Where("sale_date >= ? AND sale_date < ?", start, end).
+		Where("sale_date >= ? AND sale_date < ?", startUTC, endUTC).
 		// Where("sale_date = ?", today).
 		Order("sale_date DESC").
 		Find(&sales)
