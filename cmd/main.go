@@ -22,7 +22,7 @@ import (
 // @contact.email				sankaungkin@gmail.com
 // @license.name				Apache 2.0
 // @license.url				http://www.apache.org/licenses/LICENSE-2.0.html
-// @host						http://192.168.100.7:5555
+// @host						http://127.0.0.1:5555
 
 // @securityDefinitions.apikey Bearer
 // @in header
@@ -38,7 +38,7 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		//TAKE NOTE don't put the space between the AllowOrigins *****************************
-		AllowOrigins:     "http://localhost:4200,http://192.168.100.7:4200,http://127.0.0.1:4200,http://192.168.100.7:5555,http://localhost:5555", // your frontend addresses
+		AllowOrigins:     "http://localhost:4200,http://192.168.100.7:4200,http://127.0.0.1:4200,http://192.168.100.7:5555,http://localhost:5555,http://127.0.0.1:5555,http://192.168.100.3:5555", // your frontend addresses
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		ExposeHeaders:    "Content-Length",

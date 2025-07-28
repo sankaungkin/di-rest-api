@@ -199,6 +199,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Get("/today-grand-total", saleService.GetTodayGrandTotal)
 	sale.Get("/monthly", saleService.GetMonthlySales)
 	sale.Get("/monthly-grand-total", saleService.GetMonthlyGrandTotal)
+	sale.Get("/top-customers", saleService.TopCustomers)
 	sale.Get("/:id", saleService.GetById)
 
 	// purchase di

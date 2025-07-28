@@ -16,6 +16,7 @@ type SaleServiceInterface interface {
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlySales() ([]models.Sale, error)
 	GetMonthlyGrandTotal() (int64, error)
+	GetTopCustomers() (*ResponseTopCustomerDTO, error)
 }
 
 type SaleService struct {
@@ -62,4 +63,8 @@ func (s *SaleService) GetMonthlySales() ([]models.Sale, error) {
 
 func (s *SaleService) GetMonthlyGrandTotal() (int64, error) {
 	return s.repo.GetMonthlyGrandTotal()
+}
+
+func (s *SaleService) GetTopCustomers() (*ResponseTopCustomerDTO, error) {
+	return s.repo.TopCustomers()
 }

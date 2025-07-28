@@ -168,12 +168,15 @@ func (r *PurchaseRepository) GetById(id string) (*models.Purchase, error) {
 }
 
 func (r *PurchaseRepository) GetTodayGrandTotal() (int64, error) {
+
 	var total int64
-	today := time.Now().Format("2006-01-02")
+	today := time.Now()
+	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
 
 	err := r.db.Model(&models.Purchase{}).
 		Select("COALESCE(SUM(grand_total), 0)").
-		Where("purchase_date = ?", today).
+		Where("purchase_date >= ? AND purchase_date < ?", startOfDay, endOfDay).
 		Scan(&total).Error
 
 	if err != nil {

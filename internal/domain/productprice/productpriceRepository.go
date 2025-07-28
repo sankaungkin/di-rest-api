@@ -76,7 +76,7 @@ func (r *ProductPriceRepository) GetAll() ([]ProductPriceResponseDTO, error) {
 		Select(`pp.id, pp.product_id, p.product_name, u.unit_name, pp.unit_id, pp.unit_price, pp.price_type`).
 		Joins("JOIN products AS p ON pp.product_id = p.id").
 		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
-		Order("pp.product_id ASC").
+		Order("pp.id DESC").
 		Scan(&results).Error
 
 	if err != nil {

@@ -56,9 +56,11 @@ func (h *UnitConversionHandler) CreateUnitConversion(c *fiber.Ctx) error {
 	newUnitConversion := models.UnitConversion{
 		Factor:       input.Factor,
 		Description:  input.Description,
+		BaseUnit:     input.BaseUnit,
 		ProductId:    input.ProductId,
 		BaseUnitId:   input.BaseUnitId,
 		DeriveUnitId: input.DeriveUnitId,
+		DeriveUnit:   input.DeriveUnit,
 	}
 
 	errors := models.ValidateStruct(newUnitConversion)

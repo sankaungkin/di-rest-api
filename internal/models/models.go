@@ -74,7 +74,7 @@ type ProductPriceHistory struct {
 
 type ProductStock struct {
 	gorm.Model
-	ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	// ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId    string `gorm:"type:varchar(20)" json:"productId"`
 	BaseUnitId   int    `json:"baseUnitId" validate:"required"`
 	DeriveUnitId int    `json:"deriveUnitId" validate:"required"`

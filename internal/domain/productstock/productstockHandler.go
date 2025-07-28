@@ -59,13 +59,15 @@ func (h *ProductStockHandler) CreateProductStocks(c *fiber.Ctx) error {
 			"message": "Invalid JSON format",
 		})
 	}
-	log.Println("inputProduct(Handler): ", input)
+	log.Println("inputProductStock(Handler): ", input)
 
 	productStockToCreate := &models.ProductStock{
-		ProductId:  input.ProductId,
-		BaseQty:    input.BaseQty,
-		DerivedQty: input.DerivedQty,
-		ReorderLvl: input.ReorderLvl,
+		ProductId:    input.ProductId,
+		BaseQty:      input.BaseQty,
+		DerivedQty:   input.DerivedQty,
+		ReorderLvl:   input.ReorderLvl,
+		BaseUnitId:   input.BaseUnitId,
+		DeriveUnitId: input.DeriveUnitId,
 		// Add other fields as necessary
 	}
 

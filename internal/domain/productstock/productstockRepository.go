@@ -141,7 +141,7 @@ func (r *ProductStockRepository) GetAllProductStocks() ([]ResponseProductStockDT
 		`).
 		Joins("JOIN unit_conversions uc ON p.product_id = uc.product_id").
 		Joins("JOIN products item ON p.product_id = item.id").
-		Order("p.product_id").
+		Order("p.id DESC").
 		Scan(&results).Error
 
 	if err != nil {

@@ -23,6 +23,7 @@ type SaleRepositoryInterface interface {
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlySales() ([]models.Sale, error)
 	GetMonthlyGrandTotal() (int64, error)
+	TopCustomers() (*ResponseTopCustomerDTO, error)
 }
 
 type SaleRepository struct {
@@ -162,6 +163,7 @@ func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error
 			return err
 		}
 
+		//TODO bug to fix
 	default:
 		return fmt.Errorf("invalid unit %s for product %s (expected %s or %s)", sd.Uom, sd.ProductId, unitConv.BaseUnit, unitConv.DeriveUnit)
 	}
@@ -182,6 +184,25 @@ func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 	// }
 
 	return sales, nil
+}
+
+func (r *SaleRepository) TopCustomers() (*ResponseTopCustomerDTO, error) {
+
+	var result ResponseTopCustomerDTO
+
+	err := r.db.Table("sales s").
+		Select("cu.name, SUM(s.grand_total) AS total_spent").
+		Joins("JOIN customers cu ON s.customer_id = cu.id").
+		Group("cu.id, cu.name").
+		Order("total_spent DESC").
+		Limit(1).
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (r *SaleRepository) GetTodaySales() ([]models.Sale, error) {
@@ -232,20 +253,18 @@ func (r *SaleRepository) GetById(id string) (*models.Sale, error) {
 		return nil, nil
 	}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	return &sale, nil
 }
 
 func (r *SaleRepository) GetTodayGrandTotal() (int64, error) {
 	var total int64
-	today := time.Now().Format("2006-01-02")
+	today := time.Now()
+	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
 
 	err := r.db.Model(&models.Sale{}).
 		Select("COALESCE(SUM(grand_total), 0)").
-		Where("sale_date = ?", today).
+		Where("sale_date >= ? AND sale_date < ?", startOfDay, endOfDay).
 		Scan(&total).Error
 
 	if err != nil {

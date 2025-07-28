@@ -116,9 +116,9 @@ func (r *ProductRepository) GetAllWithoutStock() ([]ResponseProductDTO, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(products) == 0 {
-		return nil, errors.New("no records found")
-	}
+	// if len(products) == 0 {
+	// 	return nil, errors.New("no records found")
+	// }
 
 	var dtos []ResponseProductDTO
 	for _, p := range products {

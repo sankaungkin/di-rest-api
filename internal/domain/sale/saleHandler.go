@@ -267,3 +267,31 @@ func (h *SaleHandler) GetMonthlyGrandTotal(c *fiber.Ctx) error {
 		"data":    grandTotal,
 	})
 }
+
+// TopCustomers godoc
+//
+//	@Summary		Fetch top customers
+//	@Description	Fetch top customers
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{object}	ResponseTopCustomerDTO
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/sales/top-customers	[get]
+//	@Security		Bearer
+func (h *SaleHandler) TopCustomers(c *fiber.Ctx) error {
+
+	customers, err := h.svc.GetTopCustomers()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Top customers fetched successfully",
+		"data":    customers,
+	})
+}

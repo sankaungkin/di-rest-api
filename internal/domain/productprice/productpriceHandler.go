@@ -51,7 +51,7 @@ func (h *ProductPriceHandler) CreateProductPrice(c *fiber.Ctx) error {
 		})
 	}
 
-	log.Println("New product price input: ", input)
+	log.Println("inputProductPrice(Handler): ", input)
 	newProductPrice := models.ProductPrice{
 		ID:        input.ID,
 		ProductId: input.ProductId,

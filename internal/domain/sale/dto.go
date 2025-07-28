@@ -16,3 +16,8 @@ type SaleInvoiceRequestDTO struct {
 	Remark      string              `json:"remark"`
 	SaleDate    time.Time           `json:"saleDate"`
 }
+
+type ResponseTopCustomerDTO struct {
+	Name       string `json:"name"`
+	TotalSpent int64  `json:"totalSpent"`
+}
