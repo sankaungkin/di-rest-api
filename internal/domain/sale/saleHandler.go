@@ -295,3 +295,33 @@ func (h *SaleHandler) TopCustomers(c *fiber.Ctx) error {
 		"data":    customers,
 	})
 }
+
+// GetDailySales godoc
+//
+//	@Summary		Fetch daily sales
+//	@Description	Fetch daily sales
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		ResponseDailySalesDTO
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/sales/daily	[get]
+//	@Security		Bearer
+func (h *SaleHandler) GetDailySales(c *fiber.Ctx) error {
+
+	sales, err := h.svc.GetDailySales()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(sales)) + " records found",
+			"data":    sales,
+			"count":   len(sales),
+		})
+}

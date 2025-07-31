@@ -12,6 +12,7 @@ type SaleServiceInterface interface {
 	CreateService(sale *models.Sale) (*models.Sale, error)
 	GetAllService() ([]models.Sale, error)
 	GetTodaySales() ([]models.Sale, error)
+	GetDailySales() ([]ResponseDailySalesDTO, error)
 	GetById(id string) (*models.Sale, error)
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlySales() ([]models.Sale, error)
@@ -67,4 +68,8 @@ func (s *SaleService) GetMonthlyGrandTotal() (int64, error) {
 
 func (s *SaleService) GetTopCustomers() (*ResponseTopCustomerDTO, error) {
 	return s.repo.TopCustomers()
+}
+
+func (s *SaleService) GetDailySales() ([]ResponseDailySalesDTO, error) {
+	return s.repo.GetDailySales()
 }

@@ -18,6 +18,7 @@ import (
 type SaleRepositoryInterface interface {
 	Create(sale *models.Sale) (*models.Sale, error)
 	GetAll() ([]models.Sale, error)
+	GetDailySales() ([]ResponseDailySalesDTO, error)
 	GetTodaySales() ([]models.Sale, error)
 	GetById(id string) (*models.Sale, error)
 	GetTodayGrandTotal() (int64, error)
@@ -184,6 +185,60 @@ func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 	// }
 
 	return sales, nil
+}
+
+func (r *SaleRepository) GetDailySalesOLD() ([]ResponseDailySalesDTO, error) {
+	var results []ResponseDailySalesDTO
+
+	// Get the first day of the current month
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	err := r.db.
+		Table("sales").
+		Select("sale_date::DATE , SUM(grand_total) AS total ").
+		Where("sale_date >= ?", monthStart).
+		Group("sale_date::DATE").
+		Order("sale_date::DATE DESC").
+		Scan(&results).Error
+
+	return results, err
+}
+
+func (r *SaleRepository) GetDailySales() ([]ResponseDailySalesDTO, error) {
+	type rawSale struct {
+		SaleDate time.Time
+		Total    int64
+	}
+
+	var rawResults []rawSale
+	var results []ResponseDailySalesDTO
+
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	err := r.db.
+		Table("sales").
+		Select("sale_date::DATE as sale_date, SUM(grand_total) AS total").
+		Where("sale_date >= ?", monthStart).
+		Group("sale_date::DATE").
+		Order("sale_date::DATE DESC").
+		Scan(&rawResults).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Format date to dd-MM-yyyy
+	for _, raw := range rawResults {
+		formatted := ResponseDailySalesDTO{
+			SaleDate: raw.SaleDate.Format("02-01-2006"), // dd-MM-yyyy
+			Total:    raw.Total,
+		}
+		results = append(results, formatted)
+	}
+
+	return results, nil
 }
 
 func (r *SaleRepository) TopCustomers() (*ResponseTopCustomerDTO, error) {

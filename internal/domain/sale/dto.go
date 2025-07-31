@@ -21,3 +21,8 @@ type ResponseTopCustomerDTO struct {
 	Name       string `json:"name"`
 	TotalSpent int64  `json:"totalSpent"`
 }
+
+type ResponseDailySalesDTO struct {
+	SaleDate string `json:"saleDate"`
+	Total    int64  `json:"total"`
+}

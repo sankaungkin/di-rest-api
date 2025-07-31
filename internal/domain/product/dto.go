@@ -100,3 +100,15 @@ type UpdateUnitRequstDTO struct {
 	ID       uint   `json:"id"`
 	UnitName string `json:"unitName"`
 }
+
+//SELECT product_id, p.product_name, uom.unit_name, unit_id, unit_price, effective_date, price_type
+
+type ResponseProductHistoryDTO struct {
+	ProductId     string `json:"productId"`
+	ProductName   string `json:"productName"`
+	UnitId        uint   `json:"unitId"`
+	UnitName      string `json:"unitName"`
+	PriceType     string `json:"priceType"`
+	UnitPrice     int64  `json:"unitPrice"`
+	EffectiveDate string `json:"effectiveDate"`
+}

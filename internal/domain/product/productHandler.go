@@ -396,6 +396,48 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	})
 }
 
+// GetProductPriceHistory godoc
+//
+//	@Summary		Get product price history
+//	@Description	Get product price history
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"product Id"
+//	@Success		200					{object}	models.Product
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/products/price-history/{id} [get]
+//	@Security		Bearer
+func (h *ProductHandler) GetProductPriceHistory(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "ID is required",
+		})
+	}
+
+	productPriceHistory, err := h.svc.GetProductPriceHistory(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "No product price history found for this ID",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": " Record found",
+		"data":    productPriceHistory,
+	})
+}
+
 // // GetAllProductStocks godoc
 // //
 // //	@Summary		Get all product stocks

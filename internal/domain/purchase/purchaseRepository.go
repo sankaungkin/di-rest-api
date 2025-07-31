@@ -100,6 +100,16 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		}
 		tx.Save(&newItemTransaction)
 
+		newProductPriceHistory := models.ProductPriceHistory{
+			ProductId:     newPurchase.PurchaseDetails[i].ProductId,
+			ProductName:   newPurchase.PurchaseDetails[i].ProductName,
+			UnitName:      newPurchase.PurchaseDetails[i].UnitName,
+			UnitPrice:     newPurchase.PurchaseDetails[i].Price,
+			PriceType:     "BUY",
+			EffectiveDate: time.Now(),
+		}
+		tx.Save(&newProductPriceHistory)
+
 	}
 	tx.Commit()
 	return &newPurchase, nil

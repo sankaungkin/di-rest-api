@@ -64,10 +64,12 @@ type ProductPrice struct {
 type ProductPriceHistory struct {
 	gorm.Model
 	ID            uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductId     string    `json:"productId" validate:"required"`
-	UnitId        uint      `json:"unitId" validate:"required"`
-	PriceType     string    `json:"priceType" validate:"required,min=1"` // "BUY"	or "SELL"
-	UnitPrice     int64     `json:"price" validate:"required,min=1"`
+	ProductId     string    `json:"productId"`
+	ProductName   string    `json:"productName"`
+	UnitId        uint      `json:"unitId" `
+	UnitName      string    `json:"unitName" `
+	PriceType     string    `json:"priceType" ` // "BUY"	or "SELL"
+	UnitPrice     int64     `json:"price" `
 	EffectiveDate time.Time `gorm:"not null"`
 	CreatedAt     time.Time
 }

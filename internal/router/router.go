@@ -70,6 +70,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
+	products.Get("/price-history/:id", productService.GetProductPriceHistory)
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
@@ -196,6 +197,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Post("/", saleService.CreateSale)
 	sale.Get("/", saleService.GetAllSales)
 	sale.Get("/today", saleService.GetTodaySales)
+	sale.Get("/daily", saleService.GetDailySales)
 	sale.Get("/today-grand-total", saleService.GetTodayGrandTotal)
 	sale.Get("/monthly", saleService.GetMonthlySales)
 	sale.Get("/monthly-grand-total", saleService.GetMonthlyGrandTotal)
