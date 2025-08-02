@@ -26,7 +26,8 @@ type ProductServiceInterface interface {
 	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
 	UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error)
 	UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error)
-	GetProductPriceHistory(productId string) ([]ResponseProductHistoryDTO, error)
+	GetProductPriceHistoryByProductId(productId string) ([]ResponseProductHistoryDTO, error)
+	GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error)
 }
 
 type ProductService struct {
@@ -120,6 +121,10 @@ func (s *ProductService) UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOf
 	return s.repo.UpdateUnit(input)
 }
 
-func (s *ProductService) GetProductPriceHistory(productId string) ([]ResponseProductHistoryDTO, error) {
-	return s.repo.GetProductPriceHistory(productId)
+func (s *ProductService) GetProductPriceHistoryByProductId(productId string) ([]ResponseProductHistoryDTO, error) {
+	return s.repo.GetProductPriceHistoryByProductId(productId)
+}
+
+func (s *ProductService) GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error) {
+	return s.repo.GetAllProductPriceHistory()
 }

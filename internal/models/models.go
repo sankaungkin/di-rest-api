@@ -54,11 +54,12 @@ type UnitOfMeasure struct {
 
 type ProductPrice struct {
 	gorm.Model
-	ID        uint   `gorm:"primaryKey" json:"id"`
+	ID        uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId string `gorm:"index:idx_product_unit_type,unique" json:"productId" validate:"required"`
 	UnitId    uint   `gorm:"index:idx_product_unit_type,unique" json:"unitId" validate:"required"`
 	PriceType string `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
 	UnitPrice int64  `json:"price" validate:"required,min=1"`
+	Remark    string `json:"remark"`
 }
 
 type ProductPriceHistory struct {
@@ -70,6 +71,7 @@ type ProductPriceHistory struct {
 	UnitName      string    `json:"unitName" `
 	PriceType     string    `json:"priceType" ` // "BUY"	or "SELL"
 	UnitPrice     int64     `json:"price" `
+	Remark        string    `json:"remark"`
 	EffectiveDate time.Time `gorm:"not null"`
 	CreatedAt     time.Time
 }
@@ -186,6 +188,7 @@ type PurchaseDetail struct {
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
 	Price       int64  `json:"price"`
+	UnitId      uint   `json:"unitId"`
 	UnitName    string `json:"unitName"`
 	Total       int64  `json:"total"`
 	PurchaseId  string `json:"purchaseId"`

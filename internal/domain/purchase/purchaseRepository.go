@@ -100,13 +100,32 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		}
 		tx.Save(&newItemTransaction)
 
+		newProductPrice := models.ProductPrice{
+			ProductId: newPurchase.PurchaseDetails[i].ProductId,
+			UnitId:    newPurchase.PurchaseDetails[i].UnitId,
+			UnitPrice: newPurchase.PurchaseDetails[i].Price,
+			PriceType: "BUY",
+			Remark:    "PurchaseID:" + newPurchase.ID + ", line item id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].UnitName,
+		}
+
+		err := tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "product_id"}, {Name: "unit_id"}, {Name: "price_type"}},
+			DoUpdates: clause.AssignmentColumns([]string{"unit_price", "updated_at"}),
+		}).Create(&newProductPrice).Error
+
+		if err != nil {
+			return nil, err
+		}
+
+		//save new record to ProductPriceHistory
 		newProductPriceHistory := models.ProductPriceHistory{
 			ProductId:     newPurchase.PurchaseDetails[i].ProductId,
 			ProductName:   newPurchase.PurchaseDetails[i].ProductName,
 			UnitName:      newPurchase.PurchaseDetails[i].UnitName,
+			UnitId:        newPurchase.PurchaseDetails[i].UnitId,
 			UnitPrice:     newPurchase.PurchaseDetails[i].Price,
 			PriceType:     "BUY",
-			EffectiveDate: time.Now(),
+			EffectiveDate: newPurchase.PurchaseDate,
 		}
 		tx.Save(&newProductPriceHistory)
 

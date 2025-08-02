@@ -71,6 +71,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
 	products.Get("/price-history/:id", productService.GetProductPriceHistory)
+	products.Get("/price-history", productService.GetAllProductPriceHistory)
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)

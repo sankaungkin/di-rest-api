@@ -33,7 +33,8 @@ type ProductRepositoryInterface interface {
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
 	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
 	UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error)
-	GetProductPriceHistory(productId string) ([]ResponseProductHistoryDTO, error)
+	GetProductPriceHistoryByProductId(productId string) ([]ResponseProductHistoryDTO, error)
+	GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error)
 }
 
 type ProductRepository struct {
@@ -439,7 +440,34 @@ func (r *ProductRepository) GetUniofMeasurementById(id string) (models.UnitOfMea
 	return unitOfMeasure, nil
 }
 
-func (r *ProductRepository) GetProductPriceHistory(productId string) ([]ResponseProductHistoryDTO, error) {
+func (r *ProductRepository) GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error) {
+	var productPriceHistory []ResponseProductHistoryDTO
+
+	err := r.db.
+		Table("product_price_histories").
+		Select(`
+			product_price_histories.product_id,
+			p.product_name,
+			uom.unit_name,
+			product_price_histories.unit_id,
+			product_price_histories.unit_price,
+			product_price_histories.effective_date,
+			product_price_histories.price_type
+		`).
+		Joins("JOIN products p ON product_price_histories.product_id = p.id").
+		Joins("JOIN unit_of_measures uom ON product_price_histories.unit_id = uom.id").
+		Order("product_price_histories.product_id, product_price_histories.effective_date DESC").
+		Scan(&productPriceHistory).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return []ResponseProductHistoryDTO{}, nil
+		}
+		return []ResponseProductHistoryDTO{}, err
+	}
+	return productPriceHistory, nil
+}
+
+func (r *ProductRepository) GetProductPriceHistoryByProductId(productId string) ([]ResponseProductHistoryDTO, error) {
 	var productPriceHistory []ResponseProductHistoryDTO
 
 	err := r.db.

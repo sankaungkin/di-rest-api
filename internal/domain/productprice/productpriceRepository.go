@@ -128,45 +128,6 @@ func (r *ProductPriceRepository) GetById(id int) (*ProductPriceResponseDTO, erro
 	return &result, nil
 }
 
-func (r *ProductPriceRepository) UpdateProductPriceOld(input *models.ProductPrice) (*models.ProductPrice, error) {
-	var existingProductPrice models.ProductPrice
-	err := r.db.Where("id = ?", input.ID).First(&existingProductPrice).Error
-	if err != nil {
-		return nil, err
-	}
-
-	log.Println("input from Repository: ", input)
-	if input.ProductId == "" || input.UnitId == 0 || input.UnitPrice == 0 {
-		return nil, fmt.Errorf("missing required fields")
-	}
-
-	priceChanged := existingProductPrice.UnitPrice != input.UnitPrice
-
-	existingProductPrice.ProductId = input.ProductId
-	existingProductPrice.UnitId = input.UnitId
-	existingProductPrice.UnitPrice = input.UnitPrice
-
-	log.Println("existingProductPrice to update: ", existingProductPrice)
-	err = r.db.Save(&existingProductPrice).Error
-	if err != nil {
-		return nil, err
-	}
-
-	// Insert into history if price changed
-	if priceChanged {
-		history := models.ProductPriceHistory{
-			ProductId:     existingProductPrice.ProductId,
-			UnitId:        existingProductPrice.UnitId,
-			PriceType:     existingProductPrice.PriceType,
-			UnitPrice:     existingProductPrice.UnitPrice,
-			EffectiveDate: time.Now(),
-			CreatedAt:     time.Now(),
-		}
-		_ = r.db.Create(&history)
-	}
-	return &existingProductPrice, nil
-}
-
 func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error) {
 	// Start transaction
 	tx := r.db.Begin()
@@ -192,7 +153,8 @@ func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) 
 	existingProductPrice.ProductId = input.ProductId
 	existingProductPrice.UnitId = input.UnitId
 	existingProductPrice.UnitPrice = input.UnitPrice
-
+	remark := input.ProductId + ", UnitId: " + fmt.Sprintf("%d", input.UnitId) + ", UnitPrice: " + fmt.Sprintf("%d", input.UnitPrice) + " was changed in time : " + time.Now().Format("2006-01-02 15:04:05")
+	existingProductPrice.Remark = remark
 	if err := tx.Save(&existingProductPrice).Error; err != nil {
 		tx.Rollback()
 		return nil, err
@@ -205,6 +167,7 @@ func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) 
 			UnitId:        existingProductPrice.UnitId,
 			PriceType:     existingProductPrice.PriceType,
 			UnitPrice:     input.UnitPrice,
+			Remark:        remark,
 			EffectiveDate: time.Now(),
 			CreatedAt:     time.Now(),
 		}
@@ -223,52 +186,6 @@ func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) 
 
 	return &existingProductPrice, nil
 }
-
-// func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error) {
-// 	var existingProductPrice models.ProductPrice
-// 	err := r.db.Where("id = ?", input.ID).First(&existingProductPrice).Error
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	log.Println("input from Repository: ", input)
-// 	if input.ProductId == "" || input.UnitId == 0 || input.UnitPrice == 0 {
-// 		return nil, fmt.Errorf("missing required fields")
-// 	}
-
-// 	priceChanged := existingProductPrice.UnitPrice != input.UnitPrice
-
-// 	existingProductPrice.ProductId = input.ProductId
-// 	existingProductPrice.UnitId = input.UnitId
-// 	existingProductPrice.UnitPrice = input.UnitPrice
-
-// 	log.Println("existingProductPrice to update: ", existingProductPrice)
-
-// 	// Save updated price
-// 	if err := r.db.Save(&existingProductPrice).Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Record price change history
-// 	if priceChanged {
-// 		history := models.ProductPriceHistory{
-// 			ProductId:     existingProductPrice.ProductId,
-// 			UnitId:        existingProductPrice.UnitId,
-// 			PriceType:     existingProductPrice.PriceType,
-// 			UnitPrice:     input.UnitPrice,
-// 			EffectiveDate: time.Now(),
-// 			CreatedAt:     time.Now(),
-// 		}
-
-// 		if err := r.db.Create(&history).Error; err != nil {
-// 			log.Println("Failed to create price history:", err)
-// 			// Optional: return error if history insert is critical
-// 			return nil, fmt.Errorf("failed to record price history: %w", err)
-// 		}
-// 	}
-
-// 	return &existingProductPrice, nil
-// }
 
 func (r *ProductPriceRepository) DeleteProductPrice(id int) error {
 	// return r.db.Delete(&User{}, id).Error
