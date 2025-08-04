@@ -325,3 +325,23 @@ func (h *SaleHandler) GetDailySales(c *fiber.Ctx) error {
 			"count":   len(sales),
 		})
 }
+
+// @Summary Get Top Ten Sole Products
+// @Description Get Top Ten Sole Products
+// @Tags Sale
+// @Accept json
+// @Produce json
+// @Success 200 {object} fiber.Map{data=[]ResponseTopTenSoleProductsDTO}
+// @Router /api/v1/sales/toptensoleproducts [get]
+func (h *SaleHandler) GetTopTenSoleProducts(c *fiber.Ctx) error {
+	results, err := h.svc.GetTopTenSoleProducts()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Top Ten Sole Products fetched successfully",
+			"data":    results,
+		})
+}

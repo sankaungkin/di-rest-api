@@ -15,6 +15,7 @@ import (
 type ProductPriceRepositoryInterface interface {
 	Create(productPrice *models.ProductPrice) (*models.ProductPrice, error)
 	GetAll() ([]ProductPriceResponseDTO, error)
+	GetAllWithStock() ([]ProductPriceResponseDTO, error)
 	GetInventoryTotalValue() (int64, error)
 	GetById(id int) (*ProductPriceResponseDTO, error)
 	UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error)
@@ -76,6 +77,30 @@ func (r *ProductPriceRepository) GetAll() ([]ProductPriceResponseDTO, error) {
 		Select(`pp.id, pp.product_id, p.product_name, u.unit_name, pp.unit_id, pp.unit_price, pp.price_type`).
 		Joins("JOIN products AS p ON pp.product_id = p.id").
 		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
+		Order("pp.id DESC").
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(results) == 0 {
+		return nil, errors.New("no records found")
+	}
+
+	return results, nil
+}
+
+func (r *ProductPriceRepository) GetAllWithStock() ([]ProductPriceResponseDTO, error) {
+	var results []ProductPriceResponseDTO
+
+	err := r.db.
+		Table("product_prices AS pp").
+		Select(`pp.id, pp.product_id, p.product_name, u.unit_name, pp.unit_id, pp.unit_price, pp.price_type`).
+		Joins("JOIN products AS p ON pp.product_id = p.id").
+		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
+		Joins("JOIN product_stocks AS ps ON ps.product_id = pp.product_id").
+		Where("ps.base_qty > ps.reorder_lvl").
 		Order("pp.id DESC").
 		Scan(&results).Error
 

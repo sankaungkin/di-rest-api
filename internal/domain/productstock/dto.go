@@ -10,6 +10,25 @@ type ResponseProductStockDTO struct {
 	DeriveUnitId int    `json:"deriveUnitId"`
 }
 
+type ResponseProductDTO struct {
+	ID          string `gorm:"primaryKey" json:"id"`
+	ProductName string `json:"productName" validate:"required,min=3"`
+	CategoryId  uint   `json:"categoryId"`
+	// Uom             string `json:"uom" validate:"required,min=3"`
+	BaseUnit        string `json:"baseUnit"`
+	DeriveUnit      string `json:"deriveUnit"`
+	UomId           uint   `json:"uomId"`
+	DeriveUomId     uint   `json:"deriveUomId"`
+	BuyPrice        int64  `json:"buyPrice" validate:"required,min=1"`
+	SellPriceLevel1 int64  `json:"sellPricelvl1" `
+	DeriveUnitPrice int64  `json:"deriveUnitPrice"`
+	ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	QtyOnHand       int    `json:"qtyOnHand" validate:"required"`
+	BrandName       string `json:"brandName"`
+	IsActive        bool   `json:"isActive" gorm:"default:true"`
+	CreatedAt       string `json:"createdAt"`
+}
+
 type UpdateProductStockDTO struct {
 	ID         uint   `gorm:"primaryKey" json:"id"`
 	ProductID  string `json:"productId"`

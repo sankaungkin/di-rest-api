@@ -26,3 +26,9 @@ type ResponseDailySalesDTO struct {
 	SaleDate string `json:"saleDate"`
 	Total    int64  `json:"total"`
 }
+
+type ResponseTopTenSoleProductsDTO struct {
+	ProductId    string `json:"productId"`
+	ProductName  string `json:"productName"`
+	TotalQtySold int64  `json:"totalQtySold"`
+}

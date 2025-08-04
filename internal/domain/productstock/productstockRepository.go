@@ -141,6 +141,7 @@ func (r *ProductStockRepository) GetAllProductStocks() ([]ResponseProductStockDT
 		`).
 		Joins("JOIN unit_conversions uc ON p.product_id = uc.product_id").
 		Joins("JOIN products item ON p.product_id = item.id").
+		Where("p.base_qty > p.reorder_lvl").
 		Order("p.id DESC").
 		Scan(&results).Error
 

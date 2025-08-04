@@ -20,6 +20,7 @@ type SaleRepositoryInterface interface {
 	GetAll() ([]models.Sale, error)
 	GetDailySales() ([]ResponseDailySalesDTO, error)
 	GetTodaySales() ([]models.Sale, error)
+	GetTopTenSoleProducts() ([]ResponseTopTenSoleProductsDTO, error)
 	GetById(id string) (*models.Sale, error)
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlySales() ([]models.Sale, error)
@@ -205,7 +206,7 @@ func (r *SaleRepository) GetDailySalesOLD() ([]ResponseDailySalesDTO, error) {
 	return results, err
 }
 
-func (r *SaleRepository) GetDailySales() ([]ResponseDailySalesDTO, error) {
+func (r *SaleRepository) GetDailySalesOld() ([]ResponseDailySalesDTO, error) {
 	type rawSale struct {
 		SaleDate time.Time
 		Total    int64
@@ -236,6 +237,79 @@ func (r *SaleRepository) GetDailySales() ([]ResponseDailySalesDTO, error) {
 			Total:    raw.Total,
 		}
 		results = append(results, formatted)
+	}
+
+	return results, nil
+}
+
+func (r *SaleRepository) GetDailySales() ([]ResponseDailySalesDTO, error) {
+	type rawSale struct {
+		SaleDate time.Time
+		Total    int64
+	}
+
+	now := time.Now()
+	currentYear, currentMonth, _ := now.Date()
+	monthStart := time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, now.Location())
+	nextMonth := monthStart.AddDate(0, 1, 0)
+	daysInMonth := nextMonth.Sub(monthStart).Hours() / 24
+
+	// Generate all dates in the month
+	var allDates []time.Time
+	for d := 0; d < int(daysInMonth); d++ {
+		allDates = append(allDates, monthStart.AddDate(0, 0, d))
+	}
+
+	// Get sales data
+	var salesData []rawSale
+	err := r.db.
+		Table("sales").
+		Select("sale_date::DATE as sale_date, COALESCE(SUM(grand_total), 0) AS total").
+		Where("sale_date >= ? AND sale_date < ?", monthStart, nextMonth).
+		Group("sale_date::DATE").
+		Scan(&salesData).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a map of date to total for easy lookup
+	salesMap := make(map[string]int64)
+	for _, sale := range salesData {
+		salesMap[sale.SaleDate.Format("2006-01-02")] = sale.Total
+	}
+
+	// Build results with all dates, filling 0 where no sales
+	var results []ResponseDailySalesDTO
+	for _, date := range allDates {
+		dateStr := date.Format("2006-01-02")
+		total, exists := salesMap[dateStr]
+		if !exists {
+			total = 0
+		}
+		results = append(results, ResponseDailySalesDTO{
+			SaleDate: date.Format("02-01-2006"), // dd-MM-yyyy format
+			Total:    total,
+		})
+	}
+
+	return results, nil
+}
+
+func (r *SaleRepository) GetTopTenSoleProducts() ([]ResponseTopTenSoleProductsDTO, error) {
+	var results []ResponseTopTenSoleProductsDTO
+
+	err := r.db.
+		Table("sale_details sd").
+		Select("sd.product_id, sd.product_name, SUM(sd.qty) as total_qty_sold").
+		Joins("JOIN sales s ON sd.sale_id = s.id").
+		Group("sd.product_id, sd.product_name").
+		Order("total_qty_sold DESC").
+		Limit(10).
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
 	}
 
 	return results, nil
