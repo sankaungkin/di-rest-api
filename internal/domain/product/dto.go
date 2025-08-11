@@ -13,6 +13,81 @@ type CreateProductRequstDTO struct {
 	Facor       int    `json:"factor" gorm:"default:1"`
 }
 
+type Create_Product_UnitConversion_Stock_Price_DTO struct {
+	//Product DTO
+	ID          string `gorm:"primaryKey" json:"id"`
+	ProductName string `json:"productName" validate:"required,min=3"`
+	CategoryId  uint   `json:"categoryId" validate:"required"`
+	Uom         string `json:"uom"`
+	UomId       uint   `json:"uomId" validate:"required"`
+	DeriveUom   string `json:"deriveUom"`
+	DeriveUomId uint   `json:"deriveUomId" gorm:"default:1"`
+	BrandName   string `json:"brandName"`
+	IsActive    bool   `json:"isActive" gorm:"default:true"`
+
+	//Product Unit Conversion DTO
+	/**
+		type UnitConversion struct {
+		gorm.Model
+		ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+		Description  string `gorm:"type:varchar(20)" json:"description"`
+		ProductId    string `gorm:"type:varchar(20)" json:"productId" validate:"required"`
+		BaseUnit     string `json:"baseUnit"`
+		DeriveUnit   string `json:"deriveUnit" `
+		BaseUnitId   int    `json:"baseUnitId" validate:"required"`
+		DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
+		Factor       int    `json:"factor" validate:"required,min=1"`
+	}
+	*/
+	BaseUnitName   string `json:"baseUnitName"`
+	BaseUnitId     uint   `json:"baseUnitId" validate:"required"`
+	DeriveUnitName string `json:"deriveUnitName"`
+	DeriveUnitId   uint   `json:"deriveUnitId" validate:"required"`
+	Description    string `json:"description"`
+	Factor         int    `json:"factor" gorm:"default:1"`
+
+	//Product Price DTO
+	/**
+	type ProductPrice struct {
+		gorm.Model
+		ID        uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+		ProductId string `gorm:"index:idx_product_unit_type,unique" json:"productId" validate:"required"`
+		UnitId    uint   `gorm:"index:idx_product_unit_type,unique" json:"unitId" validate:"required"`
+		PriceType string `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
+		UnitPrice int64  `json:"price" validate:"required,min=1"`
+		Remark    string `json:"remark"`
+	}
+	*/
+
+	// PriceType string `json:"priceType" gorm:"default:BUY"`
+	// Price     int64  `json:"price"`
+
+	Prices []struct {
+		PriceType string `json:"priceType" validate:"required,oneof=BUY SELL"`
+		UnitId    uint   `json:"unitId" validate:"required"`
+		Price     int64  `json:"price" validate:"required,min=1"`
+	} `json:"prices" validate:"required,min=1"`
+
+	//Inventory DTO
+	// BasesUnitId uint `json:"baseUnitId"`
+	// DerivedUnitId uint `json:"deriveUnitId"`
+	/**
+		type ProductStock struct {
+		gorm.Model
+		// ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+		ProductId    string `gorm:"type:varchar(20)" json:"productId"`
+		BaseUnitId   int    `json:"baseUnitId" validate:"required"`
+		DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
+		BaseQty      int    `json:"baseQty" validate:"required,min=1"`
+		DerivedQty   int    `json:"derivedQty" validate:"required,min=1"`
+		ReorderLvl   int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	}
+	*/
+	BaseQty    int `json:"baseQty"`
+	DerivedQty int `json:"derivedQty"`
+	ReorderLvl int `json:"reorderlvl" gorm:"default:5"`
+}
+
 type UpdateProductRequstDTO struct {
 	ProductName string `json:"productName" validate:"required,min=3"`
 	CategoryId  uint   `json:"categoryId" validate:"required"`

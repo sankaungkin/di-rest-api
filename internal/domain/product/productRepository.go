@@ -15,6 +15,7 @@ import (
 
 type ProductRepositoryInterface interface {
 	Create(product *models.Product) (*models.Product, error)
+	CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error)
 	// GetAll() ([]models.Product, error)
 	GetAll() ([]ResponseProductDTO, error)
 	GetAllWithoutStock() ([]ResponseProductDTO, error)
@@ -65,6 +66,147 @@ func NewProductRepository(db *gorm.DB) ProductRepositoryInterface {
 func (r *ProductRepository) Create(product *models.Product) (*models.Product, error) {
 	err := r.db.Create(&product).Error
 	return product, err
+}
+
+func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error) {
+	// Start transaction
+	tx := s.db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1. Create Product
+	product := &models.Product{
+		ID:          dto.ID,
+		ProductName: dto.ProductName,
+		CategoryId:  dto.CategoryId,
+		Uom:         dto.Uom,
+		UomId:       dto.UomId,
+		DeriveUom:   dto.DeriveUom,
+		DeriveUomId: dto.DeriveUomId,
+		BrandName:   dto.BrandName,
+		IsActive:    dto.IsActive,
+	}
+
+	if err := tx.Create(product).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to create product: %w", err)
+	}
+
+	// 2. Create Unit Conversion
+	unitConversion := &models.UnitConversion{
+		Description:  dto.Description,
+		ProductId:    dto.ID,
+		BaseUnit:     dto.BaseUnitName,
+		DeriveUnit:   dto.DeriveUom,
+		BaseUnitId:   int(dto.BaseUnitId),
+		DeriveUnitId: int(dto.DeriveUomId),
+		Factor:       dto.Factor,
+	}
+
+	if err := tx.Create(unitConversion).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to create unit conversion: %w", err)
+	}
+
+	// Update DTO with generated IDs from unit conversion
+	dto.Description = unitConversion.Description
+	dto.BaseUnitId = uint(unitConversion.BaseUnitId)
+	dto.DeriveUnitId = uint(unitConversion.DeriveUnitId)
+	dto.Factor = unitConversion.Factor
+
+	// 3. Create Product Stock
+	productStock := &models.ProductStock{
+		ProductId:    dto.ID,
+		BaseUnitId:   int(dto.BaseUnitId),
+		DeriveUnitId: int(dto.DeriveUnitId),
+		BaseQty:      dto.BaseQty,
+		DerivedQty:   dto.DerivedQty,
+		ReorderLvl:   dto.ReorderLvl,
+	}
+
+	if err := tx.Create(productStock).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to create product stock: %w", err)
+	}
+
+	// Update DTO with stock information
+	dto.BaseQty = productStock.BaseQty
+	dto.DerivedQty = productStock.DerivedQty
+	dto.ReorderLvl = productStock.ReorderLvl
+
+	// 4. Create Product Price
+	// productPrice := &models.ProductPrice{
+	// 	ProductId: dto.ID,
+	// 	UnitId:    dto.BaseUnitId,
+	// 	PriceType: dto.PriceType,
+	// 	UnitPrice: dto.Price,
+	// }
+
+	// if err := tx.Create(productPrice).Error; err != nil {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("failed to create product price: %w", err)
+	// }
+
+	for _, price := range dto.Prices {
+		productPrice := &models.ProductPrice{
+			ProductId: dto.ID,
+			PriceType: price.PriceType,
+			UnitId:    price.UnitId,
+			UnitPrice: price.Price,
+		}
+
+		if err := tx.Create(productPrice).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to create %s price: %w", price.PriceType, err)
+		}
+
+		// Create price history
+		priceHistory := &models.ProductPriceHistory{
+			ProductId:     dto.ID,
+			UnitId:        price.UnitId,
+			PriceType:     price.PriceType,
+			UnitPrice:     price.Price,
+			EffectiveDate: time.Now(),
+		}
+		if err := tx.Create(priceHistory).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to create price history: %w", err)
+		}
+	}
+
+	// // Update DTO with price information
+	// dto.PriceType = productPrice.PriceType
+	// dto.Price = productPrice.UnitPrice
+
+	// // 5. Create Price History (as part of the same transaction)
+	// priceHistory := &models.ProductPriceHistory{
+	// 	ProductId:     productPrice.ProductId,
+	// 	UnitId:        productPrice.UnitId,
+	// 	PriceType:     productPrice.PriceType,
+	// 	UnitPrice:     productPrice.UnitPrice,
+	// 	EffectiveDate: time.Now(),
+	// 	CreatedAt:     time.Now(),
+	// }
+
+	// if err := tx.Create(priceHistory).Error; err != nil {
+	// 	tx.Rollback()
+	// 	return nil, fmt.Errorf("failed to create price history: %w", err)
+	// }
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	// Return the updated DTO with all generated fields
+	return dto, nil
 }
 
 func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {

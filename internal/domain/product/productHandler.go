@@ -1,6 +1,7 @@
 package product
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,6 +12,12 @@ import (
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
+)
+
+// Error variables for product creation
+var (
+	ErrDuplicateProduct = errors.New("duplicate product")
+	ErrInvalidCategory  = errors.New("invalid category")
 )
 
 type ProductHandler struct {
@@ -411,4 +418,55 @@ func (h *ProductHandler) GetAllProductPriceHistory(c *fiber.Ctx) error {
 			"data":    productPriceHistory,
 			"count":   len(productPriceHistory),
 		})
+}
+
+// @Summary Create Product with Unit Conversion, Stock, and Price
+// @Tags Product
+// @Produce json
+// @Param product body Create_Product_UnitConversion_Stock_Price_DTO true "Product"
+// @Success 200 {object} Create_Product_UnitConversion_Stock_Price_DTO
+// @Router /products [post]
+func (h *ProductHandler) CreateProductWithDetails(c *fiber.Ctx) error {
+	// 1. Initialize DTO
+	var dto Create_Product_UnitConversion_Stock_Price_DTO
+
+	// 2. Parse request body
+	if err := c.BodyParser(&dto); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"code":    fiber.StatusBadRequest,
+			"message": "Invalid request payload",
+			"error":   err.Error(), // Include the actual error for debugging
+		})
+	}
+
+	// 4. Call service
+	createdDto, err := h.svc.CreateProductWithDetails(&dto)
+	if err != nil {
+		// Handle different types of errors appropriately
+		var statusCode int
+		switch {
+		case errors.Is(err, ErrDuplicateProduct):
+			statusCode = fiber.StatusConflict
+		case errors.Is(err, ErrInvalidCategory):
+			statusCode = fiber.StatusUnprocessableEntity
+		default:
+			statusCode = fiber.StatusInternalServerError
+		}
+
+		return c.Status(statusCode).JSON(fiber.Map{
+			"status":  "FAIL",
+			"code":    statusCode,
+			"message": "Failed to create product",
+			"error":   err.Error(),
+		})
+	}
+
+	// 5. Return success response
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{ // Use 201 for created resources
+		"status":  "SUCCESS",
+		"code":    fiber.StatusCreated,
+		"message": "Product created successfully",
+		"data":    createdDto,
+	})
 }

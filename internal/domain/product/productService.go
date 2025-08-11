@@ -10,6 +10,7 @@ import (
 
 type ProductServiceInterface interface {
 	CreateSerive(product *models.Product) (*models.Product, error)
+	CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error)
 	GetAllSerive() ([]ResponseProductDTO, error)
 	GetAllWithoutStock() ([]ResponseProductDTO, error)
 	GetProductsWithoutPrices() ([]ResponseProductDTO, error)
@@ -56,9 +57,12 @@ func NewProductService(repo ProductRepositoryInterface) ProductServiceInterface 
 }
 
 func (s *ProductService) CreateSerive(product *models.Product) (*models.Product, error) {
-
 	return s.repo.Create(product)
 }
+func (s *ProductService) CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error) {
+	return s.repo.CreateProductWithDetails(dto)
+}
+
 func (s *ProductService) GetAllSerive() ([]ResponseProductDTO, error) {
 	return s.repo.GetAll()
 }

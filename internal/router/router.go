@@ -66,7 +66,8 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	products := api.Group("/products")
 	products.Use(middleware.Protected())
 
-	products.Post("/", productService.CreateProduct)
+	// products.Post("/", productService.CreateProduct)
+	products.Post("/", productService.CreateProductWithDetails)
 	products.Get("/", productService.GetAllProducts)
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
