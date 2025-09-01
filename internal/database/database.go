@@ -48,6 +48,8 @@ func NewDB() (*gorm.DB, error) {
 			"host=%s port=%s password=%s user=%s dbname=%s sslmode=%s timezone=%s",
 			Host, Port, Password, User, DBName, SSLMode, timeZone)
 
+		log.Print(dsn)
+
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			// return nil, err
@@ -66,6 +68,7 @@ func NewDB() (*gorm.DB, error) {
 			&models.Inventory{},
 			&models.Sale{},
 			&models.SaleDetail{},
+			&models.ProductUnit{},
 			&models.Purchase{},
 			&models.PurchaseDetail{},
 			&models.ItemTransaction{},

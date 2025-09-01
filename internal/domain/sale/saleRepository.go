@@ -76,18 +76,41 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 		return nil, err
 	}
 
+	// Preload all necessary relationships
+	if err := tx.Preload("SaleDetails.Product").
+		First(&newSale, "id = ?", newSale.ID).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
 	if err := tx.Preload("SaleDetails").First(&newSale, "id = ?", newSale.ID).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
 	for i := range newSale.SaleDetails {
+
 		sd := &newSale.SaleDetails[i]
 
-		if err := adjustProductStock(tx, newSale.ID, sd); err != nil {
+		tx.Preload("Product").Preload("Uom").First(sd, sd.ID)
+
+		if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "increase"); err != nil {
 			tx.Rollback()
-			return nil, err
+			return nil, fmt.Errorf("failed to add stock movement: %v", err)
 		}
+		newItemTransactions := models.ItemTransaction{
+			ProductId:   sd.ProductId,
+			TranType:    "SALE",
+			OutQty:      sd.Qty,
+			Uom:         sd.Uom,
+			ReferenceNo: input.ID + "-" + strconv.Itoa(int(sd.ID)),
+			Remark: fmt.Sprintf(
+				"SaleId:%s, SaleDetailId %d, ProductId %s : %s, Sold %d %s",
+				input.ID, sd.ID, sd.ProductId, sd.Product.ProductName, sd.Qty, sd.Uom,
+			),
+			CreatedAt: time.Now().Local(),
+		}
+		tx.Create(&newItemTransactions)
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -97,81 +120,80 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	return &newSale, nil
 }
 
-func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error {
-	var productStock models.ProductStock
-	if err := tx.First(&productStock, "product_id = ?", sd.ProductId).Error; err != nil {
-		return err
-	}
+// func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error {
+// 	var productStock models.ProductStock
+// 	if err := tx.First(&productStock, "product_id = ?", sd.ProductId).Error; err != nil {
+// 		return err
+// 	}
 
-	//broadcast low stock message
+// 	//broadcast low stock message
 
-	var unitConv models.UnitConversion
-	if err := tx.First(&unitConv, "product_id = ?", sd.ProductId).Error; err != nil {
-		return fmt.Errorf("unit conversion not found for product %s", sd.ProductId)
-	}
+// 	var unitConv models.UnitConversion
+// 	if err := tx.First(&unitConv, "product_id = ?", sd.ProductId).Error; err != nil {
+// 		return fmt.Errorf("unit conversion not found for product %s", sd.ProductId)
+// 	}
 
-	factor := int(unitConv.Factor)
+// 	factor := int(unitConv.Factor)
 
-	switch {
-	case strings.EqualFold(sd.Uom, unitConv.BaseUnit):
-		if sd.Qty > productStock.BaseQty {
-			return fmt.Errorf("not enough stock: base unit of %s. requested %d, available %d", sd.ProductId, sd.Qty, productStock.BaseQty)
-		}
-		productStock.BaseQty -= sd.Qty
+// 	switch {
+// 	case strings.EqualFold(sd.Uom, unitConv.BaseUnit):
+// 		if sd.Qty > productStock.BaseQty {
+// 			return fmt.Errorf("not enough stock: base unit of %s. requested %d, available %d", sd.ProductId, sd.Qty, productStock.BaseQty)
+// 		}
+// 		productStock.BaseQty -= sd.Qty
 
-		// Log base unit transaction
-		trx := models.ItemTransaction{
-			ProductId:   sd.ProductId,
-			ReferenceNo: saleId + "-" + strconv.Itoa(int(sd.ID)),
-			OutQty:      sd.Qty,
-			Uom:         sd.Uom,
-			TranType:    "CREDIT",
-			Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (base unit)", sd.SaleId, sd.ID, sd.ProductId, sd.Qty, sd.Uom),
-		}
-		if err := tx.Create(&trx).Error; err != nil {
-			return err
-		}
+// 		// Log base unit transaction
+// 		trx := models.ItemTransaction{
+// 			ProductId:   sd.ProductId,
+// 			ReferenceNo: saleId + "-" + strconv.Itoa(int(sd.ID)),
+// 			OutQty:      sd.Qty,
+// 			Uom:         sd.Uom,
+// 			TranType:    "CREDIT",
+// 			Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (base unit)", sd.SaleId, sd.ID, sd.ProductId, sd.Qty, sd.Uom),
+// 		}
+// 		if err := tx.Create(&trx).Error; err != nil {
+// 			return err
+// 		}
 
-	case strings.EqualFold(sd.Uom, unitConv.DeriveUnit):
-		totalNeeded := sd.DerivedQty
+// 	case strings.EqualFold(sd.Uom, unitConv.DeriveUnit):
+// 		totalNeeded := sd.DerivedQty
 
-		if totalNeeded <= productStock.DerivedQty {
-			productStock.DerivedQty -= totalNeeded
-		} else {
-			shortage := totalNeeded - productStock.DerivedQty
-			productStock.DerivedQty = 0
+// 		if totalNeeded <= productStock.DerivedQty {
+// 			productStock.DerivedQty -= totalNeeded
+// 		} else {
+// 			shortage := totalNeeded - productStock.DerivedQty
+// 			productStock.DerivedQty = 0
 
-			baseToConvert := (shortage + factor - 1) / factor // round up
-			if baseToConvert > productStock.BaseQty {
-				return fmt.Errorf("not enough stock for derived sale of product %s: need %d %s → convert %d base units, only %d available",
-					sd.ProductId, totalNeeded, unitConv.DeriveUnit, baseToConvert, productStock.BaseQty)
-			}
+// 			baseToConvert := (shortage + factor - 1) / factor // round up
+// 			if baseToConvert > productStock.BaseQty {
+// 				return fmt.Errorf("not enough stock for derived sale of product %s: need %d %s → convert %d base units, only %d available",
+// 					sd.ProductId, totalNeeded, unitConv.DeriveUnit, baseToConvert, productStock.BaseQty)
+// 			}
 
-			productStock.BaseQty -= baseToConvert
-			convertedDerived := baseToConvert * factor
-			productStock.DerivedQty = convertedDerived - shortage
-		}
+// 			productStock.BaseQty -= baseToConvert
+// 			convertedDerived := baseToConvert * factor
+// 			productStock.DerivedQty = convertedDerived - shortage
+// 		}
 
-		// Log derived unit transaction
-		trx := models.ItemTransaction{
-			ProductId:   sd.ProductId,
-			ReferenceNo: saleId + "-" + strconv.Itoa(int(sd.ID)),
-			OutQty:      sd.DerivedQty,
-			Uom:         sd.Uom,
-			TranType:    "CREDIT",
-			Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (derived unit)", sd.SaleId, sd.ID, sd.ProductId, sd.DerivedQty, sd.Uom),
-		}
-		if err := tx.Create(&trx).Error; err != nil {
-			return err
-		}
+// 		// Log derived unit transaction
+// 		trx := models.ItemTransaction{
+// 			ProductId:   sd.ProductId,
+// 			ReferenceNo: saleId + "-" + strconv.Itoa(int(sd.ID)),
+// 			OutQty:      sd.DerivedQty,
+// 			Uom:         sd.Uom,
+// 			TranType:    "CREDIT",
+// 			Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (derived unit)", sd.SaleId, sd.ID, sd.ProductId, sd.DerivedQty, sd.Uom),
+// 		}
+// 		if err := tx.Create(&trx).Error; err != nil {
+// 			return err
+// 		}
 
-		//TODO bug to fix
-	default:
-		return fmt.Errorf("invalid unit %s for product %s (expected %s or %s)", sd.Uom, sd.ProductId, unitConv.BaseUnit, unitConv.DeriveUnit)
-	}
+// 	default:
+// 		return fmt.Errorf("invalid unit %s for product %s (expected %s or %s)", sd.Uom, sd.ProductId, unitConv.BaseUnit, unitConv.DeriveUnit)
+// 	}
 
-	return tx.Save(&productStock).Error
-}
+// 	return tx.Save(&productStock).Error
+// }
 
 func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 

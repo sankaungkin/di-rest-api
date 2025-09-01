@@ -61,7 +61,7 @@ func (r *ProductPriceRepository) Create(productPrice *models.ProductPrice) (*mod
 		UnitId:        productPrice.UnitId,
 		PriceType:     productPrice.PriceType,
 		UnitPrice:     productPrice.UnitPrice,
-		EffectiveDate: time.Now(),
+		EffectiveDate: time.Now().Format("2006-01-02"),
 		CreatedAt:     time.Now(),
 	}
 	_ = r.db.Create(&history) // optional: handle error if needed
@@ -193,8 +193,8 @@ func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) 
 			PriceType:     existingProductPrice.PriceType,
 			UnitPrice:     input.UnitPrice,
 			Remark:        remark,
-			EffectiveDate: time.Now(),
-			CreatedAt:     time.Now(),
+			EffectiveDate: time.Now().Local().Format("2006-01-02"),
+			CreatedAt:     time.Now().Local(),
 		}
 
 		if err := tx.Create(&history).Error; err != nil {
@@ -228,8 +228,8 @@ func (r *ProductPriceRepository) DeleteProductPrice(id int) error {
 		UnitId:        productPrice.UnitId,
 		PriceType:     productPrice.PriceType,
 		UnitPrice:     productPrice.UnitPrice,
-		EffectiveDate: time.Now(),
-		CreatedAt:     time.Now(),
+		EffectiveDate: time.Now().Local().Format("2006-01-02"),
+		CreatedAt:     time.Now().Local(),
 	}
 	_ = r.db.Create(&history)
 

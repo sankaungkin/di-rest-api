@@ -6,7 +6,7 @@ type ProductPriceResponseDTO struct {
 	ProductName string `json:"productName"`
 	UnitId      uint   `json:"unitId" `
 	UnitName    string `json:"unitName"`
-	UnitPrice   int64  `json:"price" `
+	UnitPrice   int    `json:"price" `
 	PriceType   string `json:"priceType"`
 }
 
@@ -16,6 +16,6 @@ type UpdateProductPriceRequestDTO struct {
 	ProductName string `json:"productName"`
 	UnitId      uint   `json:"unitId" `
 	UnitName    string `json:"unitName"`
-	UnitPrice   int64  `json:"price" `
+	UnitPrice   int    `json:"price" `
 	PriceType   string `json:"priceType"`
 }

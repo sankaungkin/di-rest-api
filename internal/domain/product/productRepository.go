@@ -173,7 +173,7 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 			UnitId:        price.UnitId,
 			PriceType:     price.PriceType,
 			UnitPrice:     price.Price,
-			EffectiveDate: time.Now(),
+			EffectiveDate: time.Now().Local().Format("2006-01-02"),
 		}
 		if err := tx.Create(priceHistory).Error; err != nil {
 			tx.Rollback()

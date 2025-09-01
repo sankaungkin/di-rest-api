@@ -1,6 +1,7 @@
 package purchase
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -41,7 +42,7 @@ func NewSaleRepository(db *gorm.DB) PurchaseRepositoryInterface {
 	return repoInstance
 }
 
-func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+func (r *PurchaseRepository) CreateOld(input *models.Purchase) (*models.Purchase, error) {
 
 	newPurchase := models.Purchase{
 		ID:              input.ID,
@@ -74,6 +75,12 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		tx.Rollback()
 		return nil, err
 	}
+
+	if err := tx.Preload("PurchaseDetails.Product").First(&newPurchase, "id = ?", newPurchase.ID).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
 	for i := range newPurchase.PurchaseDetails {
 
 		// increase productStock qtyonhand
@@ -89,13 +96,12 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 			InQty:       newPurchase.PurchaseDetails[i].Qty,
 			OutQty:      0,
 			ProductId:   newPurchase.PurchaseDetails[i].ProductId,
-			TranType:    "DEBIT",
+			TranType:    "PURCHASE",
 			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)),
 			Uom:         newPurchase.PurchaseDetails[i].UnitName,
-			// Remark:      "PurchaseID:" + newPurchase.ID + ", line items id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].Uom,
 			Remark: fmt.Sprintf(
-				"PurchaseID:%s, line item id:%d, decrease %d %s ",
-				newPurchase.ID, newPurchase.PurchaseDetails[i].ID, newPurchase.PurchaseDetails[i].Qty, newPurchase.PurchaseDetails[i].UnitName,
+				"PurchaseID:%s, purchaseDetail id:%d, buy %s %s %d %s ",
+				newPurchase.ID, newPurchase.PurchaseDetails[i].ID, newPurchase.PurchaseDetails[i].ProductId, newPurchase.PurchaseDetails[i].Product.ProductName, newPurchase.PurchaseDetails[i].Qty, newPurchase.PurchaseDetails[i].UnitName,
 			),
 		}
 		tx.Save(&newItemTransaction)
@@ -133,6 +139,86 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 	tx.Commit()
 	return &newPurchase, nil
 
+}
+
+func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Precompute BaseQty for each detail before saving
+		for i := range input.PurchaseDetails {
+			detail := &input.PurchaseDetails[i]
+
+			// Find ProductUnit
+			var pu models.ProductUnit
+			if err := tx.Where("id = ?", detail.ProductUnitId).First(&pu).Error; err != nil {
+				return fmt.Errorf("product unit not found: %w", err)
+			}
+
+			detail.BaseQty = detail.Qty * pu.ConversionToBase
+		}
+
+		// 2. Save Purchase + PurchaseDetails (so IDs are available)
+		if err := tx.Create(&input).Error; err != nil {
+			return err
+		}
+
+		// 3. Create ItemTransactions for each detail
+		for _, detail := range input.PurchaseDetails {
+			// Load product to get ProductName
+			var product models.Product
+			if err := tx.Where("id = ?", detail.ProductId).First(&product).Error; err != nil {
+				return fmt.Errorf("product not found: %w", err)
+			}
+
+			newItemTransaction := models.ItemTransaction{
+				ProductId:   detail.ProductId,
+				InQty:       detail.Qty,
+				TranType:    "PURCHASE",
+				ReferenceNo: fmt.Sprintf("%s-%d", input.ID, detail.ID),
+				Uom:         detail.Uom,
+				Remark: fmt.Sprintf("PurchaseID:%s, PurchaseDetail id:%d, Buy %s : %s %d %s",
+					input.ID, detail.ID, detail.ProductId, product.ProductName, detail.Qty, detail.Uom),
+				CreatedAt: time.Now().Local(),
+			}
+
+			if err := tx.Create(&newItemTransaction).Error; err != nil {
+				return err
+			}
+		}
+
+		// 4. Update stock
+		for _, detail := range input.PurchaseDetails {
+			if err := r.updateStock(tx, detail.ProductId, detail.BaseQty); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return input, nil
+}
+
+// Update stock always in base unit
+func (r *PurchaseRepository) updateStock(tx *gorm.DB, productId string, baseQty int) error {
+	var stock models.ProductStock
+	if err := tx.Where("product_id = ?", productId).First(&stock).Error; err != nil {
+		// If not exists, create new
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			stock = models.ProductStock{
+				ProductId: productId,
+				BaseQty:   baseQty,
+			}
+			return tx.Create(&stock).Error
+		}
+		return err
+	}
+
+	// Increase stock
+	stock.BaseQty += baseQty
+	return tx.Save(&stock).Error
 }
 
 func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {

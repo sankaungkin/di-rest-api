@@ -1,8 +1,6 @@
 package sale
 
 import (
-	"time"
-
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
 
@@ -14,7 +12,7 @@ type SaleInvoiceRequestDTO struct {
 	Total       int64               `json:"total"`
 	GrandTotal  int64               `json:"grandTotal"`
 	Remark      string              `json:"remark"`
-	SaleDate    time.Time           `json:"saleDate"`
+	SaleDate    string              `json:"saleDate"`
 }
 
 type ResponseTopCustomerDTO struct {

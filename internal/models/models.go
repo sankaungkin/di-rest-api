@@ -16,7 +16,7 @@ type Category struct {
 	gorm.Model
 	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	CategoryName string    `json:"categoryName" validate:"required,min=3"`
-	Products     []Product `gorm:"foreignKey:CategoryId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	Products     []Product `gorm:"foreignKey:CategoryId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"products"`
 	CreatedAt    int64     `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt    int64     `gorm:"autoUpdateTime:milli" json:"-"`
 }
@@ -26,11 +26,11 @@ type Product struct {
 	ID               string            `gorm:"primaryKey" json:"id"`
 	ProductName      string            `json:"productName" validate:"required,min=3"`
 	CategoryId       uint              `json:"categoryId"`
-	UnitConversion   []UnitConversion  `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
-	Inventories      []Inventory       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
-	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"-"`
-	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"-"`
-	ItemTransactions []ItemTransaction `gorm:"foreignKey:ProductId;"  json:"-"`
+	UnitConversion   []UnitConversion  `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversion"`
+	Inventories      []Inventory       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"inventories"`
+	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"saleDetails"`
+	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"purchaseDetails"`
+	ItemTransactions []ItemTransaction `gorm:"foreignKey:ProductId;"  json:"itemTransactions"`
 	Uom              string            `json:"uom"`
 	DeriveUom        string            `json:"deriveUom"`
 	UomId            uint              `json:"uomId" validate:"required"`
@@ -44,35 +44,27 @@ type Product struct {
 	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
-type UnitOfMeasure struct {
-	gorm.Model
-	ID             uint             `gorm:"primaryKey;autoIncrement" json:"id"`
-	UnitName       string           `json:"unitName" validate:"required,min=3"`
-	Product        []Product        `gorm:"foreignKey:UomId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
-	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
-}
-
 type ProductPrice struct {
 	gorm.Model
 	ID        uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId string `gorm:"index:idx_product_unit_type,unique" json:"productId" validate:"required"`
 	UnitId    uint   `gorm:"index:idx_product_unit_type,unique" json:"unitId" validate:"required"`
 	PriceType string `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
-	UnitPrice int64  `json:"price" validate:"required,min=1"`
+	UnitPrice int    `json:"price" validate:"required,min=1"`
 	Remark    string `json:"remark"`
 }
 
 type ProductPriceHistory struct {
 	gorm.Model
-	ID            uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductId     string    `json:"productId"`
-	ProductName   string    `json:"productName"`
-	UnitId        uint      `json:"unitId" `
-	UnitName      string    `json:"unitName" `
-	PriceType     string    `json:"priceType" ` // "BUY"	or "SELL"
-	UnitPrice     int64     `json:"price" `
-	Remark        string    `json:"remark"`
-	EffectiveDate time.Time `gorm:"not null"`
+	ID            uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProductId     string `json:"productId"`
+	ProductName   string `json:"productName"`
+	UnitId        uint   `json:"unitId" `
+	UnitName      string `json:"unitName" `
+	PriceType     string `json:"priceType" ` // "BUY"	or "SELL"
+	UnitPrice     int    `json:"price" `
+	Remark        string `json:"remark"`
+	EffectiveDate string `gorm:"not null"`
 	CreatedAt     time.Time
 }
 
@@ -150,7 +142,7 @@ type Customer struct {
 	Name      string `json:"name" validate:"required,min=3"`
 	Address   string `json:"address" validate:"required,min=3"`
 	Phone     string `json:"phone" validate:"required,min=3"`
-	Sales     []Sale `gorm:"foreignKey:CustomerId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	Sales     []Sale `gorm:"foreignKey:CustomerId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"sales"`
 	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`
 }
@@ -161,37 +153,63 @@ type Supplier struct {
 	Name      string     `json:"name" validate:"required,min=3"`
 	Address   string     `json:"address" validate:"required,min=3"`
 	Phone     string     `json:"phone" validate:"required,min=3"`
-	Purchases []Purchase `gorm:"foreignKey:SupplierId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
+	Purchases []Purchase `gorm:"foreignKey:SupplierId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"purchases"`
 	CreatedAt int64      `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64      `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
 type Purchase struct {
 	gorm.Model
-	ID              string           `gorm:"primaryKey" json:"id"`
-	SupplierId      uint             `json:"supplierId"`
-	Supplier        *Supplier        `json:"supplier"`
+	ID         string    `gorm:"primaryKey" json:"id"`
+	SupplierId uint      `json:"supplierId"`
+	Supplier   *Supplier `json:"supplier"`
+	// Supplier        Supplier         `gorm:"foreignKey:SupplierId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"supplier"`
 	PurchaseDetails []PurchaseDetail `gorm:"foreignKey:PurchaseId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"purchaseDetails"`
-	Discount        int64            `json:"discount"`
-	Total           int64            `json:"total"`
-	GrandTotal      int64            `json:"grandTotal"`
+	Discount        int              `json:"discount"`
+	Total           int              `json:"total"`
+	GrandTotal      int              `json:"grandTotal"`
 	Remark          string           `json:"remark"`
-	PurchaseDate    time.Time        `json:"purchaseDate"`
+	PurchaseDate    string           `json:"purchaseDate"`
 	CreatedAt       int64            `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt       int64            `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
+// type PurchaseDetail struct {
+// 	// gorm.Model includes ID, CreatedAt, UpdatedAt, DeletedAt
+// 	// so you don't need to redefine ID again
+// 	gorm.Model
+
+// 	ProductId     string      `gorm:"type:varchar(20)" json:"productId"`
+// 	ProductName   string      `json:"productName"`
+// 	Uom           string      `json:"uom"`
+// 	Qty           int         `json:"qty"`
+// 	Price         int         `json:"price"`
+// 	UnitId        uint        `json:"unitId"`
+// 	UnitName      string      `json:"unitName"`
+// 	Total         int         `json:"total"`
+// 	BaseQty       int         `json:"baseQty"`
+// 	PurchaseId    string      `json:"purchaseId"`
+// 	ProductUnitId string      `json:"productUnitId"`
+// 	ProductUnit   ProductUnit `gorm:"foreignKey:ProductUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnit"`
+// 	Product       Product     `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+// }
+
 type PurchaseDetail struct {
 	gorm.Model
-	ID          uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	ProductId   string `gorm:"type:varchar(20)" json:"productId"`
-	ProductName string `json:"productName"`
-	Qty         int    `json:"qty"`
-	Price       int64  `json:"price"`
-	UnitId      uint   `json:"unitId"`
-	UnitName    string `json:"unitName"`
-	Total       int64  `json:"total"`
-	PurchaseId  string `json:"purchaseId"`
+	ID            uint        `gorm:"primaryKey:autoIncrement" json:"-"`
+	ProductId     string      `gorm:"type:varchar(20)" json:"productId"`
+	ProductName   string      `json:"productName"`
+	Uom           string      `json:"uom"`
+	Qty           int         `json:"qty"`
+	Price         int         `json:"price"`
+	UnitId        uint        `json:"unitId"`
+	UnitName      string      `json:"unitName"`
+	Total         int         `json:"total"`
+	BaseQty       int         `json:"baseQty"` // Converted to smallest/base unit
+	PurchaseId    string      `json:"purchaseId"`
+	ProductUnitId string      `json:"productUnitId"`
+	ProductUnit   ProductUnit `gorm:"foreignKey:ProductUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnit"`
+	Product       Product     `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
 }
 
 type Sale struct {
@@ -204,7 +222,7 @@ type Sale struct {
 	Total       int64        `json:"total"`
 	GrandTotal  int64        `json:"grandTotal"`
 	Remark      string       `json:"remark"`
-	SaleDate    time.Time    `json:"saleDate"`
+	SaleDate    string       `json:"saleDate"`
 	CreatedAt   int64        `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt   int64        `gorm:"autoUpdateTime:milli" json:"-"`
 }
@@ -215,11 +233,34 @@ type SaleDetail struct {
 	ProductId   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
-	DerivedQty  int    `json:"derivedQty"`
-	Uom         string `json:"uom"`
-	Price       int64  `json:"price"`
-	Total       int64  `json:"total"`
-	SaleId      string `json:"saleId"`
+	// DerivedQty    int         `json:"derivedQty"`
+	Uom           string      `json:"uom"`
+	Price         int64       `json:"price"`
+	Total         int64       `json:"total"`
+	SaleId        string      `json:"saleId"`
+	ProductUnitId string      `json:"productUnitId"`
+	ProductUnit   ProductUnit `gorm:"foreignKey:ProductUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnit"`
+	Product       Product     `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+}
+
+type UnitOfMeasure struct {
+	gorm.Model
+	ID             uint             `gorm:"primaryKey;autoIncrement" json:"id"`
+	UnitName       string           `json:"unitName" validate:"required,min=3"`
+	Product        []Product        `gorm:"foreignKey:UomId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"products"`
+	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversions"`
+	ProductUnit    []ProductUnit    `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnits"`
+}
+
+type ProductUnit struct {
+	gorm.Model
+	ID               string        `gorm:"primaryKey" json:"id"`
+	ProductId        string        `gorm:"type:varchar(20)" json:"productId" validate:"required"`
+	UnitId           uint          `gorm:"type:int" json:"unitId" validate:"required"`
+	ConversionToBase int           `json:"conversionToBase" validate:"required,min=1"`
+	IsDefaultUnit    bool          `json:"isDefaultUnit" validate:"required"`
+	Product          Product       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+	UnitOfMeasure    UnitOfMeasure `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure"`
 }
 
 type ErrorResponse struct {

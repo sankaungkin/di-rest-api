@@ -65,7 +65,7 @@ type Create_Product_UnitConversion_Stock_Price_DTO struct {
 	Prices []struct {
 		PriceType string `json:"priceType" validate:"required,oneof=BUY SELL"`
 		UnitId    uint   `json:"unitId" validate:"required"`
-		Price     int64  `json:"price" validate:"required,min=1"`
+		Price     int    `json:"price" validate:"required,min=1"`
 	} `json:"prices" validate:"required,min=1"`
 
 	//Inventory DTO
