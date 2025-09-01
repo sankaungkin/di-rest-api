@@ -470,3 +470,104 @@ func (h *ProductHandler) CreateProductWithDetails(c *fiber.Ctx) error {
 		"data":    createdDto,
 	})
 }
+
+// GetAllProductUnits godoc
+//
+//	@Summary		Fetch all product units
+//	@Description	Fetch all product units
+//	@Tags			Product
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.ProductUnit
+//	@Failure		400				{object}	httputil.HttpError400			"Invalid request payload"
+//	@Failure		401				{object}	httputil.HttpError401			"Unauthorized access"
+//	@Failure		500				{object}	httputil.HttpError500			"Internal server error"
+//	@Router			/api/product-units	[get]
+//	@Security		Bearer
+func (h *ProductHandler) GetAllProductUnits(c *fiber.Ctx) error {
+	productUnits, err := h.svc.GetAllProductUnits()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(*productUnits)) + " records found",
+			"data":    *productUnits,
+			"count":   len(*productUnits),
+		})
+}
+
+// GetProductUnitById godoc
+//
+//	@Summary		Fetch individual product unit by Id
+//	@Description	Fetch individual product unit by Id
+//	@Tags			Product
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"product unit Id"
+//	@Success		200					{object}	models.ProductUnit
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/product-units/{id}	[get]
+//	@Security		Bearer
+func (h *ProductHandler) GetProductUnitById(c *fiber.Ctx) error {
+
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "ID is required",
+		})
+	}
+
+	productUnit, err := h.svc.GetProductUnitById(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Record found",
+		"data":    productUnit,
+	})
+}
+
+// GetAllProducts godoc
+//
+//	@Summary		Fetch all products
+//	@Description	Fetch all products
+//	@Tags			Products
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Product
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/products	[get]
+//	@Security		Bearer
+func (h *ProductHandler) GetAllProductsNew(c *fiber.Ctx) error {
+	products, err := h.svc.GetAllProducts()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(products)) + " records found",
+			"data":    products,
+			"count":   len(products),
+		})
+}

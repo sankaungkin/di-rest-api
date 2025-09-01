@@ -36,6 +36,10 @@ type ProductRepositoryInterface interface {
 	UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error)
 	GetProductPriceHistoryByProductId(productId string) ([]ResponseProductHistoryDTO, error)
 	GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error)
+
+	GetAllProductUnits() (*[]models.ProductUnit, error)
+	GetProductUnitById(id string) (*models.ProductUnit, error)
+	GetAllProducts() ([]models.Product, error)
 }
 
 type ProductRepository struct {
@@ -208,6 +212,23 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 	// Return the updated DTO with all generated fields
 	return dto, nil
 }
+func (r *ProductRepository) GetAllProducts() ([]models.Product, error) {
+	var products []models.Product
+
+	err := r.db.
+		Preload("Category").
+		Preload("ProductUnits"). // 👈 also preload nested UnitOfMeasure
+		Preload("UnitOfMeasure").
+		Find(&products).Error
+
+	if err != nil {
+		return nil, err
+	}
+	if len(products) == 0 {
+		return nil, errors.New("no records found")
+	}
+	return products, nil
+}
 
 func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 	var products []models.Product
@@ -331,7 +352,10 @@ func (r *ProductRepository) GetProductsWithoutPrices() ([]ResponseProductDTO, er
 func (r *ProductRepository) GetById(id string) (*models.Product, error) {
 
 	var product models.Product
-	result := r.db.First(&product, "id = ?", strings.ToUpper(id))
+	result := r.db.
+		Preload("Category").
+		Preload("UnitOfMeasure").Preload("ProductUnits").
+		First(&product, "id = ?", strings.ToUpper(id))
 	if err := result.Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, err
@@ -361,6 +385,43 @@ func (r *ProductRepository) GetProductUnitPricesById(productId string) ([]Respon
 	}
 
 	return results, nil
+}
+
+func (r *ProductRepository) GetAllProductUnits() (*[]models.ProductUnit, error) {
+	var results []models.ProductUnit
+
+	err := r.db.
+		Preload("UnitOfMeasure").
+		Preload("Product").
+		Model(&models.ProductUnit{}).
+		Order("ID asc").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, errors.New("no records found")
+	}
+
+	return &results, nil
+}
+
+func (r *ProductRepository) GetProductUnitById(id string) (*models.ProductUnit, error) {
+	var result models.ProductUnit
+
+	err := r.db.
+		Preload("UnitOfMeasure").
+		Preload("Product").
+		First(&result, "id = ?", strings.ToUpper(id)).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (r *ProductRepository) Update(input *models.Product) (*models.Product, error) {

@@ -1103,6 +1103,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/productprices/with-stock": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch all product prices with stock",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ProductPrice"
+                ],
+                "summary": "Fetch all product prices with stock",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductPrice"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
         "/api/productprices/{id}": {
             "get": {
                 "security": [
@@ -1246,6 +1295,107 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/price-history": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get all product price history",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get all product price history",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/price-history/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get product price history",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get product price history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "product Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
                         }
                     },
                     "400": {
@@ -2264,6 +2414,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/sales/daily": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch daily sales",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sales"
+                ],
+                "summary": "Fetch daily sales",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_domain_sale.ResponseDailySalesDTO"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
+                        }
+                    }
+                }
+            }
+        },
         "/api/sales/monthly": {
             "get": {
                 "security": [
@@ -2425,6 +2624,52 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/sales/top-customers": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Fetch top customers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sales"
+                ],
+                "summary": "Fetch top customers",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_sale.ResponseTopCustomerDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HttpError500"
                         }
                     }
                 }
@@ -3646,6 +3891,74 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/sales/toptensoleproducts": {
+            "get": {
+                "description": "Get Top Ten Sole Products",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sale"
+                ],
+                "summary": "Get Top Ten Sole Products",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/fiber.Map"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/internal_domain_sale.ResponseTopTenSoleProductsDTO"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Product"
+                ],
+                "summary": "Create Product with Unit Conversion, Stock, and Price",
+                "parameters": [
+                    {
+                        "description": "Product",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_product.Create_Product_UnitConversion_Stock_Price_DTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_domain_product.Create_Product_UnitConversion_Stock_Price_DTO"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3656,6 +3969,10 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "fiber.Map": {
+            "type": "object",
+            "additionalProperties": true
         },
         "github_com_sankangkin_di-rest-api_internal_models.Category": {
             "type": "object",
@@ -3675,6 +3992,12 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                    }
                 },
                 "updatedAt": {
                     "type": "string"
@@ -3709,6 +4032,12 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "minLength": 3
+                },
+                "sales": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Sale"
+                    }
                 },
                 "updatedAt": {
                     "type": "string"
@@ -3830,15 +4159,45 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "inventories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Inventory"
+                    }
+                },
                 "isActive": {
                     "type": "boolean"
+                },
+                "itemTransactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ItemTransaction"
+                    }
                 },
                 "productName": {
                     "type": "string",
                     "minLength": 3
                 },
+                "purchaseDetails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail"
+                    }
+                },
+                "saleDetails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.SaleDetail"
+                    }
+                },
                 "sellPricelvl1": {
                     "type": "integer"
+                },
+                "unitConversion": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                    }
                 },
                 "uom": {
                     "type": "string"
@@ -3879,6 +4238,9 @@ const docTemplate = `{
                     "minLength": 1
                 },
                 "productId": {
+                    "type": "string"
+                },
+                "remark": {
                     "type": "string"
                 },
                 "unitId": {
@@ -3923,11 +4285,54 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "productId": {
+                    "description": "ID           uint   ` + "`" + `gorm:\"primaryKey;autoIncrement\" json:\"id\"` + "`" + `",
                     "type": "string"
                 },
                 "reorderlvl": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_sankangkin_di-rest-api_internal_models.ProductUnit": {
+            "type": "object",
+            "required": [
+                "conversionToBase",
+                "isDefaultUnit",
+                "productId",
+                "unitId"
+            ],
+            "properties": {
+                "conversionToBase": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isDefaultUnit": {
+                    "type": "boolean"
+                },
+                "product": {
+                    "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "unitId": {
+                    "type": "integer"
+                },
+                "unitOfMeasure": {
+                    "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitOfMeasure"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -3956,6 +4361,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "purchaseDetails": {
+                    "description": "Supplier        Supplier         ` + "`" + `gorm:\"foreignKey:SupplierId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;\" json:\"supplier\"` + "`" + `",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail"
@@ -3981,6 +4387,10 @@ const docTemplate = `{
         "github_com_sankangkin_di-rest-api_internal_models.PurchaseDetail": {
             "type": "object",
             "properties": {
+                "baseQty": {
+                    "description": "Converted to smallest/base unit",
+                    "type": "integer"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -3993,10 +4403,19 @@ const docTemplate = `{
                 "price": {
                     "type": "integer"
                 },
+                "product": {
+                    "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                },
                 "productId": {
                     "type": "string"
                 },
                 "productName": {
+                    "type": "string"
+                },
+                "productUnit": {
+                    "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductUnit"
+                },
+                "productUnitId": {
                     "type": "string"
                 },
                 "purchaseId": {
@@ -4008,7 +4427,13 @@ const docTemplate = `{
                 "total": {
                     "type": "integer"
                 },
+                "unitId": {
+                    "type": "integer"
+                },
                 "unitName": {
+                    "type": "string"
+                },
+                "uom": {
                     "type": "string"
                 },
                 "updatedAt": {
@@ -4080,19 +4505,25 @@ const docTemplate = `{
                 "deletedAt": {
                     "$ref": "#/definitions/gorm.DeletedAt"
                 },
-                "derivedQty": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "integer"
                 },
                 "price": {
                     "type": "integer"
                 },
+                "product": {
+                    "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                },
                 "productId": {
                     "type": "string"
                 },
                 "productName": {
+                    "type": "string"
+                },
+                "productUnit": {
+                    "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductUnit"
+                },
+                "productUnitId": {
                     "type": "string"
                 },
                 "qty": {
@@ -4105,6 +4536,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "uom": {
+                    "description": "DerivedQty    int         ` + "`" + `json:\"derivedQty\"` + "`" + `",
                     "type": "string"
                 },
                 "updatedAt": {
@@ -4140,6 +4572,12 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "minLength": 3
+                },
+                "purchases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Purchase"
+                    }
                 },
                 "updatedAt": {
                     "type": "string"
@@ -4205,6 +4643,24 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "productUnits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.ProductUnit"
+                    }
+                },
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.Product"
+                    }
+                },
+                "unitConversions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_sankangkin_di-rest-api_internal_models.UnitConversion"
+                    }
                 },
                 "unitName": {
                     "type": "string",
@@ -4539,6 +4995,105 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_domain_product.Create_Product_UnitConversion_Stock_Price_DTO": {
+            "type": "object",
+            "required": [
+                "baseUnitId",
+                "categoryId",
+                "deriveUnitId",
+                "prices",
+                "productName",
+                "uomId"
+            ],
+            "properties": {
+                "baseQty": {
+                    "description": "Inventory DTO\nBasesUnitId uint ` + "`" + `json:\"baseUnitId\"` + "`" + `\nDerivedUnitId uint ` + "`" + `json:\"deriveUnitId\"` + "`" + `\n*\n\t\ttype ProductStock struct {\n\t\tgorm.Model\n\t\t// ID           uint   ` + "`" + `gorm:\"primaryKey;autoIncrement\" json:\"id\"` + "`" + `\n\t\tProductId    string ` + "`" + `gorm:\"type:varchar(20)\" json:\"productId\"` + "`" + `\n\t\tBaseUnitId   int    ` + "`" + `json:\"baseUnitId\" validate:\"required\"` + "`" + `\n\t\tDeriveUnitId int    ` + "`" + `json:\"deriveUnitId\" validate:\"required\"` + "`" + `\n\t\tBaseQty      int    ` + "`" + `json:\"baseQty\" validate:\"required,min=1\"` + "`" + `\n\t\tDerivedQty   int    ` + "`" + `json:\"derivedQty\" validate:\"required,min=1\"` + "`" + `\n\t\tReorderLvl   int    ` + "`" + `json:\"reorderlvl\" gorm:\"default:1\" validate:\"required,min=1\"` + "`" + `\n\t}",
+                    "type": "integer"
+                },
+                "baseUnitId": {
+                    "type": "integer"
+                },
+                "baseUnitName": {
+                    "description": "Product Unit Conversion DTO\n*\n\t\ttype UnitConversion struct {\n\t\tgorm.Model\n\t\tID           uint   ` + "`" + `gorm:\"primaryKey;autoIncrement\" json:\"id\"` + "`" + `\n\t\tDescription  string ` + "`" + `gorm:\"type:varchar(20)\" json:\"description\"` + "`" + `\n\t\tProductId    string ` + "`" + `gorm:\"type:varchar(20)\" json:\"productId\" validate:\"required\"` + "`" + `\n\t\tBaseUnit     string ` + "`" + `json:\"baseUnit\"` + "`" + `\n\t\tDeriveUnit   string ` + "`" + `json:\"deriveUnit\" ` + "`" + `\n\t\tBaseUnitId   int    ` + "`" + `json:\"baseUnitId\" validate:\"required\"` + "`" + `\n\t\tDeriveUnitId int    ` + "`" + `json:\"deriveUnitId\" validate:\"required\"` + "`" + `\n\t\tFactor       int    ` + "`" + `json:\"factor\" validate:\"required,min=1\"` + "`" + `\n\t}",
+                    "type": "string"
+                },
+                "brandName": {
+                    "type": "string"
+                },
+                "categoryId": {
+                    "type": "integer"
+                },
+                "deriveUnitId": {
+                    "type": "integer"
+                },
+                "deriveUnitName": {
+                    "type": "string"
+                },
+                "deriveUom": {
+                    "type": "string"
+                },
+                "deriveUomId": {
+                    "type": "integer"
+                },
+                "derivedQty": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "factor": {
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "Product DTO",
+                    "type": "string"
+                },
+                "isActive": {
+                    "type": "boolean"
+                },
+                "prices": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "price",
+                            "priceType",
+                            "unitId"
+                        ],
+                        "properties": {
+                            "price": {
+                                "type": "integer",
+                                "minimum": 1
+                            },
+                            "priceType": {
+                                "type": "string",
+                                "enum": [
+                                    "BUY",
+                                    "SELL"
+                                ]
+                            },
+                            "unitId": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                },
+                "productName": {
+                    "type": "string",
+                    "minLength": 3
+                },
+                "reorderlvl": {
+                    "type": "integer"
+                },
+                "uom": {
+                    "type": "string"
+                },
+                "uomId": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_domain_product.UpdateProductRequstDTO": {
             "type": "object",
             "required": [
@@ -4680,6 +5235,42 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_domain_sale.ResponseDailySalesDTO": {
+            "type": "object",
+            "properties": {
+                "saleDate": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_domain_sale.ResponseTopCustomerDTO": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "totalSpent": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_domain_sale.ResponseTopTenSoleProductsDTO": {
+            "type": "object",
+            "properties": {
+                "productId": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "totalQtySold": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_domain_sale.SaleInvoiceRequestDTO": {
             "type": "object",
             "properties": {
@@ -4743,8 +5334,14 @@ const docTemplate = `{
         "internal_domain_unitconversion.CreateUnitConversionDTO": {
             "type": "object",
             "properties": {
+                "baseUnit": {
+                    "type": "string"
+                },
                 "baseUnitId": {
                     "type": "integer"
+                },
+                "deriveUnit": {
+                    "type": "string"
                 },
                 "deriveUnitId": {
                     "type": "integer"
@@ -4797,7 +5394,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "192.168.100.7:5555",
+	Host:             "http://127.0.0.1:5555",
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "REST-API with(golang fiber, google wire dependency injection)",

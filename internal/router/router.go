@@ -68,11 +68,13 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 
 	// products.Post("/", productService.CreateProduct)
 	products.Post("/", productService.CreateProductWithDetails)
-	products.Get("/", productService.GetAllProducts)
+	products.Get("/", productService.GetAllProductsNew)
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
 	products.Get("/price-history/:id", productService.GetProductPriceHistory)
 	products.Get("/price-history", productService.GetAllProductPriceHistory)
+	products.Get("/units", productService.GetAllProductUnits)
+	products.Get("/units/:id", productService.GetProductUnitById)
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
@@ -116,6 +118,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	productstocks.Use(middleware.Protected())
 	productstocks.Post("/", productStockService.CreateProductStocks)
 	productstocks.Get("/", productStockService.GetAllProductStocks)
+	productstocks.Get("/stockonhand/:id", productStockService.GetDetailsProductStockById)
 	productstocks.Get("/low-stock-products", productStockService.GetLowStockProduct)
 	productstocks.Get("/out-of-stock-products", productStockService.GetOutOfStockProducts)
 	productstocks.Get("/:id", productStockService.GetProductStocksById)

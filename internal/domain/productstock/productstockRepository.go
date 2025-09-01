@@ -1,7 +1,10 @@
 package productstock
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"sync"
 
@@ -12,11 +15,15 @@ import (
 
 type ProductStockRepositoryInterface interface {
 	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
-	GetAllProductStocks() ([]ResponseProductStockDTO, error)
+	// GetAllProductStocks() ([]ResponseProductStockDTO, error)
+	GetAllProductStocks() ([]models.ProductStock, error)
 	GetLowStockProducts() ([]ResponseProductStockDTO, error)
 	GetOutOfStockProducts() ([]ResponseProductStockDTO, error)
-	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
+	// GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
+	GetProductStocksById(productId string) (models.ProductStock, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
+
+	GetDetailsProductStockById(productId string) (*StockResponse, error)
 }
 
 type ProductStockRepository struct {
@@ -115,7 +122,44 @@ func (r *ProductStockRepository) GetOutOfStockProducts() ([]ResponseProductStock
 	return results, nil
 }
 
-func (r *ProductStockRepository) GetAllProductStocks() ([]ResponseProductStockDTO, error) {
+func (r *ProductStockRepository) GetAllProductStocks() ([]models.ProductStock, error) {
+	var results []models.ProductStock
+
+	err := r.db.
+		Preload("Product").
+		Preload("UnitOfMeasure").
+		Preload("UnitConversion").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, errors.New("no records found")
+	}
+	return results, nil
+}
+
+func (r *ProductStockRepository) GetProductStocksById(productId string) (models.ProductStock, error) {
+	var result models.ProductStock
+
+	err := r.db.
+		Preload("Product").
+		Preload("UnitOfMeasure").
+		Preload("UnitConversion").
+		Where("product_id = ?", strings.ToUpper(productId)).
+		Find(&result).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return models.ProductStock{}, errors.New("no product found for this id")
+		}
+		return models.ProductStock{}, err
+	}
+	return result, nil
+}
+
+func (r *ProductStockRepository) GetAllProductStocksOld() ([]ResponseProductStockDTO, error) {
 	var results []ResponseProductStockDTO
 
 	// Perform the join and select necessary fields
@@ -157,7 +201,7 @@ func (r *ProductStockRepository) CreateProductStocks(productStock *models.Produc
 	return productStock, err
 }
 
-func (r *ProductStockRepository) GetProductStocksById(productId string) (*ResponseProductStockDTO, error) {
+func (r *ProductStockRepository) GetProductStocksByIdOld(productId string) (*ResponseProductStockDTO, error) {
 	var result ResponseProductStockDTO
 
 	err := r.db.
@@ -205,4 +249,101 @@ func (r *ProductStockRepository) UpdateProductStocksById(productStock *models.Pr
 	}
 
 	return &existingProductStock, nil
+}
+
+func (r *ProductStockRepository) GetDetailsProductStockByIdOld(productId string) ([]DisplayStock, error) {
+	// 1. Load stock
+	var stock models.ProductStock
+	if err := r.db.
+		Preload("Product").
+		Where("product_id = ?", productId).
+		First(&stock).Error; err != nil {
+		return nil, err
+	}
+
+	// 2. Load product units + preload UnitOfMeasure
+	var units []models.ProductUnit
+	if err := r.db.
+		Preload("Product").
+		Preload("UnitOfMeasure").
+		Where("product_id = ?", productId).
+		Find(&units).Error; err != nil {
+		return nil, err
+	}
+
+	// 3. Convert
+	return ConvertStockToUnits(stock.BaseQty, units), nil
+
+}
+
+func (r *ProductStockRepository) GetDetailsProductStockById(productId string) (*StockResponse, error) {
+	// 1. Load stock (always stored in smallest unit)
+	var stock models.ProductStock
+	if err := r.db.Where("product_id = ?", productId).
+		First(&stock).Error; err != nil {
+		return nil, err
+	}
+
+	// 2. Load product units with relations
+	var units []models.ProductUnit
+	if err := r.db.
+		Preload("UnitOfMeasure").
+		Preload("Product").
+		Where("product_id = ?", productId).
+		Find(&units).Error; err != nil {
+		return nil, err
+	}
+
+	if len(units) == 0 {
+		return nil, fmt.Errorf("no units found for product %s", productId)
+	}
+
+	// 3. Convert
+	displayUnits := ConvertStockToUnits(stock.BaseQty, units)
+
+	// 4. Response
+	resp := &StockResponse{
+		ProductName: units[0].Product.ProductName,
+		Units:       displayUnits,
+		Message:     "Record found",
+		Status:      "SUCCESS",
+	}
+
+	return resp, nil
+}
+
+func ConvertStockToUnits(stockQty int, units []models.ProductUnit) []DisplayStock {
+	// Sort by ConversionToBase descending
+	sort.Slice(units, func(i, j int) bool {
+		return units[i].ConversionToBase > units[j].ConversionToBase
+	})
+
+	var result []DisplayStock
+	remainder := stockQty
+
+	for _, u := range units {
+		if remainder >= u.ConversionToBase {
+			qty := remainder / u.ConversionToBase
+			remainder = remainder % u.ConversionToBase
+			result = append(result, DisplayStock{
+				UnitName: u.UnitOfMeasure.UnitName, // ✅ works if preloaded
+				Quantity: qty,
+			})
+		}
+	}
+
+	// handle leftover smallest unit
+	if remainder > 0 {
+		for _, u := range units {
+			if u.ConversionToBase == 1 {
+				result = append(result, DisplayStock{
+					UnitName: u.UnitOfMeasure.UnitName,
+					Quantity: remainder,
+				})
+				break
+			}
+		}
+	}
+
+	return result
 }

@@ -260,32 +260,81 @@ func (h *ProductStockHandler) UpdateProductStocksById(c *fiber.Ctx) error {
 			"status": "FAIL", "message": err.Error(),
 		})
 	}
-	foundProductStock.BaseQty = input.BaseQty
-	foundProductStock.DerivedQty = input.DerivedQty
-	foundProductStock.ReorderLvl = input.ReorderLvl
+
+	//TODO:
+	// foundProductStock.BaseQty = input.BaseQty
+	// foundProductStock.DerivedQty = input.DerivedQty
+	// foundProductStock.ReorderLvl = input.ReorderLvl
 
 	log.Println("updateProduct(Handler): ", foundProductStock)
 
 	// Map foundProductStock (*ResponseProductStockDTO) to *models.ProductStock
-	productStockToUpdate := &models.ProductStock{
-		ProductId:  foundProductStock.ProductID,
-		BaseQty:    foundProductStock.BaseQty,
-		DerivedQty: foundProductStock.DerivedQty,
-		ReorderLvl: foundProductStock.ReorderLvl,
-		// Add other fields as necessary
-	}
+	// productStockToUpdate := &models.ProductStock{
+	// 	ProductId:  foundProductStock.ProductID,
+	// 	BaseQty:    foundProductStock.BaseQty,
+	// 	DerivedQty: foundProductStock.DerivedQty,
+	// 	ReorderLvl: foundProductStock.ReorderLvl,
+	// 	// Add other fields as necessary
+	// }
 
 	// Step 4: Update and return
-	result, err := h.svc.UpdateProductStocksById(productStockToUpdate)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "FAIL",
-			"message": err.Error(),
-		})
-	}
+	// result, err := h.svc.UpdateProductStocksById(productStockToUpdate)
+	// if err != nil {
+	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+	// 		"status":  "FAIL",
+	// 		"message": err.Error(),
+	// 	})
+	// }
+	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
+	// 	"status":  "SUCCESS",
+	// 	"message": "Update Successfully",
+	// 	"data":    result,
+	// })
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
 		"message": "Update Successfully",
-		"data":    result,
+		"data":    foundProductStock,
+	})
+}
+
+// GetDetailsProductStockById godoc
+//
+//	@Summary		Get details of product stock
+//	@Description	Get details of product stock
+//	@Tags			ProductStocks
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"product Id"
+//	@Success		200					{object}	DisplayStock
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/productstocks/{id}	[get]
+//	@Security		Bearer
+func (h *ProductStockHandler) GetDetailsProductStockById(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "ID is required",
+		})
+	}
+
+	details, err := h.svc.GetDetailsProductStockById(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "No product stocks found for this ID",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "FAIL", "message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		// "status":  "SUCCESS",
+		// "message": " Record found",
+		"data": details,
 	})
 }

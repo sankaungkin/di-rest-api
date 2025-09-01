@@ -12,6 +12,26 @@ import (
 	en_translations "github.com/go-playground/validator/v10/translations/en"
 )
 
+type ProductUnit struct {
+	gorm.Model
+	ID               string        `gorm:"primaryKey" json:"id"`
+	ProductId        string        `gorm:"type:varchar(20)" json:"productId" validate:"required"`
+	UnitId           uint          `gorm:"type:int" json:"unitId" validate:"required"`
+	ConversionToBase int           `json:"conversionToBase" validate:"required,min=1"`
+	IsDefaultUnit    bool          `json:"isDefaultUnit" validate:"required"`
+	Product          Product       `gorm:"foreignKey:ProductId;references:ID" json:"product"`
+	UnitOfMeasure    UnitOfMeasure `gorm:"foreignKey:UnitId;references:ID" json:"unitOfMeasure"`
+}
+type UnitOfMeasure struct {
+	gorm.Model
+	ID             uint             `gorm:"primaryKey;autoIncrement" json:"id"`
+	UnitName       string           `json:"unitName" validate:"required,min=3"`
+	Product        []Product        `gorm:"foreignKey:UomId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"products"`
+	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversions"`
+	ProductUnit    []ProductUnit    `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnits"`
+	ProductStock   []ProductStock   `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productStocks"`
+}
+
 type Category struct {
 	gorm.Model
 	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -26,6 +46,9 @@ type Product struct {
 	ID               string            `gorm:"primaryKey" json:"id"`
 	ProductName      string            `json:"productName" validate:"required,min=3"`
 	CategoryId       uint              `json:"categoryId"`
+	Category         Category          `gorm:"foreignKey:CategoryId;references:ID" json:"category"` // 👈 Add this
+	UnitOfMeasure    UnitOfMeasure     `gorm:"foreignKey:UomId;references:ID" json:"unitOfMeasure"`
+	ProductUnits     []ProductUnit     `gorm:"foreignKey:ProductId;references:ID" json:"productUnits"`
 	UnitConversion   []UnitConversion  `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversion"`
 	Inventories      []Inventory       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"inventories"`
 	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"saleDetails"`
@@ -71,12 +94,15 @@ type ProductPriceHistory struct {
 type ProductStock struct {
 	gorm.Model
 	// ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductId    string `gorm:"type:varchar(20)" json:"productId"`
-	BaseUnitId   int    `json:"baseUnitId" validate:"required"`
-	DeriveUnitId int    `json:"deriveUnitId" validate:"required"`
-	BaseQty      int    `json:"baseQty" validate:"required,min=1"`
-	DerivedQty   int    `json:"derivedQty" validate:"required,min=1"`
-	ReorderLvl   int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	ProductId      string         `gorm:"type:varchar(20)" json:"productId"`
+	Product        Product        `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+	BaseUnitId     int            `json:"baseUnitId" validate:"required"`
+	DeriveUnitId   int            `json:"deriveUnitId" validate:"required"`
+	BaseQty        int            `json:"baseQty" validate:"required,min=1"`
+	DerivedQty     int            `json:"derivedQty" validate:"required,min=1"`
+	ReorderLvl     int            `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	UnitConversion UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversion"`
+	UnitOfMeasure  UnitOfMeasure  `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure"`
 }
 
 type UnitConversion struct {
@@ -174,26 +200,6 @@ type Purchase struct {
 	UpdatedAt       int64            `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
-// type PurchaseDetail struct {
-// 	// gorm.Model includes ID, CreatedAt, UpdatedAt, DeletedAt
-// 	// so you don't need to redefine ID again
-// 	gorm.Model
-
-// 	ProductId     string      `gorm:"type:varchar(20)" json:"productId"`
-// 	ProductName   string      `json:"productName"`
-// 	Uom           string      `json:"uom"`
-// 	Qty           int         `json:"qty"`
-// 	Price         int         `json:"price"`
-// 	UnitId        uint        `json:"unitId"`
-// 	UnitName      string      `json:"unitName"`
-// 	Total         int         `json:"total"`
-// 	BaseQty       int         `json:"baseQty"`
-// 	PurchaseId    string      `json:"purchaseId"`
-// 	ProductUnitId string      `json:"productUnitId"`
-// 	ProductUnit   ProductUnit `gorm:"foreignKey:ProductUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnit"`
-// 	Product       Product     `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
-// }
-
 type PurchaseDetail struct {
 	gorm.Model
 	ID            uint        `gorm:"primaryKey:autoIncrement" json:"-"`
@@ -241,26 +247,6 @@ type SaleDetail struct {
 	ProductUnitId string      `json:"productUnitId"`
 	ProductUnit   ProductUnit `gorm:"foreignKey:ProductUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnit"`
 	Product       Product     `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
-}
-
-type UnitOfMeasure struct {
-	gorm.Model
-	ID             uint             `gorm:"primaryKey;autoIncrement" json:"id"`
-	UnitName       string           `json:"unitName" validate:"required,min=3"`
-	Product        []Product        `gorm:"foreignKey:UomId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"products"`
-	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversions"`
-	ProductUnit    []ProductUnit    `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnits"`
-}
-
-type ProductUnit struct {
-	gorm.Model
-	ID               string        `gorm:"primaryKey" json:"id"`
-	ProductId        string        `gorm:"type:varchar(20)" json:"productId" validate:"required"`
-	UnitId           uint          `gorm:"type:int" json:"unitId" validate:"required"`
-	ConversionToBase int           `json:"conversionToBase" validate:"required,min=1"`
-	IsDefaultUnit    bool          `json:"isDefaultUnit" validate:"required"`
-	Product          Product       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
-	UnitOfMeasure    UnitOfMeasure `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure"`
 }
 
 type ErrorResponse struct {

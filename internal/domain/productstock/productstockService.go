@@ -10,11 +10,14 @@ import (
 
 type ProductStockServiceInterface interface {
 	CreateProductStocks(productStock *models.ProductStock) (*models.ProductStock, error)
-	GetAllProductStocks() ([]ResponseProductStockDTO, error)
+	// GetAllProductStocks() ([]ResponseProductStockDTO, error)
+	GetAllProductStocks() ([]models.ProductStock, error)
 	GetLowStockProducts() ([]ResponseProductStockDTO, error)
 	GetOutOfStockProducts() ([]ResponseProductStockDTO, error)
-	GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
+	// GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
+	GetProductStocksById(productId string) (models.ProductStock, error)
 	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
+	GetDetailsProductStockById(productId string) (*StockResponse, error)
 }
 
 type ProductStockService struct {
@@ -46,7 +49,11 @@ func (s *ProductStockService) CreateProductStocks(productStock *models.ProductSt
 	return s.repo.CreateProductStocks(productStock)
 }
 
-func (s *ProductStockService) GetAllProductStocks() ([]ResponseProductStockDTO, error) {
+// func (s *ProductStockService) GetAllProductStocks() ([]ResponseProductStockDTO, error) {
+// 	return s.repo.GetAllProductStocks()
+// }
+
+func (s *ProductStockService) GetAllProductStocks() ([]models.ProductStock, error) {
 	return s.repo.GetAllProductStocks()
 }
 
@@ -58,10 +65,18 @@ func (s *ProductStockService) GetOutOfStockProducts() ([]ResponseProductStockDTO
 	return s.repo.GetOutOfStockProducts()
 }
 
-func (s *ProductStockService) GetProductStocksById(productId string) (*ResponseProductStockDTO, error) {
-	return s.repo.GetProductStocksById(productId)
-}
+// func (s *ProductStockService) GetProductStocksById(productId string) (*ResponseProductStockDTO, error) {
+// 	return s.repo.GetProductStocksById(productId)
+// }
 
 func (s *ProductStockService) UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error) {
 	return s.repo.UpdateProductStocksById(productStock)
+}
+
+func (s *ProductStockService) GetProductStocksById(productId string) (models.ProductStock, error) {
+	return s.repo.GetProductStocksById(productId)
+}
+
+func (s *ProductStockService) GetDetailsProductStockById(productId string) (*StockResponse, error) {
+	return s.repo.GetDetailsProductStockById(productId)
 }
