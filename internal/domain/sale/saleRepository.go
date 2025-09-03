@@ -26,6 +26,8 @@ type SaleRepositoryInterface interface {
 	GetMonthlySales() ([]models.Sale, error)
 	GetMonthlyGrandTotal() (int64, error)
 	TopCustomers() (*ResponseTopCustomerDTO, error)
+
+	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 }
 
 type SaleRepository struct {
@@ -43,6 +45,37 @@ func NewSaleRepository(db *gorm.DB) SaleRepositoryInterface {
 		repoInstance = &SaleRepository{db: db}
 	})
 	return repoInstance
+}
+
+func (r *SaleRepository) GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error) {
+	var result []ResponseSaleStockItemWithPrice
+
+	query := `
+		SELECT 
+    pu.id as product_unit_id,
+	p.product_name,
+    pu.product_id,
+    pu.unit_id as unit_id,
+    uom.unit_name as unit_name,           
+    pp.unit_id as price_unit_id,
+    pp.price_type,
+    pp.unit_price
+FROM product_units pu
+JOIN product_prices pp 
+    ON pu.product_id = pp.product_id 
+    AND pu.unit_id = pp.unit_id
+JOIN unit_of_measures uom         
+    ON uom.id = pu.unit_id
+JOIN products p
+	ON p.id = pu.product_id
+WHERE 
+    pp.price_type = 'SELL'
+	`
+
+	if err := r.db.Raw(query).Scan(&result).Error; err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
@@ -119,81 +152,6 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 
 	return &newSale, nil
 }
-
-// func adjustProductStock(tx *gorm.DB, saleId string, sd *models.SaleDetail) error {
-// 	var productStock models.ProductStock
-// 	if err := tx.First(&productStock, "product_id = ?", sd.ProductId).Error; err != nil {
-// 		return err
-// 	}
-
-// 	//broadcast low stock message
-
-// 	var unitConv models.UnitConversion
-// 	if err := tx.First(&unitConv, "product_id = ?", sd.ProductId).Error; err != nil {
-// 		return fmt.Errorf("unit conversion not found for product %s", sd.ProductId)
-// 	}
-
-// 	factor := int(unitConv.Factor)
-
-// 	switch {
-// 	case strings.EqualFold(sd.Uom, unitConv.BaseUnit):
-// 		if sd.Qty > productStock.BaseQty {
-// 			return fmt.Errorf("not enough stock: base unit of %s. requested %d, available %d", sd.ProductId, sd.Qty, productStock.BaseQty)
-// 		}
-// 		productStock.BaseQty -= sd.Qty
-
-// 		// Log base unit transaction
-// 		trx := models.ItemTransaction{
-// 			ProductId:   sd.ProductId,
-// 			ReferenceNo: saleId + "-" + strconv.Itoa(int(sd.ID)),
-// 			OutQty:      sd.Qty,
-// 			Uom:         sd.Uom,
-// 			TranType:    "CREDIT",
-// 			Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (base unit)", sd.SaleId, sd.ID, sd.ProductId, sd.Qty, sd.Uom),
-// 		}
-// 		if err := tx.Create(&trx).Error; err != nil {
-// 			return err
-// 		}
-
-// 	case strings.EqualFold(sd.Uom, unitConv.DeriveUnit):
-// 		totalNeeded := sd.DerivedQty
-
-// 		if totalNeeded <= productStock.DerivedQty {
-// 			productStock.DerivedQty -= totalNeeded
-// 		} else {
-// 			shortage := totalNeeded - productStock.DerivedQty
-// 			productStock.DerivedQty = 0
-
-// 			baseToConvert := (shortage + factor - 1) / factor // round up
-// 			if baseToConvert > productStock.BaseQty {
-// 				return fmt.Errorf("not enough stock for derived sale of product %s: need %d %s → convert %d base units, only %d available",
-// 					sd.ProductId, totalNeeded, unitConv.DeriveUnit, baseToConvert, productStock.BaseQty)
-// 			}
-
-// 			productStock.BaseQty -= baseToConvert
-// 			convertedDerived := baseToConvert * factor
-// 			productStock.DerivedQty = convertedDerived - shortage
-// 		}
-
-// 		// Log derived unit transaction
-// 		trx := models.ItemTransaction{
-// 			ProductId:   sd.ProductId,
-// 			ReferenceNo: saleId + "-" + strconv.Itoa(int(sd.ID)),
-// 			OutQty:      sd.DerivedQty,
-// 			Uom:         sd.Uom,
-// 			TranType:    "CREDIT",
-// 			Remark:      fmt.Sprintf("SaleId %s, SaleDetailId %d, ProductId %s, Sold %d %s (derived unit)", sd.SaleId, sd.ID, sd.ProductId, sd.DerivedQty, sd.Uom),
-// 		}
-// 		if err := tx.Create(&trx).Error; err != nil {
-// 			return err
-// 		}
-
-// 	default:
-// 		return fmt.Errorf("invalid unit %s for product %s (expected %s or %s)", sd.Uom, sd.ProductId, unitConv.BaseUnit, unitConv.DeriveUnit)
-// 	}
-
-// 	return tx.Save(&productStock).Error
-// }
 
 func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 

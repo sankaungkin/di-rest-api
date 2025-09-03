@@ -345,3 +345,30 @@ func (h *SaleHandler) GetTopTenSoleProducts(c *fiber.Ctx) error {
 			"data":    results,
 		})
 }
+
+// GetSaleStockItemWithPrice godoc
+//
+//	@Summary		Fetch sale stock item with price
+//	@Description	Fetch sale stock item with price
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		ResponseSaleStockItemWithPrice
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/sales/sale-stock-item-with-price	[get]
+//	@Security		Bearer
+func (h *SaleHandler) GetSaleStockItemWithPrice(c *fiber.Ctx) error {
+
+	results, err := h.svc.GetSaleStockItemWithPrice()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Sale stock item with price fetched successfully",
+			"data":    results,
+		})
+}

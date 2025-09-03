@@ -551,96 +551,96 @@ var productPrices = []models.ProductPrice{
 	},
 }
 
-var productStocks = []models.ProductStock{
-	{
-		ProductId:    "P001",
-		BaseUnitId:   1,
-		DeriveUnitId: 2,
-		BaseQty:      50,
-		DerivedQty:   6,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P002",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P003",
-		BaseUnitId:   1,
-		DeriveUnitId: 3,
-		BaseQty:      50,
-		DerivedQty:   10,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P004",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P005",
-		BaseUnitId:   1,
-		DeriveUnitId: 2,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P006",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   10,
-	},
-	{
-		ProductId:    "P007",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P008",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P009",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P010",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-	{
-		ProductId:    "P011",
-		BaseUnitId:   1,
-		DeriveUnitId: 1,
-		BaseQty:      50,
-		DerivedQty:   0,
-		ReorderLvl:   5,
-	},
-}
+// var productStocks = []models.ProductStock{
+// 	{
+// 		ProductId:    "P001",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 2,
+// 		BaseQty:      50,
+// 		DerivedQty:   6,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P002",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P003",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 3,
+// 		BaseQty:      50,
+// 		DerivedQty:   10,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P004",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P005",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 2,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P006",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   10,
+// 	},
+// 	{
+// 		ProductId:    "P007",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P008",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P009",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P010",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// 	{
+// 		ProductId:    "P011",
+// 		BaseUnitId:   1,
+// 		DeriveUnitId: 1,
+// 		BaseQty:      50,
+// 		DerivedQty:   0,
+// 		ReorderLvl:   5,
+// 	},
+// }
 
 func load() {
 	fmt.Println("......Seeding data ....")
@@ -681,10 +681,10 @@ func load() {
 			return fmt.Errorf("failed to seed productPrices: %w", err)
 		}
 
-		fmt.Println("Seeding product stocks data ....")
-		if err := tx.Create(&productStocks).Error; err != nil {
-			return fmt.Errorf("failed to seed productStocks: %w", err)
-		}
+		// fmt.Println("Seeding product stocks data ....")
+		// if err := tx.Create(&productStocks).Error; err != nil {
+		// 	return fmt.Errorf("failed to seed productStocks: %w", err)
+		// }
 
 		fmt.Println("Seeding unit conversions data ....")
 		if err := tx.Create(&unitConversions).Error; err != nil {

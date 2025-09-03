@@ -43,6 +43,7 @@ type DisplayStock struct {
 }
 
 type StockResponse struct {
+	ProductId   string         `json:"productId"`
 	ProductName string         `json:"productName"`
 	Units       []DisplayStock `json:"units"`
 	Message     string         `json:"message"`

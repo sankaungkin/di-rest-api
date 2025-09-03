@@ -1,6 +1,7 @@
 package productstock
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -62,12 +63,12 @@ func (h *ProductStockHandler) CreateProductStocks(c *fiber.Ctx) error {
 	log.Println("inputProductStock(Handler): ", input)
 
 	productStockToCreate := &models.ProductStock{
-		ProductId:    input.ProductId,
-		BaseQty:      input.BaseQty,
-		DerivedQty:   input.DerivedQty,
-		ReorderLvl:   input.ReorderLvl,
-		BaseUnitId:   input.BaseUnitId,
-		DeriveUnitId: input.DeriveUnitId,
+		ProductId: input.ProductId,
+		BaseQty:   input.BaseQty,
+		// DerivedQty:   input.DerivedQty,
+		ReorderLvl: input.ReorderLvl,
+		// BaseUnitId:   input.BaseUnitId,
+		// DeriveUnitId: input.DeriveUnitId,
 		// Add other fields as necessary
 	}
 
@@ -322,19 +323,26 @@ func (h *ProductStockHandler) GetDetailsProductStockById(c *fiber.Ctx) error {
 
 	details, err := h.svc.GetDetailsProductStockById(id)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"status":  "FAIL",
 				"message": "No product stocks found for this ID",
 			})
 		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status": "FAIL", "message": err.Error(),
+			"status":  "FAIL",
+			"message": err.Error(),
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		// "status":  "SUCCESS",
-		// "message": " Record found",
-		"data": details,
-	})
+
+	// Format response explicitly
+	response := fiber.Map{
+		"productId":   details.ProductId,
+		"productName": details.ProductName,
+		"units":       details.Units, // should be []DisplayStock or []map[string]interface{}
+		"message":     "Record found",
+		"status":      "SUCCESS",
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response)
 }

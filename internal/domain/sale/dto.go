@@ -30,3 +30,13 @@ type ResponseTopTenSoleProductsDTO struct {
 	ProductName  string `json:"productName"`
 	TotalQtySold int64  `json:"totalQtySold"`
 }
+
+type ResponseSaleStockItemWithPrice struct {
+	ProductUnitId string `json:"productUnitId"`
+	ProductName   string `json:"productName"`
+	ProductId     string `json:"productId"`
+	UnitId        int    `json:"unitId"`
+	UnitName      string `json:"uom"`
+	PriceType     string `json:"priceType"`
+	UnitPrice     int    `json:"unitPrice"`
+}

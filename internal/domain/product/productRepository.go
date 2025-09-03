@@ -127,12 +127,12 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 
 	// 3. Create Product Stock
 	productStock := &models.ProductStock{
-		ProductId:    dto.ID,
-		BaseUnitId:   int(dto.BaseUnitId),
-		DeriveUnitId: int(dto.DeriveUnitId),
-		BaseQty:      dto.BaseQty,
-		DerivedQty:   dto.DerivedQty,
-		ReorderLvl:   dto.ReorderLvl,
+		ProductId: dto.ID,
+		// BaseUnitId:   int(dto.BaseUnitId),
+		// DeriveUnitId: int(dto.DeriveUnitId),
+		BaseQty: dto.BaseQty,
+		// DerivedQty:   dto.DerivedQty,
+		ReorderLvl: dto.ReorderLvl,
 	}
 
 	if err := tx.Create(productStock).Error; err != nil {
@@ -142,7 +142,7 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 
 	// Update DTO with stock information
 	dto.BaseQty = productStock.BaseQty
-	dto.DerivedQty = productStock.DerivedQty
+	// dto.DerivedQty = productStock.DerivedQty
 	dto.ReorderLvl = productStock.ReorderLvl
 
 	// 4. Create Product Price

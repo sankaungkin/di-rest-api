@@ -110,9 +110,10 @@ func (r *TransactionRepository) CreateAdjustmentTransaction(transaction Resquest
 		if transaction.Uom == "EACH" {
 			stock.BaseQty = transaction.InQty
 
-		} else {
-			stock.DerivedQty = transaction.InQty
 		}
+		// else {
+		// 	stock.DerivedQty = transaction.InQty
+		// }
 
 		// Step 4: Save updated stock
 		if err := tx.Save(&stock).Error; err != nil {
