@@ -23,6 +23,8 @@ type PurchaseRepositoryInterface interface {
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlyPurchases() ([]models.Purchase, error)
 	GetMonthlyGrandTotal() (int64, error)
+
+	GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error)
 }
 
 type PurchaseRepository struct {
@@ -40,6 +42,37 @@ func NewSaleRepository(db *gorm.DB) PurchaseRepositoryInterface {
 		repoInstance = &PurchaseRepository{db: db}
 	})
 	return repoInstance
+}
+
+func (r *PurchaseRepository) GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error) {
+	var result []ResponsePurchaseLineItemDTO
+
+	query := `
+		SELECT 
+    pu.id as product_unit_id,
+	p.product_name,
+    pu.product_id,
+    pu.unit_id as unit_id,
+    uom.unit_name as unit_name,           
+    pp.unit_id as price_unit_id,
+    pp.price_type,
+    pp.unit_price
+FROM product_units pu
+JOIN product_prices pp 
+    ON pu.product_id = pp.product_id 
+    AND pu.unit_id = pp.unit_id
+JOIN unit_of_measures uom         
+    ON uom.id = pu.unit_id
+JOIN products p
+	ON p.id = pu.product_id
+WHERE 
+    pp.price_type = 'BUY'
+	`
+
+	if err := r.db.Raw(query).Scan(&result).Error; err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (r *PurchaseRepository) CreateOld(input *models.Purchase) (*models.Purchase, error) {
@@ -131,7 +164,7 @@ func (r *PurchaseRepository) CreateOld(input *models.Purchase) (*models.Purchase
 			UnitId:        newPurchase.PurchaseDetails[i].UnitId,
 			UnitPrice:     newPurchase.PurchaseDetails[i].Price,
 			PriceType:     "BUY",
-			EffectiveDate: newPurchase.PurchaseDate,
+			EffectiveDate: newPurchase.PurchaseDate.Format("2006-01-02 15:04:05"),
 		}
 		tx.Save(&newProductPriceHistory)
 
@@ -285,6 +318,7 @@ func (r *PurchaseRepository) GetById(id string) (*models.Purchase, error) {
 func (r *PurchaseRepository) GetTodayGrandTotal() (int64, error) {
 
 	var total int64
+
 	today := time.Now()
 	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, today.Location())
 	endOfDay := startOfDay.Add(24 * time.Hour)
@@ -298,6 +332,7 @@ func (r *PurchaseRepository) GetTodayGrandTotal() (int64, error) {
 		return 0, err
 	}
 	return total, nil
+
 }
 
 func (r *PurchaseRepository) GetMonthlyPurchases() ([]models.Purchase, error) {

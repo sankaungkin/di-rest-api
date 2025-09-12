@@ -136,7 +136,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	productprices.Get("/with-stock", productPriceService.GetAllProductPricesWithStock)
 	productprices.Get("/inventory-total-value", productPriceService.GetInventoryTotalValue)
 	productprices.Get("/:id", productPriceService.GetProductPriceById)
-	productprices.Put("/:id", productPriceService.UpdateProductPrice)
+	// productprices.Put("/:id", productPriceService.UpdateProductPrice)
 
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()
@@ -222,6 +222,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	purchase.Use(middleware.Protected())
 	purchase.Post("/", purchaseService.CreatePurchase)
 	purchase.Get("/", purchaseService.GetAllPurchases)
+	purchase.Get("/line-items", purchaseService.GetPurchaseLineItems)
 	purchase.Get("/today", purchaseService.GetTodayPurchases)
 	purchase.Get("/today-grand-total", purchaseService.GetTodayGrandTotal)
 	purchase.Get("/monthly", purchaseService.GetMonthlyPurchases)

@@ -52,24 +52,16 @@ func (r *SaleRepository) GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWit
 
 	query := `
 		SELECT 
-    pu.id as product_unit_id,
-	p.product_name,
-    pu.product_id,
-    pu.unit_id as unit_id,
-    uom.unit_name as unit_name,           
-    pp.unit_id as price_unit_id,
-    pp.price_type,
-    pp.unit_price
-FROM product_units pu
-JOIN product_prices pp 
-    ON pu.product_id = pp.product_id 
-    AND pu.unit_id = pp.unit_id
-JOIN unit_of_measures uom         
-    ON uom.id = pu.unit_id
-JOIN products p
-	ON p.id = pu.product_id
-WHERE 
-    pp.price_type = 'SELL'
+		pp.product_unit_id, 
+		p.product_name, 
+		pp.product_id, 
+		uom.id, 
+		uom.unit_name, 
+		pp.price_type, 
+		pp.unit_price  
+FROM public.product_prices pp, public.products p, public.unit_of_measures uom
+WHERE pp.product_id = p.id AND pp.unit_id = uom.id AND pp.price_type = 'SELL'
+ORDER BY pp.product_id ASC 
 	`
 
 	if err := r.db.Raw(query).Scan(&result).Error; err != nil {

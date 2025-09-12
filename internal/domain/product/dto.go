@@ -89,20 +89,20 @@ type Create_Product_UnitConversion_Stock_Price_DTO struct {
 }
 
 type UpdateProductRequstDTO struct {
-	ProductName string `json:"productName" validate:"required,min=3"`
-	CategoryId  uint   `json:"categoryId" validate:"required"`
-	UomId       uint   `json:"uomId" `
-	Uom         string `json:"uom" validate:"required,min=2"`
-	DeriveUom   string `json:"deriveUom" `
-	DeriveUomId uint   `json:"deriveUomId" gorm:"default:1"`
-	// UomId          uint   `json:"uomId"
-	// BuyPrice        int64 `json:"buyPrice" `
-	// SellPriceLevel1 int64 `json:"sellPricelvl1" `
-	// DeriveUnitPrice int64 `json:"deriveUnitPrice" `
-	// ReorderLvl      uint   `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	// QtyOnHand       int    `json:"qtyOhHand" validate:"required"`
-	BrandName string `json:"brandName"`
-	IsActive  bool   `json:"isActive" gorm:"default:true"`
+	ProductId    string        `json:"productId" validate:"required"`
+	ProductName  string        `json:"productName" validate:"required,min=3"`
+	CategoryId   uint          `json:"categoryId" validate:"required"`
+	BrandName    string        `json:"brandName"`
+	IsActive     bool          `json:"isActive" gorm:"default:true"`
+	ProductUnits []ProductUnit `json:"productUnits" gorm:"many2many:product_units;"`
+}
+
+type ProductUnit struct {
+	ProductUnitId    string `json:"productUnitId" `
+	ProductId        string `json:"productId" `
+	UnitId           uint   `json:"unitId" `
+	ConversionToBase int    `json:"conversionToBase" gorm:"default:1"`
+	IsDefaultUnit    bool   `json:"isDefaultUnit" gorm:"default:false"`
 }
 
 type ResponseProductDTO struct {

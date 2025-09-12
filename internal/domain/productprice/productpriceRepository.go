@@ -10,14 +10,16 @@ import (
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ProductPriceRepositoryInterface interface {
 	Create(productPrice *models.ProductPrice) (*models.ProductPrice, error)
+	GetAllNew() ([]models.ProductPrice, error)
 	GetAll() ([]ProductPriceResponseDTO, error)
 	GetAllWithStock() ([]ProductPriceResponseDTO, error)
 	GetInventoryTotalValue() (int64, error)
-	GetById(id int) (*ProductPriceResponseDTO, error)
+	GetById(id string) (*[]ProductPriceResponseDTO, error)
 	UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error)
 	DeleteProductPrice(id int) error
 }
@@ -74,7 +76,9 @@ func (r *ProductPriceRepository) GetAll() ([]ProductPriceResponseDTO, error) {
 
 	err := r.db.
 		Table("product_prices AS pp").
-		Select(`pp.id, pp.product_id, p.product_name, u.unit_name, pp.unit_id, pp.unit_price, pp.price_type`).
+		Select(`pp.id, pp.product_id, p.product_name, 
+		pp.product_unit_id, u.unit_name, pp.unit_id, 
+		pp.unit_price, pp.price_type`).
 		Joins("JOIN products AS p ON pp.product_id = p.id").
 		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
 		Order("pp.id DESC").
@@ -89,6 +93,20 @@ func (r *ProductPriceRepository) GetAll() ([]ProductPriceResponseDTO, error) {
 	}
 
 	return results, nil
+}
+
+func (r *ProductPriceRepository) GetAllNew() ([]models.ProductPrice, error) {
+	productPrices := []models.ProductPrice{}
+	result := r.db.Preload(clause.Associations).Model(&models.ProductPrice{}).Order("product_id ASC").Find(&productPrices)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	// if len(productPrices) == 0 {
+	// 	return nil, errors.New("NO records found")
+	// }
+
+	return productPrices, nil
 }
 
 func (r *ProductPriceRepository) GetAllWithStock() ([]ProductPriceResponseDTO, error) {
@@ -135,16 +153,16 @@ func (r *ProductPriceRepository) GetInventoryTotalValue() (int64, error) {
 	return result, nil
 }
 
-func (r *ProductPriceRepository) GetById(id int) (*ProductPriceResponseDTO, error) {
-	var result ProductPriceResponseDTO
+func (r *ProductPriceRepository) GetById(id string) (*[]ProductPriceResponseDTO, error) {
+	var result []ProductPriceResponseDTO
 
 	err := r.db.
 		Table("product_prices AS pp").
-		Select(`pp.id, pp.product_id, p.product_name, pp.unit_id, u.unit_name AS unit_name, pp.unit_price`).
+		Select(`pp.id, pp.product_id, p.product_name, pp.unit_id, u.unit_name AS unit_name, pp.unit_price, pp.price_type`).
 		Joins("JOIN products AS p ON pp.product_id = p.id").
 		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
-		Where("pp.id = ?", id).
-		First(&result).Error
+		Where("pp.product_id = ?", id).
+		Find(&result).Error
 
 	if err != nil {
 		return nil, err

@@ -258,3 +258,30 @@ func (h *PurchaseHandler) GetMonthlyGrandTotal(c *fiber.Ctx) error {
 		"data":    grandTotal,
 	})
 }
+
+// GetPurchaseLineItems godoc
+//
+//	@Summary		Fetch purchase line items
+//	@Description	Fetch purchase line items
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		ResponsePurchaseLineItemDTO
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases/line-items	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetPurchaseLineItems(c *fiber.Ctx) error {
+
+	results, err := h.svc.GetPurchaseLineItems()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Purchase line items fetched successfully",
+			"data":    results,
+		})
+}

@@ -179,14 +179,14 @@ func (h *ProductPriceHandler) GetInventoryTotalValue(c *fiber.Ctx) error {
 func (h *ProductPriceHandler) GetProductPriceById(c *fiber.Ctx) error {
 
 	productPriceIdStr := c.Params("id")
-	productPriceId, err := strconv.Atoi(productPriceIdStr)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "FAIL",
-			"message": "Invalid product price ID",
-		})
-	}
-	productPrice, err := h.svc.GetById(productPriceId)
+	// productPriceId, err := strconv.Atoi(productPriceIdStr)
+	// if err != nil {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"status":  "FAIL",
+	// 		"message": "Invalid product price ID",
+	// 	})
+	// }
+	productPrice, err := h.svc.GetById(productPriceIdStr)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -220,64 +220,96 @@ func (h *ProductPriceHandler) GetProductPriceById(c *fiber.Ctx) error {
 //	@Failure		500					{object}	httputil.HttpError500
 //	@Router			/api/productprices/{id}	[put]
 //	@Security		Bearer
-func (h *ProductPriceHandler) UpdateProductPrice(c *fiber.Ctx) error {
-	idUint64, err := strconv.ParseUint(c.Params("id"), 10, 32)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "FAIL",
-			"message": "Invalid product price ID",
-		})
-	}
-	id := int(idUint64)
+//TODO: update product price
+// func (h *ProductPriceHandler) UpdateProductPrice(c *fiber.Ctx) error {
+// 	// idUint64, err := strconv.ParseUint(c.Params("id"), 10, 32)
+// 	// if err != nil {
+// 	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 	// 		"status":  "FAIL",
+// 	// 		"message": "Invalid product price ID",
+// 	// 	})
+// 	// }
+// 	// id := int(idUint64)
+// 	productId := c.Params("id")
+// 	// Step 1: Get the existing product
+// 	foundProductPrice, err := h.svc.GetById(productId)
+// 	if err != nil {
+// 		if err == gorm.ErrRecordNotFound {
+// 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+// 				"status":  "FAIL",
+// 				"message": "Record not found",
+// 			})
+// 		}
+// 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+// 			"status": "FAIL", "message": err.Error(),
+// 		})
+// 	}
+// 	input := new(UpdateProductPriceRequestDTO)
+// 	if err := c.BodyParser(input); err != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"status":  400,
+// 			"message": "Invalid JSON format",
+// 		})
+// 	}
+// 	log.Println("inputProduct(Handler): ", input)
 
-	// Step 1: Get the existing product
-	foundProductPrice, err := h.svc.GetById(id)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"status":  "FAIL",
-				"message": "Record not found",
-			})
-		}
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"status": "FAIL", "message": err.Error(),
-		})
-	}
-	input := new(UpdateProductPriceRequestDTO)
-	if err := c.BodyParser(input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  400,
-			"message": "Invalid JSON format",
-		})
-	}
-	log.Println("inputProduct(Handler): ", input)
+// 	// Step 3: Manually update only intended fields
+// 	foundProductPrice.ProductId = input.ProductId
+// 	foundProductPrice.UnitId = input.UnitId
+// 	foundProductPrice.UnitPrice = input.UnitPrice
 
-	// Step 3: Manually update only intended fields
-	foundProductPrice.ProductId = input.ProductId
-	foundProductPrice.UnitId = input.UnitId
-	foundProductPrice.UnitPrice = input.UnitPrice
+// 	log.Println("updateProduct(Handler): ", foundProductPrice)
 
-	log.Println("updateProduct(Handler): ", foundProductPrice)
+// 	// Convert foundProductPrice to *models.ProductPrice
+// 	updatedProductPrice := &models.ProductPrice{
+// 		ID:        foundProductPrice.ID,
+// 		ProductId: foundProductPrice.ProductId,
+// 		UnitId:    foundProductPrice.UnitId,
+// 		UnitPrice: foundProductPrice.UnitPrice,
+// 	}
 
-	// Convert foundProductPrice to *models.ProductPrice
-	updatedProductPrice := &models.ProductPrice{
-		ID:        foundProductPrice.ID,
-		ProductId: foundProductPrice.ProductId,
-		UnitId:    foundProductPrice.UnitId,
-		UnitPrice: foundProductPrice.UnitPrice,
-	}
+// 	// Step 4: Update and return
+// 	result, err := h.svc.UpdateProductPrice(updatedProductPrice)
+// 	if err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+// 			"status":  "FAIL",
+// 			"message": err.Error(),
+// 		})
+// 	}
+// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"status":  "SUCCESS",
+// 		"message": "Update Successfully",
+// 		"data":    result,
+// 	})
+// }
 
-	// Step 4: Update and return
-	result, err := h.svc.UpdateProductPrice(updatedProductPrice)
+// GetAllNew godoc
+//
+//	@Summary		Fetch all product prices with stock
+
+// @Summary		Fetch all product prices with stock
+// @Description	Fetch all product prices with stock
+// @Tags			ProductPrice
+// @Accept			json
+// @Produce		json
+// @Success		200					{object}	[]models.ProductPrice
+// @Failure		400					{object}	httputil.HttpError400
+// @Failure		401					{object}	httputil.HttpError401
+// @Failure		500					{object}	httputil.HttpError500
+// @Router			/api/productprices/with-stock [get]
+// @Security		Bearer
+func (h *ProductPriceHandler) GetAllNew(c *fiber.Ctx) error {
+	productPrices, err := h.svc.GetAllNew()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "FAIL",
-			"message": err.Error(),
+			"error": err.Error(),
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status":  "SUCCESS",
-		"message": "Update Successfully",
-		"data":    result,
-	})
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(productPrices)) + " records found",
+			"data":    productPrices,
+			"count":   len(productPrices),
+		})
 }

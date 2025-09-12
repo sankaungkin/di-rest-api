@@ -29,7 +29,7 @@ type ProductRepositoryInterface interface {
 	GetAllUnitConversionsWithProductName() ([]UnitConversionWithProductDTO, error)
 	GetAllUnitConversions() ([]models.UnitConversion, error)
 	UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error)
-	Update(product *models.Product) (*models.Product, error)
+	Update(input UpdateProductRequstDTO) (*models.Product, error)
 	Delete(id string) error
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
 	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
@@ -424,7 +424,7 @@ func (r *ProductRepository) GetProductUnitById(id string) (*models.ProductUnit, 
 	return &result, nil
 }
 
-func (r *ProductRepository) Update(input *models.Product) (*models.Product, error) {
+func (r *ProductRepository) UpdateOld(input *models.Product) (*models.Product, error) {
 	var existingProduct models.Product
 	err := r.db.Where("id = ?", input.ID).First(&existingProduct).Error
 	if err != nil {
@@ -438,20 +438,71 @@ func (r *ProductRepository) Update(input *models.Product) (*models.Product, erro
 
 	existingProduct.BrandName = input.BrandName
 	existingProduct.ProductName = input.ProductName
-	existingProduct.Uom = input.Uom
-	existingProduct.UomId = input.UomId
-	existingProduct.DeriveUom = input.DeriveUom
-	existingProduct.DeriveUomId = input.DeriveUomId
 	existingProduct.IsActive = input.IsActive
-	// existingProduct.BuyPrice = input.BuyPrice
 	existingProduct.CategoryId = input.CategoryId
-	// existingProduct.SellPriceLevel1 = input.SellPriceLevel1
-	// existingProduct.DeriveUnitPrice = input.DeriveUnitPrice
-	// existingProduct.ReorderLvl = input.ReorderLvl
 
 	log.Println("existingProduct to update: ", existingProduct)
 	err = r.db.Save(&existingProduct).Error
 	if err != nil {
+		return nil, err
+	}
+
+	return &existingProduct, nil
+}
+
+func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
+	var existingProduct models.Product
+
+	// 1. Load product with its units
+	if err := r.db.Preload("ProductUnits").
+		Where("id = ?", input.ProductId).
+		First(&existingProduct).Error; err != nil {
+		return nil, err
+	}
+
+	// 2. Validate required fields
+	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
+		return nil, fmt.Errorf("missing required fields")
+	}
+
+	// 3. Update main product fields
+	existingProduct.BrandName = input.BrandName
+	existingProduct.ProductName = input.ProductName
+	existingProduct.IsActive = input.IsActive
+	existingProduct.CategoryId = input.CategoryId
+
+	// 4. Update only existing productUnits
+	for _, u := range input.ProductUnits {
+		var unit models.ProductUnit
+		// Find the existing row
+		err := r.db.Where("product_id = ? AND id = ?", existingProduct.ID, u.ProductUnitId).
+			First(&unit).Error
+		if err != nil {
+			// if unit doesn’t exist, skip (ignore new ones)
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return nil, err
+		}
+
+		// Update fields
+		unit.ConversionToBase = u.ConversionToBase
+		unit.IsDefaultUnit = u.IsDefaultUnit
+		unit.UnitId = u.UnitId
+
+		if err := r.db.Save(&unit).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// 5. Save main product
+	if err := r.db.Save(&existingProduct).Error; err != nil {
+		return nil, err
+	}
+
+	// 6. Reload with units for response
+	if err := r.db.Preload("ProductUnits").
+		First(&existingProduct, "id = ?", input.ProductId).Error; err != nil {
 		return nil, err
 	}
 
