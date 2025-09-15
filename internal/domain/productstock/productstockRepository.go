@@ -128,7 +128,6 @@ func (r *ProductStockRepository) GetAllProductStocks() ([]models.ProductStock, e
 	err := r.db.
 		Preload("Product").
 		Preload("UnitOfMeasure").
-		Preload("UnitConversion").
 		Find(&results).Error
 
 	if err != nil {

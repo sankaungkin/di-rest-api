@@ -24,13 +24,12 @@ type ProductUnit struct {
 }
 type UnitOfMeasure struct {
 	gorm.Model
-	ID             uint             `gorm:"primaryKey;autoIncrement" json:"id"`
-	UnitName       string           `json:"unitName" validate:"required,min=3"`
-	Product        []Product        `gorm:"foreignKey:UomId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"products"`
-	UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversions"`
-	ProductUnit    []ProductUnit    `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnits"`
-	ProductStock   []ProductStock   `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productStocks"`
-	ProductPrice   []ProductPrice   `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productPrices"`
+	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	UnitName string `json:"unitName" validate:"required,min=3"`
+	// UnitConversion []UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversions"`
+	ProductUnit  []ProductUnit  `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnits"`
+	ProductStock []ProductStock `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productStocks"`
+	ProductPrice []ProductPrice `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productPrices"`
 }
 
 type Category struct {
@@ -48,17 +47,15 @@ type Product struct {
 	ProductName      string            `json:"productName" validate:"required,min=3"`
 	CategoryId       uint              `json:"categoryId"`
 	Category         Category          `gorm:"foreignKey:CategoryId;references:ID" json:"category"` // 👈 Add this
-	UnitOfMeasure    UnitOfMeasure     `gorm:"foreignKey:UomId;references:ID" json:"unitOfMeasure"`
 	ProductUnits     []ProductUnit     `gorm:"foreignKey:ProductId;references:ID" json:"productUnits"`
-	UnitConversion   []UnitConversion  `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversion"`
-	Inventories      []Inventory       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"inventories"`
+	ProductPrices    []ProductPrice    `gorm:"foreignKey:ProductId;references:ID" json:"productPrices"`
 	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"saleDetails"`
 	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"purchaseDetails"`
 	ItemTransactions []ItemTransaction `gorm:"foreignKey:ProductId;"  json:"itemTransactions"`
 	Uom              string            `json:"uom"`
 	DeriveUom        string            `json:"deriveUom"`
-	UomId            uint              `json:"uomId" validate:"required"`
-	DeriveUomId      uint              `json:"deriveUomId" validate:"required"`
+	UomId            uint              `json:"uomId"  `
+	DeriveUomId      uint              `json:"deriveUomId"`
 	BuyPrice         int64             `json:"buyPrice"`
 	SellPriceLevel1  int64             `json:"sellPricelvl1" `
 	DeriveUnitPrice  int64             `json:"deriveUnitPrice" `
@@ -77,7 +74,7 @@ type ProductPrice struct {
 	Unit          UnitOfMeasure `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unit"`
 	ProductUnitId string        `gorm:"index:idx_product_unit_type,unique" json:"productUnitId" validate:"required"`
 	PriceType     string        `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
-	UnitPrice     int           `json:"price" validate:"required,min=1"`
+	UnitPrice     int           `json:"unitPrice" validate:"required,min=1"`
 	Remark        string        `json:"remark"`
 }
 
@@ -86,6 +83,7 @@ type ProductPriceHistory struct {
 	ID            uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId     string `json:"productId"`
 	ProductName   string `json:"productName"`
+	ProductUnitId string `json:"productUnitId"`
 	UnitId        uint   `json:"unitId" `
 	UnitName      string `json:"unitName" `
 	PriceType     string `json:"priceType" ` // "BUY"	or "SELL"
@@ -98,15 +96,14 @@ type ProductPriceHistory struct {
 type ProductStock struct {
 	gorm.Model
 	// ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductId      string         `gorm:"type:varchar(20)" json:"productId"`
-	Product        Product        `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
-	BaseUnitId     int            `json:"baseUnitId" validate:"required"`
-	DeriveUnitId   int            `json:"deriveUnitId" validate:"required"`
-	BaseQty        int            `json:"baseQty" validate:"required,min=1"`
-	DerivedQty     int            `json:"derivedQty" validate:"required,min=1"`
-	ReorderLvl     int            `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	UnitConversion UnitConversion `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitConversion"`
-	UnitOfMeasure  UnitOfMeasure  `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure"`
+	ProductId     string        `gorm:"type:varchar(20)" json:"productId"`
+	Product       Product       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+	BaseUnitId    int           `json:"baseUnitId" validate:"required"`
+	DeriveUnitId  int           `json:"deriveUnitId" validate:"required"`
+	BaseQty       int           `json:"baseQty" validate:"required,min=1"`
+	DerivedQty    int           `json:"derivedQty" validate:"required,min=1"`
+	ReorderLvl    int           `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	UnitOfMeasure UnitOfMeasure `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure,omitempty"`
 }
 
 type UnitConversion struct {
@@ -127,7 +124,7 @@ type Inventory struct {
 	OutQty    int       `json:"inQty"`
 	InQty     int       `json:"outQty"`
 	ProductId string    `json:"productId"`
-	Product   Product   `gorm:"foreignKey:ProductId;" json:"product"`
+	Product   Product   `json:"product"`
 	Remark    string    `json:"remark"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdTime"`
 	UpdatedAt time.Time `gorm:"autoCreateTime" json:"updatedTime"`

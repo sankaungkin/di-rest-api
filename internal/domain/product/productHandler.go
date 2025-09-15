@@ -2,6 +2,7 @@ package product
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
-	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
 
@@ -55,52 +55,97 @@ func NewProductHandler(svc ProductServiceInterface) *ProductHandler {
 // @Failure      500          {object}  httputil.HttpError500
 // @Router       /api/product [post]
 // @Security     Bearer
-func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
-	input := new(CreateProductRequstDTO)
-	if err := c.BodyParser(input); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  400,
-			"message": "Invalid JSON format",
-		})
-	}
+// func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
+// 	// input := new(CreateProductRequstDTO)
+// 	input := new(Create_Product_UnitConversion_Stock_Price_DTO)
+// 	if err := c.BodyParser(input); err != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"status":  400,
+// 			"message": "Invalid JSON format",
+// 		})
+// 	}
 
-	log.Println("New product input: ", input)
-	newProduct := models.Product{
-		ID:          input.ID,
-		ProductName: input.ProductName,
-		CategoryId:  input.CategoryId,
-		Uom:         input.Uom,
-		UomId:       input.UomId,
-		DeriveUom:   input.DeriveUom,
-		DeriveUomId: input.DeriveUomId,
-		BrandName:   input.BrandName,
-		IsActive:    input.IsActive,
-	}
+// 	log.Println("New product input: ", input)
+// 	// Convert []ProductUnit to []models.ProductUnit
+// 	var productUnits []models.ProductUnit
+// 	for _, pu := range input.ProductUnits {
+// 		productUnits = append(productUnits, models.ProductUnit{
+// 			ID:               pu.ProductUnitId,
+// 			ProductId:        pu.ProductId,
+// 			UnitId:           uint(pu.UnitId),
+// 			ConversionToBase: pu.ConversionToBase,
+// 			IsDefaultUnit:    pu.IsDefaultUnit,
+// 		})
+// 	}
 
-	err := c.BodyParser(&newProduct)
-	if err != nil {
-		c.Status(http.StatusUnprocessableEntity).JSON(
-			&fiber.Map{"message": "request failed"})
-		return err
-	}
+// 	var productPrices []models.ProductPrice
+// 	for _, pp := range input.ProductPrices {
+// 		productPrices = append(productPrices, models.ProductPrice{
+// 			ProductId:     pp.ProductId,
+// 			ProductUnitId: pp.ProductUnitId,
+// 			UnitId:        uint(pp.UnitId),
+// 			PriceType:     pp.PriceType,
+// 			UnitPrice:     pp.UnitPrice,
+// 			Remark:        pp.Remark,
+// 		})
+// 	}
 
-	errors := models.ValidateStruct(newProduct)
-	if errors != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(errors)
-	}
-	log.Println("newProduct : ", newProduct)
+// 	newProduct := models.Product{
+// 		ID:            input.ID,
+// 		ProductName:   input.ProductName,
+// 		CategoryId:    input.CategoryId,
+// 		UomId:         uint(input.BaseUnitId),
+// 		BrandName:     input.BrandName,
+// 		IsActive:      input.IsActive,
+// 		ProductUnits:  productUnits,
+// 		ProductPrices: productPrices,
+// 	}
 
-	if _, err := h.svc.CreateSerive(&newProduct); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.Status(http.StatusOK).JSON(
-		&fiber.Map{
-			"status":  "SUCCESS",
-			"message": "new PRODUCT has been created successfully",
-			"data":    newProduct,
-		})
+// 	newProductStock := models.ProductStock{
+// 		ProductId:  input.ID,
+// 		BaseUnitId: input.BaseUnitId,
+// 		BaseQty:    input.BaseQty,
+// 		ReorderLvl: input.ReorderLvl,
+// 	}
 
-}
+// 	err := c.BodyParser(&newProduct)
+// 	if err != nil {
+// 		c.Status(http.StatusUnprocessableEntity).JSON(
+// 			&fiber.Map{"message": "request failed"})
+// 		return err
+// 	}
+
+// 	err = c.BodyParser(&newProductStock)
+// 	if err != nil {
+// 		c.Status(http.StatusUnprocessableEntity).JSON(
+// 			&fiber.Map{"message": "request failed"})
+// 		return err
+// 	}
+
+// 	errors := models.ValidateStruct(newProduct)
+// 	if errors != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(errors)
+// 	}
+// 	log.Println("newProduct : ", newProduct)
+
+// 	errors = models.ValidateStruct(newProductStock)
+// 	if errors != nil {
+// 		return c.Status(fiber.StatusBadRequest).JSON(errors)
+// 	}
+// 	log.Println("newProductStock : ", newProductStock)
+
+// 	if _, err := h.svc.CreateSerive(&newProduct); err != nil {
+// 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+// 	}
+
+// 	return c.Status(http.StatusOK).JSON(
+// 		&fiber.Map{
+// 			"status":  "SUCCESS",
+// 			"message": "new PRODUCT has been created successfully",
+// 			"data":    newProduct,
+// 		})
+
+// }
 
 // GetAllProducts godoc
 //
@@ -474,6 +519,8 @@ func (h *ProductHandler) GetAllProductPriceHistory(c *fiber.Ctx) error {
 func (h *ProductHandler) CreateProductWithDetails(c *fiber.Ctx) error {
 	// 1. Initialize DTO
 	var dto Create_Product_UnitConversion_Stock_Price_DTO
+
+	fmt.Println(c.Body())
 
 	// 2. Parse request body
 	if err := c.BodyParser(&dto); err != nil {
