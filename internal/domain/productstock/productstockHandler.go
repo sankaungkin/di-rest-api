@@ -63,12 +63,12 @@ func (h *ProductStockHandler) CreateProductStocks(c *fiber.Ctx) error {
 	log.Println("inputProductStock(Handler): ", input)
 
 	productStockToCreate := &models.ProductStock{
-		ProductId: input.ProductId,
-		BaseQty:   input.BaseQty,
-		// DerivedQty:   input.DerivedQty,
-		ReorderLvl: input.ReorderLvl,
-		// BaseUnitId:   input.BaseUnitId,
-		// DeriveUnitId: input.DeriveUnitId,
+		ProductId:    input.ProductId,
+		BaseQty:      input.BaseQty,
+		DerivedQty:   input.DerivedQty,
+		ReorderLvl:   input.ReorderLvl,
+		BaseUnitId:   input.BaseUnitId,
+		DeriveUnitId: input.DeriveUnitId,
 		// Add other fields as necessary
 	}
 
@@ -249,7 +249,11 @@ func (h *ProductStockHandler) UpdateProductStocksById(c *fiber.Ctx) error {
 	log.Println("inputProduct(Handler): ", input)
 
 	// Step 3: Manually update only intended fields
-	foundProductStock, err := h.svc.GetProductStocksById(id)
+	foundProductStock, err := h.svc.UpdateProductStocksById(UpdateProductStockDTO{
+		ProductID:  input.ProductID,
+		DerivedQty: input.DerivedQty,
+		ReorderLvl: input.ReorderLvl,
+	})
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -339,6 +343,8 @@ func (h *ProductStockHandler) GetDetailsProductStockById(c *fiber.Ctx) error {
 	response := fiber.Map{
 		"productId":   details.ProductId,
 		"productName": details.ProductName,
+		"quantity":    details.Quantity,
+		"reorderlvl":  details.ReorderLvl,
 		"units":       details.Units, // should be []DisplayStock or []map[string]interface{}
 		"message":     "Record found",
 		"status":      "SUCCESS",

@@ -21,7 +21,7 @@ type ProductStockRepositoryInterface interface {
 	GetOutOfStockProducts() ([]ResponseProductStockDTO, error)
 	// GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (models.ProductStock, error)
-	UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error)
+	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
 
 	GetDetailsProductStockById(productId string) (*StockResponse, error)
 }
@@ -145,7 +145,6 @@ func (r *ProductStockRepository) GetProductStocksById(productId string) (models.
 	err := r.db.
 		Preload("Product").
 		Preload("UnitOfMeasure").
-		Preload("UnitConversion").
 		Where("product_id = ?", strings.ToUpper(productId)).
 		Find(&result).Error
 
@@ -200,44 +199,12 @@ func (r *ProductStockRepository) CreateProductStocks(productStock *models.Produc
 	return productStock, err
 }
 
-func (r *ProductStockRepository) GetProductStocksByIdOld(productId string) (*ResponseProductStockDTO, error) {
-	var result ResponseProductStockDTO
-
-	err := r.db.
-		Table("product_stocks").
-		Select(
-			`product_stocks.product_id, 
-			products.product_name, 
-			product_stocks.base_unit_id, 
-			product_stocks.base_qty, 
-			product_stocks.derived_qty, 
-			product_stocks.reorder_lvl,
-			product_stocks.derive_unit_id 
-			`).
-		Joins("JOIN products ON products.id = product_stocks.product_id").
-		Where("product_stocks.product_id = ?", strings.ToUpper(productId)).
-		Scan(&result).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-func (r *ProductStockRepository) UpdateProductStocksById(productStock *models.ProductStock) (*models.ProductStock, error) {
+func (r *ProductStockRepository) UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error) {
 	var existingProductStock models.ProductStock
-	err := r.db.Where("product_id = ?", strings.ToUpper(productStock.ProductId)).First(&existingProductStock).Error
+	err := r.db.Where("product_id = ?", strings.ToUpper(productStock.ProductID)).First(&existingProductStock).Error
 	if err != nil {
 		return nil, err
 	}
-
-	// log.Println("input from Repository: ", productStock)
-	// if productStock.BaseQty == 0 || productStock.DerivedQty == 0 || productStock.ReorderLvl == 0 {
-	// 	return nil, fmt.Errorf("missing required fields")
-	// }
-
-	existingProductStock.BaseQty = productStock.BaseQty
 	existingProductStock.DerivedQty = productStock.DerivedQty
 	existingProductStock.ReorderLvl = productStock.ReorderLvl
 
@@ -298,11 +265,14 @@ func (r *ProductStockRepository) GetDetailsProductStockById(productId string) (*
 	}
 
 	// 3. Convert
-	displayUnits := ConvertStockToUnits(stock.BaseQty, units)
+	displayUnits := ConvertStockToUnits(stock.DerivedQty, units)
 
 	// 4. Response
 	resp := &StockResponse{
 		ProductName: units[0].Product.ProductName,
+		ProductId:   units[0].Product.ID,
+		Quantity:    stock.DerivedQty,
+		ReorderLvl:  stock.ReorderLvl,
 		Units:       displayUnits,
 		Message:     "Record found",
 		Status:      "SUCCESS",

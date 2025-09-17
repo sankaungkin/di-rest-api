@@ -136,7 +136,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	productprices.Get("/with-stock", productPriceService.GetAllProductPricesWithStock)
 	productprices.Get("/inventory-total-value", productPriceService.GetInventoryTotalValue)
 	productprices.Get("/:id", productPriceService.GetProductPriceById)
-	// productprices.Put("/:id", productPriceService.UpdateProductPrice)
+	productprices.Put("/:id", productPriceService.UpdateProductPrice)
 
 	// item transactions di
 	transactionService, err := transactionDi.InitTransactionDI()

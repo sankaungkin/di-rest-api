@@ -98,9 +98,9 @@ type ProductStock struct {
 	// ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	ProductId     string        `gorm:"type:varchar(20)" json:"productId"`
 	Product       Product       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
-	BaseUnitId    int           `json:"baseUnitId" validate:"required"`
+	BaseUnitId    int           `json:"baseUnitId" `
 	DeriveUnitId  int           `json:"deriveUnitId" validate:"required"`
-	BaseQty       int           `json:"baseQty" validate:"required,min=1"`
+	BaseQty       int           `json:"baseQty" `
 	DerivedQty    int           `json:"derivedQty" validate:"required,min=1"`
 	ReorderLvl    int           `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
 	UnitOfMeasure UnitOfMeasure `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure,omitempty"`

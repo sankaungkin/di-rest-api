@@ -16,6 +16,7 @@ type ProductPriceServiceInterface interface {
 	GetInventoryTotalValue() (int64, error)
 	GetById(id string) (*[]ProductPriceResponseDTO, error)
 	UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error)
+	Update(productPrice UpdateProductPriceDTO) (*models.ProductPrice, error)
 	DeleteProductPrice(id int) error
 }
 
@@ -73,4 +74,8 @@ func (s *ProductPriceService) DeleteProductPrice(id int) error {
 
 func (s *ProductPriceService) GetAllNew() ([]models.ProductPrice, error) {
 	return s.repo.GetAllNew()
+}
+
+func (s *ProductPriceService) Update(productPrice UpdateProductPriceDTO) (*models.ProductPrice, error) {
+	return s.repo.Update(productPrice)
 }

@@ -20,3 +20,10 @@ type UpdateProductPriceRequestDTO struct {
 	UnitPrice   int    `json:"price" `
 	PriceType   string `json:"priceType"`
 }
+
+type UpdateProductPriceDTO struct {
+	ProductId     string `json:"productId" `
+	ProductUnitId string `json:"productUnitId"`
+	PriceType     string `json:"priceType"`
+	Price         int    `json:"price" `
+}

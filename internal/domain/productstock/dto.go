@@ -30,11 +30,10 @@ type ResponseProductDTO struct {
 }
 
 type UpdateProductStockDTO struct {
-	ID         uint   `gorm:"primaryKey" json:"id"`
-	ProductID  string `json:"productId"`
-	BaseQty    int    `json:"baseQty"`
-	DerivedQty int    `json:"derivedQty"`
-	ReorderLvl int    `json:"reorderlvl"`
+	ProductID   string `json:"productId"`
+	ProductName string `json:"productName"`
+	DerivedQty  int    `json:"derivedQty"`
+	ReorderLvl  int    `json:"reorderlvl"`
 }
 
 type DisplayStock struct {
@@ -45,6 +44,8 @@ type DisplayStock struct {
 type StockResponse struct {
 	ProductId   string         `json:"productId"`
 	ProductName string         `json:"productName"`
+	Quantity    int            `json:"quantity"`
+	ReorderLvl  int            `json:"reorderlvl"`
 	Units       []DisplayStock `json:"units"`
 	Message     string         `json:"message"`
 	Status      string         `json:"status"`

@@ -21,6 +21,7 @@ type ProductPriceRepositoryInterface interface {
 	GetInventoryTotalValue() (int64, error)
 	GetById(id string) (*[]ProductPriceResponseDTO, error)
 	UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error)
+	Update(productPrice UpdateProductPriceDTO) (*models.ProductPrice, error)
 	DeleteProductPrice(id int) error
 }
 
@@ -158,7 +159,7 @@ func (r *ProductPriceRepository) GetById(id string) (*[]ProductPriceResponseDTO,
 
 	err := r.db.
 		Table("product_prices AS pp").
-		Select(`pp.id, pp.product_id, p.product_name, pp.unit_id, u.unit_name AS unit_name, pp.unit_price, pp.price_type`).
+		Select(`pp.id, pp.product_id, p.product_name, pp.unit_id, u.unit_name AS unit_name, pp.unit_price, pp.price_type, pp.product_unit_id`).
 		Joins("JOIN products AS p ON pp.product_id = p.id").
 		Joins("JOIN unit_of_measures AS u ON pp.unit_id = u.id").
 		Where("pp.product_id = ?", id).
@@ -169,6 +170,23 @@ func (r *ProductPriceRepository) GetById(id string) (*[]ProductPriceResponseDTO,
 	}
 
 	return &result, nil
+}
+
+func (r *ProductPriceRepository) Update(productPrice UpdateProductPriceDTO) (*models.ProductPrice, error) {
+	var existingProductPrice models.ProductPrice
+	err := r.db.Where("product_id = ? AND product_unit_id = ? AND price_type = ?", productPrice.ProductId, productPrice.ProductUnitId, productPrice.PriceType).First(&existingProductPrice).Error
+	if err != nil {
+		return nil, err
+	}
+	existingProductPrice.UnitPrice = productPrice.Price
+
+	log.Println("existingProductPrice to update: ", existingProductPrice)
+	err = r.db.Save(&existingProductPrice).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingProductPrice, nil
 }
 
 func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) (*models.ProductPrice, error) {
