@@ -403,6 +403,65 @@ func (r *ProductRepository) UpdateOld(input *models.Product) (*models.Product, e
 	return &existingProduct, nil
 }
 
+// func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
+// 	var existingProduct models.Product
+
+// 	// 1. Load product with its units
+// 	if err := r.db.Preload("ProductUnits").
+// 		Where("id = ?", input.ProductId).
+// 		First(&existingProduct).Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	// 2. Validate required fields
+// 	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
+// 		return nil, fmt.Errorf("missing required fields")
+// 	}
+
+// 	// 3. Update main product fields
+// 	existingProduct.BrandName = input.BrandName
+// 	existingProduct.ProductName = input.ProductName
+// 	existingProduct.IsActive = input.IsActive
+// 	existingProduct.CategoryId = input.CategoryId
+
+// 	// 4. Update only existing productUnits
+// 	for _, u := range input.ProductUnits {
+// 		var unit models.ProductUnit
+// 		// Find the existing row
+// 		err := r.db.Where("product_id = ? AND id = ?", existingProduct.ID, u.ProductUnitId).
+// 			First(&unit).Error
+// 		if err != nil {
+// 			// if unit doesn’t exist, skip (ignore new ones)
+// 			if errors.Is(err, gorm.ErrRecordNotFound) {
+// 				continue
+// 			}
+// 			return nil, err
+// 		}
+
+// 		// Update fields
+// 		unit.ConversionToBase = u.ConversionToBase
+// 		unit.IsDefaultUnit = u.IsDefaultUnit
+// 		unit.UnitId = u.UnitId
+
+// 		if err := r.db.Save(&unit).Error; err != nil {
+// 			return nil, err
+// 		}
+// 	}
+
+// 	// 5. Save main product
+// 	if err := r.db.Save(&existingProduct).Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	// 6. Reload with units for response
+// 	if err := r.db.Preload("ProductUnits").
+// 		First(&existingProduct, "id = ?", input.ProductId).Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	return &existingProduct, nil
+// }
+
 func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
 	var existingProduct models.Product
 
@@ -424,27 +483,42 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 	existingProduct.IsActive = input.IsActive
 	existingProduct.CategoryId = input.CategoryId
 
-	// 4. Update only existing productUnits
+	// 4. Process product units (update existing and create new)
 	for _, u := range input.ProductUnits {
-		var unit models.ProductUnit
-		// Find the existing row
-		err := r.db.Where("product_id = ? AND id = ?", existingProduct.ID, u.ProductUnitId).
-			First(&unit).Error
-		if err != nil {
-			// if unit doesn’t exist, skip (ignore new ones)
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				continue
-			}
-			return nil, err
+		// Skip if unit data is invalid
+		if u.UnitId == 0 {
+			continue
 		}
 
-		// Update fields
-		unit.ConversionToBase = u.ConversionToBase
-		unit.IsDefaultUnit = u.IsDefaultUnit
-		unit.UnitId = u.UnitId
+		var unit models.ProductUnit
 
-		if err := r.db.Save(&unit).Error; err != nil {
-			return nil, err
+		// Check if this is an existing unit (has valid ProductUnitId)
+		if u.ProductUnitId != "" {
+			// Try to find existing record
+			err := r.db.Where("product_id = ? AND id = ?", existingProduct.ID, u.ProductUnitId).
+				First(&unit).Error
+
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					// Existing unit not found, but we have an ID - log and treat as new unit
+					// Alternatively, you could return an error here
+					r.createNewProductUnit(existingProduct.ID, u)
+					continue
+				}
+				return nil, err
+			}
+
+			// Update existing unit
+			unit.ConversionToBase = u.ConversionToBase
+			unit.IsDefaultUnit = u.IsDefaultUnit
+			unit.UnitId = u.UnitId
+
+			if err := r.db.Save(&unit).Error; err != nil {
+				return nil, err
+			}
+		} else {
+			// Create new product unit
+			r.createNewProductUnit(existingProduct.ID, u)
 		}
 	}
 
@@ -460,6 +534,19 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 	}
 
 	return &existingProduct, nil
+}
+
+// Helper function to create new product unit
+func (r *ProductRepository) createNewProductUnit(productID string, u ProductUnit) error {
+	newUnit := models.ProductUnit{
+		ID:               u.ProductUnitId,
+		ProductId:        productID,
+		ConversionToBase: u.ConversionToBase,
+		IsDefaultUnit:    u.IsDefaultUnit,
+		UnitId:           u.UnitId,
+	}
+
+	return r.db.Create(&newUnit).Error
 }
 
 func (r *ProductRepository) UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error) {
