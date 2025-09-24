@@ -24,7 +24,7 @@ func GetStockBalance(db *gorm.DB, productID string) (int, error) {
 }
 
 func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty int, movementType string) error {
-	baseQty, err := ConvertQuantity(db, productID, productUnitId, qty)
+	qty, err := ConvertQuantity(db, productID, productUnitId, qty)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty i
 		return err
 	}
 
-	productStock.BaseQty -= baseQty
+	productStock.DerivedQty -= qty
 
 	return db.Save(&productStock).Error
 }

@@ -193,7 +193,6 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		if err := tx.Create(&input).Error; err != nil {
 			return err
 		}
-
 		// 3. Create ItemTransactions for each detail
 		for _, detail := range input.PurchaseDetails {
 			// Load product to get ProductName
@@ -202,25 +201,50 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 				return fmt.Errorf("product not found: %w", err)
 			}
 
+			// 5. Create ItemTransactions
 			newItemTransaction := models.ItemTransaction{
 				ProductId:   detail.ProductId,
 				InQty:       detail.Qty,
 				TranType:    "PURCHASE",
 				ReferenceNo: fmt.Sprintf("%s-%d", input.ID, detail.ID),
-				Uom:         detail.Uom,
-				Remark: fmt.Sprintf("PurchaseID:%s, PurchaseDetail id:%d, Buy %s : %s %d %s",
-					input.ID, detail.ID, detail.ProductId, product.ProductName, detail.Qty, detail.Uom),
+				Uom:         detail.UnitName,
+				Remark: fmt.Sprintf("PurchaseID:%s, PurchaseDetail id:%d, Buy %s : %s : %d %s",
+					input.ID, detail.ID, detail.ProductId, product.ProductName, detail.Qty, detail.UnitName),
 				CreatedAt: time.Now().Local(),
 			}
-
 			if err := tx.Create(&newItemTransaction).Error; err != nil {
 				return err
 			}
+
+			// 6. Create ProductPriceHistory
+			newProductPriceHistory := models.ProductPriceHistory{
+				ProductId:   detail.ProductId,
+				ProductName: product.ProductName,
+				UnitName:    detail.UnitName,
+				UnitId:      detail.UnitId,
+				UnitPrice:   detail.Price,
+				PriceType:   "BUY",
+				Remark: fmt.Sprintf("PurchaseID:%s, PurchaseDetail id:%d, Buy %s : %s : %d %s",
+					input.ID, detail.ID, detail.ProductId, product.ProductName, detail.Qty, detail.UnitName),
+				EffectiveDate: input.PurchaseDate.Format("2006-01-02 15:04:05"),
+			}
+
+			if err := tx.Create(&newProductPriceHistory).Error; err != nil {
+				return err
+			}
+
 		}
 
 		// 4. Update stock
 		for _, detail := range input.PurchaseDetails {
 			if err := r.updateStock(tx, detail.ProductId, detail.BaseQty); err != nil {
+				return err
+			}
+		}
+
+		// 5. Update purchase price
+		for _, detail := range input.PurchaseDetails {
+			if err := r.updatePurchasePrice(tx, detail.ProductId, detail.Price, detail.ProductUnitId); err != nil {
 				return err
 			}
 		}
@@ -235,14 +259,14 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 }
 
 // Update stock always in base unit
-func (r *PurchaseRepository) updateStock(tx *gorm.DB, productId string, baseQty int) error {
+func (r *PurchaseRepository) updateStock(tx *gorm.DB, productId string, qty int) error {
 	var stock models.ProductStock
 	if err := tx.Where("product_id = ?", productId).First(&stock).Error; err != nil {
 		// If not exists, create new
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			stock = models.ProductStock{
-				ProductId: productId,
-				BaseQty:   baseQty,
+				ProductId:  productId,
+				DerivedQty: qty,
 			}
 			return tx.Create(&stock).Error
 		}
@@ -250,10 +274,27 @@ func (r *PurchaseRepository) updateStock(tx *gorm.DB, productId string, baseQty 
 	}
 
 	// Increase stock
-	stock.BaseQty += baseQty
+	stock.DerivedQty += qty
 	return tx.Save(&stock).Error
 }
 
+func (r *PurchaseRepository) updatePurchasePrice(tx *gorm.DB, productId string, unitPrice int, productUnitId string) error {
+	var newPrice models.ProductPrice
+	if err := tx.Where("product_id = ? AND price_type = 'BUY'", productId).First(&newPrice).Error; err != nil {
+		return err
+	}
+
+	// Find the productPrice with the same productId and unitId
+	var productPrice models.ProductPrice
+	if err := tx.Where("product_id = ? AND product_unit_id = ?", productId, productUnitId).First(&productPrice).Error; err != nil {
+		return err
+	}
+
+	// Update the productPrice
+	productPrice.UnitPrice = unitPrice
+	return tx.Save(&productPrice).Error
+
+}
 func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 
 	purchases := []models.Purchase{}
