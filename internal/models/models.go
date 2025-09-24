@@ -67,15 +67,15 @@ type Product struct {
 
 type ProductPrice struct {
 	gorm.Model
-	ID            uint          `gorm:"primaryKey;autoIncrement" json:"id"`
-	ProductId     string        `gorm:"index:idx_product_unit_type,unique" json:"productId" validate:"required"`
-	Product       Product       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
-	UnitId        uint          `gorm:"index:idx_product_unit_type,unique" json:"unitId" validate:"required"`
-	Unit          UnitOfMeasure `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unit"`
-	ProductUnitId string        `gorm:"index:idx_product_unit_type,unique" json:"productUnitId" validate:"required"`
-	PriceType     string        `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
-	UnitPrice     int           `json:"unitPrice" validate:"required,min=1"`
-	Remark        string        `json:"remark"`
+	ID        uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	ProductId string `gorm:"index:idx_product_unit_type,unique" json:"productId" validate:"required"`
+	// Product       Product       `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+	UnitId uint `gorm:"index:idx_product_unit_type,unique" json:"unitId" validate:"required"`
+	// Unit          UnitOfMeasure `gorm:"foreignKey:UnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unit"`
+	ProductUnitId string `gorm:"index:idx_product_unit_type,unique" json:"productUnitId" validate:"required"`
+	PriceType     string `gorm:"index:idx_product_unit_type,unique" json:"priceType" validate:"required,min=1"` // "BUY" or "SELL"
+	UnitPrice     int    `json:"price" validate:"required,min=1"`
+	Remark        string `json:"remark"`
 }
 
 type ProductPriceHistory struct {

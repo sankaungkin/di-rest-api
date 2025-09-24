@@ -10,6 +10,7 @@ import (
 
 type ProductPriceServiceInterface interface {
 	Create(productPrice *models.ProductPrice) (*models.ProductPrice, error)
+	CreateBulkWithTransaction(productPrices []*models.ProductPrice) ([]*models.ProductPrice, error)
 	GetAll() ([]ProductPriceResponseDTO, error)
 	GetAllNew() ([]models.ProductPrice, error)
 	GetAllWithStock() ([]ProductPriceResponseDTO, error)
@@ -78,4 +79,8 @@ func (s *ProductPriceService) GetAllNew() ([]models.ProductPrice, error) {
 
 func (s *ProductPriceService) Update(productPrice UpdateProductPriceDTO) (*models.ProductPrice, error) {
 	return s.repo.Update(productPrice)
+}
+
+func (s *ProductPriceService) CreateBulkWithTransaction(productPrices []*models.ProductPrice) ([]*models.ProductPrice, error) {
+	return s.repo.CreateBulkWithTransaction(productPrices)
 }

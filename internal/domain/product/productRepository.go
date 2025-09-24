@@ -37,7 +37,7 @@ type ProductRepositoryInterface interface {
 	GetProductPriceHistoryByProductId(productId string) ([]ResponseProductHistoryDTO, error)
 	GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error)
 	GetAllProductUnits() (*[]models.ProductUnit, error)
-	GetProductUnitById(id string) (*models.ProductUnit, error)
+	GetProductUnitByProductId(id string) ([]models.ProductUnit, error)
 	GetAllProducts() ([]models.Product, error)
 }
 
@@ -360,21 +360,21 @@ func (r *ProductRepository) GetAllProductUnits() (*[]models.ProductUnit, error) 
 	return &results, nil
 }
 
-func (r *ProductRepository) GetProductUnitById(id string) (*models.ProductUnit, error) {
-	var result models.ProductUnit
+func (r *ProductRepository) GetProductUnitByProductId(id string) ([]models.ProductUnit, error) {
+	var results []models.ProductUnit
 
 	err := r.db.
-		Preload("UnitOfMeasure").
-		Preload("Product").
-		First(&result, "id = ?", strings.ToUpper(id)).Error
-
+		Table("product_units").
+		Select("id , product_id, unit_id, conversion_to_base, is_default_unit").
+		Where("product_id = ?", strings.ToUpper(id)).
+		Scan(&results).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, err
 		}
 		return nil, err
 	}
-	return &result, nil
+	return results, nil
 }
 
 func (r *ProductRepository) UpdateOld(input *models.Product) (*models.Product, error) {

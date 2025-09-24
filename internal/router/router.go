@@ -74,7 +74,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	products.Get("/price-history/:id", productService.GetProductPriceHistory)
 	products.Get("/price-history", productService.GetAllProductPriceHistory)
 	products.Get("/units", productService.GetAllProductUnits)
-	products.Get("/units/:id", productService.GetProductUnitById)
+	products.Get("/units/:id", productService.GetProductUnitByProductId)
 
 	products.Put("/:id", productService.UpdateProduct)
 	products.Delete("/:id", productService.DeleteProduct)
@@ -131,7 +131,8 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	}
 	productprices := api.Group("/productprices")
 	productprices.Use(middleware.Protected())
-	productprices.Post("/", productPriceService.CreateProductPrice)
+	// productprices.Post("/", productPriceService.CreateProductPrice)
+	productprices.Post("/", productPriceService.CreateBulkProductPrice)
 	productprices.Get("/", productPriceService.GetAllProductPrices)
 	productprices.Get("/with-stock", productPriceService.GetAllProductPricesWithStock)
 	productprices.Get("/inventory-total-value", productPriceService.GetInventoryTotalValue)

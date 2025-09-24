@@ -372,3 +372,63 @@ func (h *ProductPriceHandler) UpdateProductPrice(c *fiber.Ctx) error {
 		"data":    foundProductPrice,
 	})
 }
+
+// CreateBulkWithTransaction godoc
+//
+//	@Summary		Create new product price
+//	@Description	Create a new product price with productId, unitId, and unitPrice
+//	@Tags			ProductPrice
+//	@Accept			json
+//	@Produce		json
+//	@Param			productPrices		body		[]models.ProductPrice	true	"Product Price Input Data"
+//	@Success		200				{object}	[]models.ProductPrice
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/productprices/bulk [post]
+//	@Security		Bearer
+func (h *ProductPriceHandler) CreateBulkProductPrice(c *fiber.Ctx) error {
+	var inputs []*models.ProductPrice
+
+	// Try parsing body into an array first
+	if err := c.BodyParser(&inputs); err != nil {
+		// If it's not an array, try parsing into a single object
+		var single models.ProductPrice
+		if err2 := c.BodyParser(&single); err2 != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"status":  400,
+				"message": "Invalid JSON format",
+			})
+		}
+		inputs = append(inputs, &single)
+	}
+
+	// Validate each product price
+	for _, pp := range inputs {
+		if errs := models.ValidateStruct(*pp); errs != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"status":  400,
+				"message": "Validation failed",
+				"errors":  errs,
+			})
+		}
+	}
+
+	log.Println("CreateProductPrice inputs:", inputs)
+
+	// Call service layer (handles transaction + history)
+	created, err := h.svc.CreateBulkWithTransaction(inputs)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  500,
+			"message": "Failed to create product prices",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Product price(s) created successfully",
+		"data":    created,
+	})
+}

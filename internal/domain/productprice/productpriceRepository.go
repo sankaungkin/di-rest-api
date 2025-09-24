@@ -15,6 +15,7 @@ import (
 
 type ProductPriceRepositoryInterface interface {
 	Create(productPrice *models.ProductPrice) (*models.ProductPrice, error)
+	CreateBulkWithTransaction(productPrices []*models.ProductPrice) ([]*models.ProductPrice, error)
 	GetAllNew() ([]models.ProductPrice, error)
 	GetAll() ([]ProductPriceResponseDTO, error)
 	GetAllWithStock() ([]ProductPriceResponseDTO, error)
@@ -70,6 +71,51 @@ func (r *ProductPriceRepository) Create(productPrice *models.ProductPrice) (*mod
 	_ = r.db.Create(&history) // optional: handle error if needed
 
 	return productPrice, nil
+}
+
+func (r *ProductPriceRepository) CreateBulkWithTransaction(productPrices []*models.ProductPrice) ([]*models.ProductPrice, error) {
+	if len(productPrices) == 0 {
+		return nil, nil
+	}
+
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	// Create product prices
+	if err := tx.Create(&productPrices).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// Create history records
+	histories := make([]models.ProductPriceHistory, len(productPrices))
+	now := time.Now()
+	effectiveDate := now.Format("2006-01-02")
+
+	for i, pp := range productPrices {
+		histories[i] = models.ProductPriceHistory{
+			ProductId:     pp.ProductId,
+			UnitId:        pp.UnitId,
+			PriceType:     pp.PriceType,
+			UnitPrice:     pp.UnitPrice,
+			EffectiveDate: effectiveDate,
+			CreatedAt:     now,
+		}
+	}
+
+	if err := tx.Create(&histories).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	return productPrices, nil
 }
 
 func (r *ProductPriceRepository) GetAll() ([]ProductPriceResponseDTO, error) {

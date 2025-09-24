@@ -548,9 +548,9 @@ func (h *ProductHandler) GetAllProductUnits(c *fiber.Ctx) error {
 //	@Failure		400					{object}	httputil.HttpError400
 //	@Failure		401					{object}	httputil.HttpError401
 //	@Failure		500					{object}	httputil.HttpError500
-//	@Router			/api/product-units/{id}	[get]
+//	@Router			/api/products/units/{id}	[get]
 //	@Security		Bearer
-func (h *ProductHandler) GetProductUnitById(c *fiber.Ctx) error {
+func (h *ProductHandler) GetProductUnitByProductId(c *fiber.Ctx) error {
 
 	id := c.Params("id")
 	if id == "" {
@@ -560,7 +560,7 @@ func (h *ProductHandler) GetProductUnitById(c *fiber.Ctx) error {
 		})
 	}
 
-	productUnit, err := h.svc.GetProductUnitById(id)
+	productUnit, err := h.svc.GetProductUnitByProductId(id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{

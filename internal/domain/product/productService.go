@@ -31,7 +31,7 @@ type ProductServiceInterface interface {
 	GetAllProductPriceHistory() ([]ResponseProductHistoryDTO, error)
 
 	GetAllProductUnits() (*[]models.ProductUnit, error)
-	GetProductUnitById(id string) (*models.ProductUnit, error)
+	GetProductUnitByProductId(id string) ([]models.ProductUnit, error)
 	GetAllProducts() ([]models.Product, error)
 }
 
@@ -141,8 +141,8 @@ func (s *ProductService) GetAllProductUnits() (*[]models.ProductUnit, error) {
 	return s.repo.GetAllProductUnits()
 }
 
-func (s *ProductService) GetProductUnitById(id string) (*models.ProductUnit, error) {
-	return s.repo.GetProductUnitById(id)
+func (s *ProductService) GetProductUnitByProductId(id string) ([]models.ProductUnit, error) {
+	return s.repo.GetProductUnitByProductId(id)
 }
 
 func (s *ProductService) GetAllProducts() ([]models.Product, error) {
