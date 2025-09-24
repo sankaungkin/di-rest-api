@@ -9,7 +9,7 @@
 -   As a user or an Admin, I want to see all Categories
 
 -   As a user or an Admin, I want to see an individual Category with ID
-    -   id is empty, show all Categories //TODO 
+    -   id is empty, show all Categories 
 
 -   As an Admin, I want to delete a category    
     -   ID must not be empty

@@ -132,7 +132,6 @@ type Inventory struct {
 
 type ItemTransaction struct {
 	gorm.Model
-	// TODO to enhance with UUID
 	ID          uint      `gorm:"primaryKey:autoIncrement" json:"id"`
 	ProductId   string    `json:"productId"`
 	ReferenceNo string    `json:"referenceNo"`

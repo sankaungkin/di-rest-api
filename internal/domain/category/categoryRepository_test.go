@@ -17,9 +17,7 @@ func TestCategoryRepository_Update(t *testing.T) {
 		args    args
 		want    *models.Category
 		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
+	}{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.r.Update(tt.args.input)

@@ -266,35 +266,8 @@ func (h *ProductStockHandler) UpdateProductStocksById(c *fiber.Ctx) error {
 		})
 	}
 
-	//TODO:
-	// foundProductStock.BaseQty = input.BaseQty
-	// foundProductStock.DerivedQty = input.DerivedQty
-	// foundProductStock.ReorderLvl = input.ReorderLvl
-
 	log.Println("updateProduct(Handler): ", foundProductStock)
 
-	// Map foundProductStock (*ResponseProductStockDTO) to *models.ProductStock
-	// productStockToUpdate := &models.ProductStock{
-	// 	ProductId:  foundProductStock.ProductID,
-	// 	BaseQty:    foundProductStock.BaseQty,
-	// 	DerivedQty: foundProductStock.DerivedQty,
-	// 	ReorderLvl: foundProductStock.ReorderLvl,
-	// 	// Add other fields as necessary
-	// }
-
-	// Step 4: Update and return
-	// result, err := h.svc.UpdateProductStocksById(productStockToUpdate)
-	// if err != nil {
-	// 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-	// 		"status":  "FAIL",
-	// 		"message": err.Error(),
-	// 	})
-	// }
-	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
-	// 	"status":  "SUCCESS",
-	// 	"message": "Update Successfully",
-	// 	"data":    result,
-	// })
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
 		"message": "Update Successfully",

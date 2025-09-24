@@ -220,7 +220,6 @@ func (h *ProductPriceHandler) GetProductPriceById(c *fiber.Ctx) error {
 //	@Failure		500					{object}	httputil.HttpError500
 //	@Router			/api/productprices/{id}	[put]
 //	@Security		Bearer
-//TODO: update product price
 // func (h *ProductPriceHandler) UpdateProductPrice(c *fiber.Ctx) error {
 // 	// idUint64, err := strconv.ParseUint(c.Params("id"), 10, 32)
 // 	// if err != nil {

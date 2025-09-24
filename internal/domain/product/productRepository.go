@@ -110,7 +110,7 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 	productStock := &models.ProductStock{
 		ProductId:  dto.ID,
 		BaseUnitId: dto.BaseUnitId,
-		BaseQty:    dto.BaseQty,
+		DerivedQty: dto.BaseQty,
 		ReorderLvl: dto.ReorderLvl,
 	}
 	if err := tx.Create(productStock).Error; err != nil {
