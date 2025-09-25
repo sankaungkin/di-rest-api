@@ -15,14 +15,14 @@ type CreateProductRequstDTO struct {
 
 type Create_Product_UnitConversion_Stock_Price_DTO struct {
 	//Product DTO
-	ID          string `gorm:"primaryKey" json:"id"`
-	ProductName string `json:"productName" validate:"required,min=3"`
-	CategoryId  uint   `json:"categoryId" validate:"required"`
-	BrandName   string `json:"brandName"`
-	IsActive    bool   `json:"isActive" gorm:"default:true"`
-	ReorderLvl  int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
-	BaseUnitId  int    `json:"baseUnitId" validate:"required"`
-	BaseQty     int    `json:"baseQty" validate:"required,min=1"`
+	ID           string `gorm:"primaryKey" json:"id"`
+	ProductName  string `json:"productName" validate:"required,min=3"`
+	CategoryId   uint   `json:"categoryId" validate:"required"`
+	BrandName    string `json:"brandName"`
+	IsActive     bool   `json:"isActive" gorm:"default:true"`
+	ReorderLvl   int    `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	DeriveUnitId int    `json:"deriveUnitId" validate:"required,min=1"`
+	Qty          int    `json:"qty" validate:"required,min=1"`
 	//Product Units array DTO
 	ProductUnits []ProductUnit `gorm:"many2many:productUnits;"`
 	//Product Prices array DTO

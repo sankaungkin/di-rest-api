@@ -58,23 +58,14 @@ func (r *ProductStockRepository) GetLowStockProducts() ([]ResponseProductStockDT
 	// 	Where("base_qty <= reorder_lvl").
 	// 	Find(&results).Error
 	err := r.db.
-		Table("product_stocks AS p").
+		Table("product_stocks AS ps").
 		Select(`
-			p.product_id,
-			item.product_name,
-			uc.base_unit,
-			p.base_unit_id,
-			p.derive_unit_id,
-			p.base_qty,
-			uc.derive_unit,
-			p.derived_qty,
-			p.reorder_lvl,
-			uc.factor
+			ps.product_id, p.product_name, ps.derive_unit_id, uom.unit_name, ps.derived_qty, ps.reorder_lvl 
 		`).
-		Joins("JOIN unit_conversions uc ON p.product_id = uc.product_id").
-		Joins("JOIN products item ON p.product_id = item.id").
-		Where("p.base_qty <= p.reorder_lvl").
-		Order("p.product_id").
+		Joins("JOIN products p ON ps.product_id = p.id").
+		Joins("JOIN unit_of_measures uom ON ps.derive_unit_id = uom.id").
+		Where("ps.derived_qty < ps.reorder_lvl").
+		Order("ps.product_id").
 		Scan(&results).Error
 
 	if err != nil {

@@ -108,10 +108,10 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 
 	// 3. Create Product Stock
 	productStock := &models.ProductStock{
-		ProductId:  dto.ID,
-		BaseUnitId: dto.BaseUnitId,
-		DerivedQty: dto.BaseQty,
-		ReorderLvl: dto.ReorderLvl,
+		ProductId:    dto.ID,
+		DeriveUnitId: dto.DeriveUnitId,
+		DerivedQty:   dto.Qty,
+		ReorderLvl:   dto.ReorderLvl,
 	}
 	if err := tx.Create(productStock).Error; err != nil {
 		tx.Rollback()
@@ -199,20 +199,9 @@ func (r *ProductRepository) GetAll() ([]ResponseProductDTO, error) {
 			ID:          p.ID,
 			ProductName: p.ProductName,
 			CategoryId:  p.CategoryId,
-			// Uom:             p.Uom,
-			UomId:       p.UomId,
-			BaseUnit:    p.Uom,
-			DeriveUnit:  p.DeriveUom,
-			DeriveUomId: p.DeriveUomId,
-
-			BuyPrice:        p.BuyPrice,
-			SellPriceLevel1: p.SellPriceLevel1,
-			DeriveUnitPrice: p.DeriveUnitPrice,
-			// ReorderLvl:      p.ReorderLvl,
-			// QtyOnHand:       p.QtyOnHand,
-			BrandName: p.BrandName,
-			IsActive:  p.IsActive,
-			CreatedAt: time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
+			BrandName:   p.BrandName,
+			IsActive:    p.IsActive,
+			CreatedAt:   time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
 		}
 		dtos = append(dtos, dto)
 	}
@@ -241,19 +230,12 @@ func (r *ProductRepository) GetAllWithoutStock() ([]ResponseProductDTO, error) {
 	var dtos []ResponseProductDTO
 	for _, p := range products {
 		dto := ResponseProductDTO{
-			ID:              p.ID,
-			ProductName:     p.ProductName,
-			CategoryId:      p.CategoryId,
-			UomId:           p.UomId,
-			BaseUnit:        p.Uom,
-			DeriveUnit:      p.DeriveUom,
-			DeriveUomId:     p.DeriveUomId,
-			BuyPrice:        p.BuyPrice,
-			SellPriceLevel1: p.SellPriceLevel1,
-			DeriveUnitPrice: p.DeriveUnitPrice,
-			BrandName:       p.BrandName,
-			IsActive:        p.IsActive,
-			CreatedAt:       time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
+			ID:          p.ID,
+			ProductName: p.ProductName,
+			CategoryId:  p.CategoryId,
+			BrandName:   p.BrandName,
+			IsActive:    p.IsActive,
+			CreatedAt:   time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
 		}
 		dtos = append(dtos, dto)
 	}
@@ -282,19 +264,12 @@ func (r *ProductRepository) GetProductsWithoutPrices() ([]ResponseProductDTO, er
 	var dtos []ResponseProductDTO
 	for _, p := range products {
 		dto := ResponseProductDTO{
-			ID:              p.ID,
-			ProductName:     p.ProductName,
-			CategoryId:      p.CategoryId,
-			UomId:           p.UomId,
-			BaseUnit:        p.Uom,
-			DeriveUnit:      p.DeriveUom,
-			DeriveUomId:     p.DeriveUomId,
-			BuyPrice:        p.BuyPrice,
-			SellPriceLevel1: p.SellPriceLevel1,
-			DeriveUnitPrice: p.DeriveUnitPrice,
-			BrandName:       p.BrandName,
-			IsActive:        p.IsActive,
-			CreatedAt:       time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
+			ID:          p.ID,
+			ProductName: p.ProductName,
+			CategoryId:  p.CategoryId,
+			BrandName:   p.BrandName,
+			IsActive:    p.IsActive,
+			CreatedAt:   time.UnixMilli(p.CreatedAt).Format("2006-01-02 15:04:05"),
 		}
 		dtos = append(dtos, dto)
 	}
@@ -402,65 +377,6 @@ func (r *ProductRepository) UpdateOld(input *models.Product) (*models.Product, e
 
 	return &existingProduct, nil
 }
-
-// func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
-// 	var existingProduct models.Product
-
-// 	// 1. Load product with its units
-// 	if err := r.db.Preload("ProductUnits").
-// 		Where("id = ?", input.ProductId).
-// 		First(&existingProduct).Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	// 2. Validate required fields
-// 	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
-// 		return nil, fmt.Errorf("missing required fields")
-// 	}
-
-// 	// 3. Update main product fields
-// 	existingProduct.BrandName = input.BrandName
-// 	existingProduct.ProductName = input.ProductName
-// 	existingProduct.IsActive = input.IsActive
-// 	existingProduct.CategoryId = input.CategoryId
-
-// 	// 4. Update only existing productUnits
-// 	for _, u := range input.ProductUnits {
-// 		var unit models.ProductUnit
-// 		// Find the existing row
-// 		err := r.db.Where("product_id = ? AND id = ?", existingProduct.ID, u.ProductUnitId).
-// 			First(&unit).Error
-// 		if err != nil {
-// 			// if unit doesn’t exist, skip (ignore new ones)
-// 			if errors.Is(err, gorm.ErrRecordNotFound) {
-// 				continue
-// 			}
-// 			return nil, err
-// 		}
-
-// 		// Update fields
-// 		unit.ConversionToBase = u.ConversionToBase
-// 		unit.IsDefaultUnit = u.IsDefaultUnit
-// 		unit.UnitId = u.UnitId
-
-// 		if err := r.db.Save(&unit).Error; err != nil {
-// 			return nil, err
-// 		}
-// 	}
-
-// 	// 5. Save main product
-// 	if err := r.db.Save(&existingProduct).Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	// 6. Reload with units for response
-// 	if err := r.db.Preload("ProductUnits").
-// 		First(&existingProduct, "id = ?", input.ProductId).Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	return &existingProduct, nil
-// }
 
 func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
 	var existingProduct models.Product

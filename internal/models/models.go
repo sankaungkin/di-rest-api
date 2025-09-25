@@ -46,21 +46,21 @@ type Product struct {
 	ID               string            `gorm:"primaryKey" json:"id"`
 	ProductName      string            `json:"productName" validate:"required,min=3"`
 	CategoryId       uint              `json:"categoryId"`
+	BrandName        string            `json:"brandName"`
+	IsActive         bool              `json:"isActive" gorm:"default:true"`
 	Category         Category          `gorm:"foreignKey:CategoryId;references:ID" json:"category"` // 👈 Add this
 	ProductUnits     []ProductUnit     `gorm:"foreignKey:ProductId;references:ID" json:"productUnits"`
 	ProductPrices    []ProductPrice    `gorm:"foreignKey:ProductId;references:ID" json:"productPrices"`
 	SaleDetail       []SaleDetail      `gorm:"foreignKey:ProductId;" json:"saleDetails"`
 	PurchaseDetail   []PurchaseDetail  `gorm:"foreignKey:ProductId;" json:"purchaseDetails"`
 	ItemTransactions []ItemTransaction `gorm:"foreignKey:ProductId;"  json:"itemTransactions"`
-	Uom              string            `json:"uom"`
-	DeriveUom        string            `json:"deriveUom"`
-	UomId            uint              `json:"uomId"  `
-	DeriveUomId      uint              `json:"deriveUomId"`
-	BuyPrice         int64             `json:"buyPrice"`
-	SellPriceLevel1  int64             `json:"sellPricelvl1" `
-	DeriveUnitPrice  int64             `json:"deriveUnitPrice" `
-	BrandName        string            `json:"brandName"`
-	IsActive         bool              `json:"isActive" gorm:"default:true"`
+	// Uom              string            `json:"uom"`
+	// DeriveUom        string            `json:"deriveUom"`
+	// UomId            uint              `json:"uomId"  `
+	// DeriveUomId      uint              `json:"deriveUomId"`
+	// BuyPrice         int64             `json:"buyPrice"`
+	// SellPriceLevel1  int64             `json:"sellPricelvl1" `
+	// DeriveUnitPrice  int64             `json:"deriveUnitPrice" `
 	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`
 }
