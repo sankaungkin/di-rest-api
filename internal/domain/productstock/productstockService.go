@@ -18,6 +18,8 @@ type ProductStockServiceInterface interface {
 	GetProductStocksById(productId string) (models.ProductStock, error)
 	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
 	GetDetailsProductStockById(productId string) (*StockResponse, error)
+
+	GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error)
 }
 
 type ProductStockService struct {
@@ -79,4 +81,8 @@ func (s *ProductStockService) GetProductStocksById(productId string) (models.Pro
 
 func (s *ProductStockService) GetDetailsProductStockById(productId string) (*StockResponse, error) {
 	return s.repo.GetDetailsProductStockById(productId)
+}
+
+func (s *ProductStockService) GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error) {
+	return s.repo.GetAllProductStocksWithCategory()
 }

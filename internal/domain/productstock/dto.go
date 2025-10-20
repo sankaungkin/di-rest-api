@@ -1,5 +1,14 @@
 package productstock
 
+type ProductStockListInfoWithCategory struct {
+	ProductId      string `json:"productId"`
+	ProductName    string `json:"productName"`
+	CategoryName   string `json:"categoryName"`
+	UomId          int    `json:"uomId"`
+	QuantityOnHand int    `json:"quantityOnHand"`
+	ReorderLvl     int    `json:"reorderlvl"`
+}
+
 type ResponseProductStockDTO struct {
 	ProductID   string `json:"productId"`
 	ProductName string `json:"productName"`

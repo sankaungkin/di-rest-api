@@ -325,3 +325,25 @@ func (h *ProductStockHandler) GetDetailsProductStockById(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(response)
 }
+
+// @Summary Get all product stocks with category
+// @Description Get all product stocks with category
+// @Tags ProductStock
+// @Accept json
+// @Produce json
+// @Success 200 {object} ProductStockListInfoWithCategory
+// @Router /product-stocks/all-with-category [get]
+func (h *ProductStockHandler) GetAllProductStocksWithCategory(c *fiber.Ctx) error {
+	productStocks, err := h.svc.GetAllProductStocksWithCategory()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": " Record found",
+		"data":    productStocks,
+		"count":   len(productStocks),
+	})
+}

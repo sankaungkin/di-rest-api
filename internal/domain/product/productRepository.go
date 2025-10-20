@@ -18,6 +18,7 @@ type ProductRepositoryInterface interface {
 	CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error)
 	// GetAll() ([]models.Product, error)
 	GetAll() ([]ResponseProductDTO, error)
+	GetInActiveProducts() ([]models.Product, error)
 	GetAllWithoutStock() ([]ResponseProductDTO, error)
 	GetProductsWithoutPrices() ([]ResponseProductDTO, error)
 	GetById(id string) (*models.Product, error)
@@ -170,6 +171,25 @@ func (r *ProductRepository) GetAllProducts() ([]models.Product, error) {
 	var products []models.Product
 
 	err := r.db.
+		Where("is_active", true).
+		Preload("Category").
+		Preload("ProductUnits"). // 👈 also preload nested UnitOfMeasure
+		Find(&products).Error
+
+	if err != nil {
+		return nil, err
+	}
+	if len(products) == 0 {
+		return nil, errors.New("no records found")
+	}
+	return products, nil
+}
+
+func (r *ProductRepository) GetInActiveProducts() ([]models.Product, error) {
+	var products []models.Product
+
+	err := r.db.
+		Where("is_active", false).
 		Preload("Category").
 		Preload("ProductUnits"). // 👈 also preload nested UnitOfMeasure
 		Find(&products).Error

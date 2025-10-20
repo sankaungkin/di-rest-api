@@ -607,3 +607,29 @@ func (h *ProductHandler) GetAllProductsNew(c *fiber.Ctx) error {
 			"count":   len(products),
 		})
 }
+
+// @Summary Get inactive products
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.Product
+// @Failure 400 {object} httputil.HttpError400
+// @Failure 401 {object} httputil.HttpError401
+// @Failure 500 {object} httputil.HttpError500
+// @Router /products/inactive [get]
+// @Security Bearer
+func (h *ProductHandler) GetInActiveProducts(c *fiber.Ctx) error {
+	products, err := h.svc.GetInActiveProducts()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(products)) + " records found",
+			"data":    products,
+			"count":   len(products),
+		})
+}

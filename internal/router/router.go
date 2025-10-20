@@ -69,6 +69,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	// products.Post("/", productService.CreateProduct)
 	products.Post("/", productService.CreateProductWithDetails)
 	products.Get("/", productService.GetAllProductsNew)
+	products.Get("/inactive-products", productService.GetInActiveProducts)
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
 	products.Get("/price-history/:id", productService.GetProductPriceHistory)
@@ -117,7 +118,8 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	productstocks := api.Group("/productstocks")
 	productstocks.Use(middleware.Protected())
 	productstocks.Post("/", productStockService.CreateProductStocks)
-	productstocks.Get("/", productStockService.GetAllProductStocks)
+	// productstocks.Get("/", productStockService.GetAllProductStocks)
+	productstocks.Get("/", productStockService.GetAllProductStocksWithCategory)
 	productstocks.Get("/stockonhand/:id", productStockService.GetDetailsProductStockById)
 	productstocks.Get("/low-stock-products", productStockService.GetLowStockProduct)
 	productstocks.Get("/out-of-stock-products", productStockService.GetOutOfStockProducts)

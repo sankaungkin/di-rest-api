@@ -24,6 +24,8 @@ type ProductStockRepositoryInterface interface {
 	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
 
 	GetDetailsProductStockById(productId string) (*StockResponse, error)
+
+	GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error)
 }
 
 type ProductStockRepository struct {
@@ -127,6 +129,31 @@ func (r *ProductStockRepository) GetAllProductStocks() ([]models.ProductStock, e
 	if len(results) == 0 {
 		return nil, errors.New("no records found")
 	}
+	return results, nil
+}
+
+func (r *ProductStockRepository) GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error) {
+	var results []ProductStockListInfoWithCategory
+
+	err := r.db.
+		Table("product_stocks AS ps").
+		Select(`
+			ps.product_id,
+			p.product_name,
+			c.category_name,
+			ps.derive_unit_id as uom_id,
+			ps.derived_qty as quantity_on_hand,
+			ps.reorder_lvl
+		`).
+		Joins("JOIN products p ON ps.product_id = p.id").
+		Joins("JOIN categories c ON p.category_id = c.id").
+		Order("c.category_name").
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
 	return results, nil
 }
 
