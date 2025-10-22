@@ -59,3 +59,10 @@ type StockResponse struct {
 	Message     string         `json:"message"`
 	Status      string         `json:"status"`
 }
+
+type ConcreteBlockHead struct {
+	ProductId      string `json:"productId"`
+	ProductName    string `json:"productName"`
+	QuantityOnHand int    `json:"quantityOnHand"`
+	ReorderLvl     int    `json:"reorderLvl"`
+}

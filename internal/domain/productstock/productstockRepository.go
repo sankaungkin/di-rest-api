@@ -24,6 +24,7 @@ type ProductStockRepositoryInterface interface {
 	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
 
 	GetDetailsProductStockById(productId string) (*StockResponse, error)
+	GetConcreteBlockHeads() ([]ConcreteBlockHead, error)
 
 	GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error)
 }
@@ -333,4 +334,22 @@ func ConvertStockToUnits(stockQty int, units []models.ProductUnit) []DisplayStoc
 	}
 
 	return result
+}
+
+func (r *ProductStockRepository) GetConcreteBlockHeads() ([]ConcreteBlockHead, error) {
+	var result []ConcreteBlockHead
+
+	err := r.db.
+		Table("product_stocks ps").
+		Select("p.id as product_id, p.product_name, ps.derived_qty as quantity_on_hand, ps.reorder_lvl").
+		Joins("JOIN products p ON ps.product_id = p.id").
+		Where("p.category_id = ?", 6).
+		Order("p.id ASC").
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

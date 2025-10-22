@@ -285,3 +285,55 @@ func (h *PurchaseHandler) GetPurchaseLineItems(c *fiber.Ctx) error {
 			"data":    results,
 		})
 }
+
+// UpdatePurchaseRemark godoc
+//
+//	@Summary		Update individual purchase
+//	@Description	Update individual purchase
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"purchase Id"
+//	@Param			purchase				body		UpdateRemarkPurchaseDTO	true	"Purchase Data"
+//	@Success		200					{object}	models.Purchase
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/purchases/{id}	[put]
+//	@Security		Bearer
+func (h *PurchaseHandler) UpdatePurchaseRemark(c *fiber.Ctx) error {
+	id := c.Params("id")
+	input := new(UpdateRemarkPurchaseDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+
+	// Step 2: Call service update (only using payload)
+	result, err := h.svc.UpdatePurchaseRemark(UpdateRemarkPurchaseDTO{
+		ID:     id,
+		Remark: input.Remark,
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+
+	// Step 3: Return response
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
+	})
+}

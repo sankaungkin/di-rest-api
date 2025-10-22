@@ -16,7 +16,7 @@ type PurchaseServiceInterface interface {
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlyPurchases() ([]models.Purchase, error)
 	GetMonthlyGrandTotal() (int64, error)
-
+	UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error)
 	GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error)
 }
 
@@ -68,4 +68,8 @@ func (s *PurchaseService) GetMonthlyGrandTotal() (int64, error) {
 
 func (s *PurchaseService) GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error) {
 	return s.repo.GetPurchaseLineItems()
+}
+
+func (s *PurchaseService) UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error) {
+	return s.repo.UpdatePurchaseRemark(purchaseRemark)
 }

@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// TODO: implement Update Sale method for updating remark
 type SaleRepositoryInterface interface {
 	Create(sale *models.Sale) (*models.Sale, error)
 	GetAll() ([]models.Sale, error)
@@ -26,6 +27,7 @@ type SaleRepositoryInterface interface {
 	GetMonthlySales() ([]models.Sale, error)
 	GetMonthlyGrandTotal() (int64, error)
 	TopCustomers() (*ResponseTopCustomerDTO, error)
+	UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error)
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 }
@@ -143,6 +145,24 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	}
 
 	return &newSale, nil
+}
+
+func (r *SaleRepository) UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error) {
+	var existingSale models.Sale
+	err := r.db.Where("id = ?", sale.ID).First(&existingSale).Error
+	if err != nil {
+		return nil, err
+	}
+
+	existingSale.Remark = sale.Remark
+
+	log.Println("existingSale to update: ", existingSale)
+	err = r.db.Save(&existingSale).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingSale, nil
 }
 
 func (r *SaleRepository) GetAll() ([]models.Sale, error) {

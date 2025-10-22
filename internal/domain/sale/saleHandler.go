@@ -372,3 +372,58 @@ func (h *SaleHandler) GetSaleStockItemWithPrice(c *fiber.Ctx) error {
 			"data":    results,
 		})
 }
+
+// UpdateSaleRemark godoc
+//
+//	@Summary		Update individual sale
+//	@Description	Update individual sale
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string						true	"sale Id"
+//	@Param			sale				body		UpdateSaleRemarkDTO	true	"Sale Data"
+//	@Success		200					{object}	models.Sale
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/sales/{id}	[put]
+//
+//	@Security		Bearer
+func (h *SaleHandler) UpdateSaleRemark(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	// Step 1: Parse incoming payload
+	input := new(UpdateSaleRemarkDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format",
+		})
+	}
+	log.Println("inputProduct(Handler): ", input)
+
+	// Step 2: Call service update (only using payload)
+	result, err := h.svc.UpdateSale(UpdateSaleRemarkDTO{
+		ID:     id,
+		Remark: input.Remark,
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+
+	// Step 3: Return response
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    result,
+	})
+}

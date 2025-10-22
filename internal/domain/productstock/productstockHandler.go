@@ -347,3 +347,28 @@ func (h *ProductStockHandler) GetAllProductStocksWithCategory(c *fiber.Ctx) erro
 		"count":   len(productStocks),
 	})
 }
+
+// @Summary Get Concrete Block Heads
+// @Description Get Concrete Block Heads
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Success 200 {array} models.Product
+// @Failure 400 {object} httputil.HttpError400
+// @Failure 401 {object} httputil.HttpError401
+// @Failure 500 {object} httputil.HttpError500
+// @Router /api/products/concrete-block-heads [get]
+// @Security Bearer
+func (h *ProductStockHandler) GetConcreteBlockHeads(c *fiber.Ctx) error {
+	results, err := h.svc.GetConcreteBlockHeads()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Concrete Block Heads fetched successfully",
+			"data":    results,
+			"count":   len(results),
+		})
+}

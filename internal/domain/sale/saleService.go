@@ -19,6 +19,7 @@ type SaleServiceInterface interface {
 	GetMonthlySales() ([]models.Sale, error)
 	GetMonthlyGrandTotal() (int64, error)
 	GetTopCustomers() (*ResponseTopCustomerDTO, error)
+	UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error)
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 }
@@ -83,4 +84,8 @@ func (s *SaleService) GetDailySales() ([]ResponseDailySalesDTO, error) {
 
 func (s *SaleService) GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error) {
 	return s.repo.GetSaleStockItemWithPrice()
+}
+
+func (s *SaleService) UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error) {
+	return s.repo.UpdateSale(sale)
 }

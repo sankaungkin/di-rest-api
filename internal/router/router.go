@@ -70,6 +70,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	products.Post("/", productService.CreateProductWithDetails)
 	products.Get("/", productService.GetAllProductsNew)
 	products.Get("/inactive-products", productService.GetInActiveProducts)
+	products.Get("/active-products", productService.GetActiveProducts)
 	products.Get("/without-stocks", productService.GetAllProductsWithoutStock) // New route to get products without stock
 	products.Get("/without-prices", productService.GetProductsWithoutPrices)   // New route to get products without prices
 	products.Get("/price-history/:id", productService.GetProductPriceHistory)
@@ -120,6 +121,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	productstocks.Post("/", productStockService.CreateProductStocks)
 	// productstocks.Get("/", productStockService.GetAllProductStocks)
 	productstocks.Get("/", productStockService.GetAllProductStocksWithCategory)
+	productstocks.Get("/concrete-block-heads", productStockService.GetConcreteBlockHeads)
 	productstocks.Get("/stockonhand/:id", productStockService.GetDetailsProductStockById)
 	productstocks.Get("/low-stock-products", productStockService.GetLowStockProduct)
 	productstocks.Get("/out-of-stock-products", productStockService.GetOutOfStockProducts)
@@ -214,6 +216,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Get("/top-customers", saleService.TopCustomers)
 	sale.Get("/toptenproducts", saleService.GetTopTenSoleProducts)
 	sale.Get("/:id", saleService.GetById)
+	sale.Put("/:id", saleService.UpdateSaleRemark)
 
 	// purchase di
 	purchaseService, err := purchaseDi.InitPurchaseDI()
@@ -231,4 +234,5 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	purchase.Get("/monthly", purchaseService.GetMonthlyPurchases)
 	purchase.Get("/monthly-grand-total", purchaseService.GetMonthlyGrandTotal)
 	purchase.Get("/:id", purchaseService.GetById)
+	purchase.Put("/:id", purchaseService.UpdatePurchaseRemark)
 }

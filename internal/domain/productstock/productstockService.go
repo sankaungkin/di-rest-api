@@ -18,7 +18,7 @@ type ProductStockServiceInterface interface {
 	GetProductStocksById(productId string) (models.ProductStock, error)
 	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
 	GetDetailsProductStockById(productId string) (*StockResponse, error)
-
+	GetConcreteBlockHeads() ([]ConcreteBlockHead, error)
 	GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error)
 }
 
@@ -85,4 +85,8 @@ func (s *ProductStockService) GetDetailsProductStockById(productId string) (*Sto
 
 func (s *ProductStockService) GetAllProductStocksWithCategory() ([]ProductStockListInfoWithCategory, error) {
 	return s.repo.GetAllProductStocksWithCategory()
+}
+
+func (s *ProductStockService) GetConcreteBlockHeads() ([]ConcreteBlockHead, error) {
+	return s.repo.GetConcreteBlockHeads()
 }

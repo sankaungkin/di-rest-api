@@ -34,6 +34,7 @@ type ProductServiceInterface interface {
 	GetProductUnitByProductId(id string) ([]models.ProductUnit, error)
 	GetAllProducts() ([]models.Product, error)
 	GetInActiveProducts() ([]models.Product, error)
+	GetActiveProducts() ([]models.Product, error)
 }
 
 type ProductService struct {
@@ -152,4 +153,8 @@ func (s *ProductService) GetAllProducts() ([]models.Product, error) {
 
 func (s *ProductService) GetInActiveProducts() ([]models.Product, error) {
 	return s.repo.GetInActiveProducts()
+}
+
+func (s *ProductService) GetActiveProducts() ([]models.Product, error) {
+	return s.repo.GetActiveProducts()
 }

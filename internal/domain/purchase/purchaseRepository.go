@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// TODO: need to implement UpdatePurchase for updating remarks
 type PurchaseRepositoryInterface interface {
 	Create(sale *models.Purchase) (*models.Purchase, error)
 	GetAll() ([]models.Purchase, error)
@@ -23,7 +24,7 @@ type PurchaseRepositoryInterface interface {
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlyPurchases() ([]models.Purchase, error)
 	GetMonthlyGrandTotal() (int64, error)
-
+	UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error)
 	GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error)
 }
 
@@ -309,6 +310,24 @@ func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {
 	// }
 
 	return purchases, nil
+}
+
+func (r *PurchaseRepository) UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error) {
+	var existingPurchase models.Purchase
+	err := r.db.Where("id = ?", purchaseRemark.ID).First(&existingPurchase).Error
+	if err != nil {
+		return nil, err
+	}
+
+	existingPurchase.Remark = purchaseRemark.Remark
+
+	log.Println("existingPurchase to update: ", existingPurchase)
+	err = r.db.Save(&existingPurchase).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &existingPurchase, nil
 }
 
 func (r *PurchaseRepository) GetTodayPurchases() ([]models.Purchase, error) {

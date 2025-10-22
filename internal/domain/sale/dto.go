@@ -42,3 +42,8 @@ type ResponseSaleStockItemWithPrice struct {
 	PriceType     string `json:"priceType"`
 	UnitPrice     int    `json:"unitPrice"`
 }
+
+type UpdateSaleRemarkDTO struct {
+	ID     string `json:"id"`
+	Remark string `json:"remark"`
+}
