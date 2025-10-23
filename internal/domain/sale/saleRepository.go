@@ -15,7 +15,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// TODO: implement Update Sale method for updating remark
 type SaleRepositoryInterface interface {
 	Create(sale *models.Sale) (*models.Sale, error)
 	GetAll() ([]models.Sale, error)

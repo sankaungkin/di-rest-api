@@ -15,7 +15,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// TODO: need to implement UpdatePurchase for updating remarks
 type PurchaseRepositoryInterface interface {
 	Create(sale *models.Purchase) (*models.Purchase, error)
 	GetAll() ([]models.Purchase, error)
