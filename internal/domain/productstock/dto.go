@@ -19,6 +19,14 @@ type ResponseProductStockDTO struct {
 	DeriveUnitId int `json:"deriveUnitId"`
 }
 
+type OutOfStockDTO struct {
+	ProductId      string `json:"productId"`
+	ProductName    string `json:"productName"`
+	QuantityOnHand int    `json:"quantityOnHand"`
+	UnitName       string `json:"unitName"`
+	ReorderLvl     int    `json:"reorderLvl"`
+}
+
 type ResponseProductDTO struct {
 	ID          string `gorm:"primaryKey" json:"id"`
 	ProductName string `json:"productName" validate:"required,min=3"`

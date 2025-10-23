@@ -13,7 +13,7 @@ type ProductStockServiceInterface interface {
 	// GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetAllProductStocks() ([]models.ProductStock, error)
 	GetLowStockProducts() ([]ResponseProductStockDTO, error)
-	GetOutOfStockProducts() ([]ResponseProductStockDTO, error)
+	GetOutOfStockProducts() ([]OutOfStockDTO, error)
 	// GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (models.ProductStock, error)
 	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
@@ -63,7 +63,7 @@ func (s *ProductStockService) GetLowStockProducts() ([]ResponseProductStockDTO, 
 	return s.repo.GetLowStockProducts()
 }
 
-func (s *ProductStockService) GetOutOfStockProducts() ([]ResponseProductStockDTO, error) {
+func (s *ProductStockService) GetOutOfStockProducts() ([]OutOfStockDTO, error) {
 	return s.repo.GetOutOfStockProducts()
 }
 

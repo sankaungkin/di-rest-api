@@ -18,7 +18,7 @@ type ProductStockRepositoryInterface interface {
 	// GetAllProductStocks() ([]ResponseProductStockDTO, error)
 	GetAllProductStocks() ([]models.ProductStock, error)
 	GetLowStockProducts() ([]ResponseProductStockDTO, error)
-	GetOutOfStockProducts() ([]ResponseProductStockDTO, error)
+	GetOutOfStockProducts() ([]OutOfStockDTO, error)
 	// GetProductStocksById(productId string) (*ResponseProductStockDTO, error)
 	GetProductStocksById(productId string) (models.ProductStock, error)
 	UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error)
@@ -67,7 +67,7 @@ func (r *ProductStockRepository) GetLowStockProducts() ([]ResponseProductStockDT
 		`).
 		Joins("JOIN products p ON ps.product_id = p.id").
 		Joins("JOIN unit_of_measures uom ON ps.derive_unit_id = uom.id").
-		Where("ps.derived_qty < ps.reorder_lvl").
+		Where("ps.derived_qty < ps.reorder_lvl and ps.derived_qty > 0").
 		Order("ps.product_id").
 		Scan(&results).Error
 
@@ -78,35 +78,26 @@ func (r *ProductStockRepository) GetLowStockProducts() ([]ResponseProductStockDT
 	return results, nil
 }
 
-func (r *ProductStockRepository) GetOutOfStockProducts() ([]ResponseProductStockDTO, error) {
+func (r *ProductStockRepository) GetOutOfStockProducts() ([]OutOfStockDTO, error) {
 	// var results []models.ProductStock
 
 	// err := r.db.
 	// 	Where("base_qty = 0").
 	// 	Find(&results).Error
-	var results []ResponseProductStockDTO
+	var results []OutOfStockDTO
 
 	// err := r.db.
 	// 	Where("base_qty <= reorder_lvl").
 	// 	Find(&results).Error
 	err := r.db.
-		Table("product_stocks AS p").
+		Table("product_stocks AS ps").
 		Select(`
-			p.product_id,
-			item.product_name,
-			uc.base_unit,
-			p.base_unit_id,
-			p.derive_unit_id,
-			p.base_qty,
-			uc.derive_unit,
-			p.derived_qty,
-			p.reorder_lvl,
-			uc.factor
+			ps.product_id, p.product_name, ps.derived_qty as quantity_on_hand,  uom.unit_name,  ps.reorder_lvl 
 		`).
-		Joins("JOIN unit_conversions uc ON p.product_id = uc.product_id").
-		Joins("JOIN products item ON p.product_id = item.id").
-		Where("p.base_qty <= 0").
-		Order("p.product_id").
+		Joins("JOIN products p ON p.id = ps.product_id").
+		Joins("JOIN unit_of_measures uom ON uom.id = ps.derive_unit_id").
+		Where("ps.derived_qty <= 0").
+		Order("ps.product_id").
 		Scan(&results).Error
 
 	if err != nil {
