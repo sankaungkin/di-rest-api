@@ -3,6 +3,7 @@ package sale
 import (
 	"log"
 	"sync"
+	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -14,6 +15,8 @@ type SaleServiceInterface interface {
 	GetTodaySales() ([]models.Sale, error)
 	GetTopTenSoleProducts() ([]ResponseTopTenSoleProductsDTO, error)
 	GetDailySales() ([]ResponseDailySalesDTO, error)
+	GetSalesByDate(date time.Time) ([]models.Sale, error)
+	GetTodaySaleList() ([]models.Sale, error)
 	GetById(id string) (*models.Sale, error)
 	GetTodayGrandTotal() (int64, error)
 	GetMonthlySales() ([]models.Sale, error)
@@ -88,4 +91,12 @@ func (s *SaleService) GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPr
 
 func (s *SaleService) UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error) {
 	return s.repo.UpdateSale(sale)
+}
+
+func (s *SaleService) GetSalesByDate(date time.Time) ([]models.Sale, error) {
+	return s.repo.GetSalesByDate(date)
+}
+
+func (s *SaleService) GetTodaySaleList() ([]models.Sale, error) {
+	return s.repo.GetTodaySaleList()
 }

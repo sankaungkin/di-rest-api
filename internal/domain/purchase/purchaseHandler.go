@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
@@ -336,4 +337,65 @@ func (h *PurchaseHandler) UpdatePurchaseRemark(c *fiber.Ctx) error {
 		"message": "Update Successfully",
 		"data":    result,
 	})
+}
+
+// GetTodayPurchaseList godoc
+//
+//	@Summary		Fetch today's purchase list
+//	@Description	Fetch today's purchase list
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Purchase
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases/today-list	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetTodayPurchaseList(c *fiber.Ctx) error {
+	results, err := h.svc.GetTodayPurchaseList()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Today's Purchase List fetched successfully",
+			"data":    results,
+		})
+}
+
+// GetPurchasesByDate godoc
+//
+//	@Summary		Fetch purchases by date
+//	@Description	Fetch purchases by date
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//	@Param			date					path		string	true	"purchase date"
+//	@Success		200				{array}		models.Purchase
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases/purchases-by-date/{date}	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetPurchasesByDate(c *fiber.Ctx) error {
+	date := c.Params("date")
+	if date == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Date is required",
+		})
+	}
+
+	results, err := h.svc.GetPurchasesByDate(time.Now())
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Purchases by date fetched successfully",
+			"data":    results,
+		})
 }

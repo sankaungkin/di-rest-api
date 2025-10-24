@@ -20,6 +20,8 @@ type SaleRepositoryInterface interface {
 	GetAll() ([]models.Sale, error)
 	GetDailySales() ([]ResponseDailySalesDTO, error)
 	GetTodaySales() ([]models.Sale, error)
+	GetSalesByDate(date time.Time) ([]models.Sale, error)
+	GetTodaySaleList() ([]models.Sale, error)
 	GetTopTenSoleProducts() ([]ResponseTopTenSoleProductsDTO, error)
 	GetById(id string) (*models.Sale, error)
 	GetTodayGrandTotal() (int64, error)
@@ -177,6 +179,30 @@ func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 	// }
 
 	return sales, nil
+}
+
+func (r *SaleRepository) GetSalesByDate(date time.Time) ([]models.Sale, error) {
+	sales := []models.Sale{}
+
+	startOfDay := date.Truncate(24 * time.Hour)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	result := r.db.Preload(clause.Associations).
+		Model(&models.Sale{}).
+		Where("sale_date >= ? AND sale_date < ?", startOfDay, endOfDay).
+		Order("sale_date DESC").
+		Find(&sales)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return sales, nil
+}
+
+// Helper method for today's sales
+func (r *SaleRepository) GetTodaySaleList() ([]models.Sale, error) {
+	return r.GetSalesByDate(time.Now())
 }
 
 func (r *SaleRepository) GetDailySalesOLD() ([]ResponseDailySalesDTO, error) {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
@@ -426,4 +427,59 @@ func (h *SaleHandler) UpdateSaleRemark(c *fiber.Ctx) error {
 		"message": "Update Successfully",
 		"data":    result,
 	})
+}
+
+// @Summary Get Today's Sale List
+// @Description Get Today's Sale List
+// @Tags Sale
+// @Accept json
+// @Produce json
+// @Success 200 {object} fiber.Map{data=[]models.Sale}
+// @Router /api/v1/sales/today-list [get]
+func (h *SaleHandler) GetTodaySaleList(c *fiber.Ctx) error {
+	results, err := h.svc.GetTodaySaleList()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Today's Sale List fetched successfully",
+			"data":    results,
+		})
+}
+
+// GetSalesByDate godoc
+//
+//	@Summary		Fetch sales by date
+//	@Description	Fetch sales by date
+//	@Tags			Sales
+//	@Accept			json
+//	@Produce		json
+//	@Param			date					path		string	true	"sale date"
+//	@Success		200				{array}		models.Sale
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/sales/sales-by-date/{date}	[get]
+//	@Security		Bearer
+func (h *SaleHandler) GetSalesByDate(c *fiber.Ctx) error {
+	date := c.Params("date")
+	if date == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Date is required",
+		})
+	}
+
+	results, err := h.svc.GetSalesByDate(time.Now())
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Sales by date fetched successfully",
+			"data":    results,
+		})
 }

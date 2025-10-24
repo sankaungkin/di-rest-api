@@ -3,6 +3,7 @@ package purchase
 import (
 	"log"
 	"sync"
+	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -18,6 +19,8 @@ type PurchaseServiceInterface interface {
 	GetMonthlyGrandTotal() (int64, error)
 	UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error)
 	GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error)
+	GetTodayPurchaseList() ([]models.Purchase, error)
+	GetPurchasesByDate(date time.Time) ([]models.Purchase, error)
 }
 
 type PurchaseService struct {
@@ -72,4 +75,12 @@ func (s *PurchaseService) GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO,
 
 func (s *PurchaseService) UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error) {
 	return s.repo.UpdatePurchaseRemark(purchaseRemark)
+}
+
+func (s *PurchaseService) GetTodayPurchaseList() ([]models.Purchase, error) {
+	return s.repo.GetTodayPurchaseList()
+}
+
+func (s *PurchaseService) GetPurchasesByDate(date time.Time) ([]models.Purchase, error) {
+	return s.repo.GetPurchasesByDate(date)
 }
