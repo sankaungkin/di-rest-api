@@ -13,7 +13,7 @@ import (
 
 type TransactionRepositoryInterface interface {
 	GetAll() ([]models.ItemTransaction, error)
-	GetByProductId(id string) ([]models.ItemTransaction, error)
+	GetByProductId(id string) ([]ResponseItemTransactionDTO, error)
 	GetByTransactionType(tranType string) ([]models.ItemTransaction, error)
 	GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error)
 	CreateAdjustmentTransaction(transaction ResquestAdjustInventoryDTO) (*models.ItemTransaction, error)
@@ -45,13 +45,40 @@ func (r *TransactionRepository) GetAll() ([]models.ItemTransaction, error) {
 	return transactions, nil
 }
 
-func (r *TransactionRepository) GetByProductId(productId string) ([]models.ItemTransaction, error) {
+func (r *TransactionRepository) GetByProductIdOld(productId string) ([]models.ItemTransaction, error) {
 	var transactions []models.ItemTransaction
 
 	result := r.db.Where("product_id = ?",
 		strings.ToUpper(productId)).
 		Order("created_at DESC").
 		Find(&transactions)
+	if err := result.Error; err != nil {
+		return nil, err
+	}
+
+	return transactions, nil
+}
+func (r *TransactionRepository) GetByProductId(productId string) ([]ResponseItemTransactionDTO, error) {
+	var transactions []ResponseItemTransactionDTO
+
+	result := r.db.
+		Table("item_transactions it").
+		Select(`
+            it.product_id, 
+            p.product_name, 
+            it.reference_no, 
+            it.in_qty, 
+            it.out_qty, 
+            it.uom, 
+            it.tran_type, 
+			TO_CHAR(it.created_at, 'Mon DD, YYYY HH24:MI:SS') as created_at,
+            it.remark
+        `).
+		Joins("JOIN products p ON it.product_id = p.id").
+		Where("it.product_id = ?", strings.ToUpper(productId)).
+		Order("it.created_at DESC").
+		Find(&transactions)
+
 	if err := result.Error; err != nil {
 		return nil, err
 	}

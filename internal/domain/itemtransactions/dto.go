@@ -22,3 +22,16 @@ type ResquestAdjustInventoryDTO struct {
 	ReferenceNo string `json:"referenceNo"` // Reference number for the transaction
 	CreatedAt   string `json:"createdAt"`   // Timestamp of the transaction
 }
+
+type ResponseItemTransactionDTO struct {
+	ProductId   string `json:"productId"`
+	ProductName string `json:"productName"`
+	ReferenceNo string `json:"referenceNo"`
+	InQty       int    `json:"inQty"`
+	OutQty      int    `json:"outQty"`
+	Uom         string `json:"uom"`
+	TranType    string `json:"tranType"`
+	// CreatedAt   time.Time `json:"createdAt"`
+	CreatedAt string `json:"createdAt"`
+	Remark    string `json:"remark"`
+}

@@ -74,3 +74,10 @@ type ConcreteBlockHead struct {
 	QuantityOnHand int    `json:"quantityOnHand"`
 	ReorderLvl     int    `json:"reorderLvl"`
 }
+
+type ActiveProductStockDTO struct {
+	ProductId      string `json:"productId"`
+	ProductName    string `json:"productName"`
+	UnitName       string `json:"unitName"`
+	QuantityOnHand int    `json:"quantityOnHand"`
+}

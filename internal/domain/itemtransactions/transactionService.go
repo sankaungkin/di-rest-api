@@ -10,7 +10,7 @@ import (
 
 type TransactionServiceInterface interface {
 	GetAll() ([]models.ItemTransaction, error)
-	GetByProductId(id string) ([]models.ItemTransaction, error)
+	GetByProductId(id string) ([]ResponseItemTransactionDTO, error)
 	GetByTransactionType(tranType string) ([]models.ItemTransaction, error)
 	GetByProductIdAndTranType(productId string, tran_type string) ([]models.ItemTransaction, error)
 	CreateAdjustmentTransaction(transaction ResquestAdjustInventoryDTO) (*models.ItemTransaction, error)
@@ -37,7 +37,7 @@ func (s *TransactionService) GetAll() ([]models.ItemTransaction, error) {
 	return s.repo.GetAll()
 }
 
-func (s *TransactionService) GetByProductId(id string) ([]models.ItemTransaction, error) {
+func (s *TransactionService) GetByProductId(id string) ([]ResponseItemTransactionDTO, error) {
 	return s.repo.GetByProductId(id)
 }
 

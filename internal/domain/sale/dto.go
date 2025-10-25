@@ -34,13 +34,14 @@ type ResponseTopTenSoleProductsDTO struct {
 }
 
 type ResponseSaleStockItemWithPrice struct {
-	ProductUnitId string `json:"productUnitId"`
-	ProductName   string `json:"productName"`
-	ProductId     string `json:"productId"`
-	UnitId        int    `json:"unitId"`
-	UnitName      string `json:"uom"`
-	PriceType     string `json:"priceType"`
-	UnitPrice     int    `json:"unitPrice"`
+	ProductUnitId  string `json:"productUnitId"`
+	ProductName    string `json:"productName"`
+	ProductId      string `json:"productId"`
+	UnitId         int    `json:"unitId"`
+	UnitName       string `json:"uom"`
+	PriceType      string `json:"priceType"`
+	UnitPrice      int    `json:"unitPrice"`
+	QuantityOnHand int    `json:"quantityOnHand"`
 }
 
 type UpdateSaleRemarkDTO struct {
