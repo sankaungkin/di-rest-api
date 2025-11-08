@@ -1,6 +1,9 @@
 package util
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
 )
@@ -23,7 +26,24 @@ func GetStockBalance(db *gorm.DB, productID string) (int, error) {
 	return total, err
 }
 
+// func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty int, movementType string) error {
+// 	qty, err := ConvertQuantity(db, productID, productUnitId, qty)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	var productStock models.ProductStock
+// 	if err := db.Where("product_id = ?", productID).First(&productStock).Error; err != nil {
+// 		return err
+// 	}
+
+// 	productStock.DerivedQty -= qty
+
+// 	return db.Save(&productStock).Error
+// }
+
 func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty int, movementType string) error {
+	// Convert to base unit if necessary
 	qty, err := ConvertQuantity(db, productID, productUnitId, qty)
 	if err != nil {
 		return err
@@ -34,7 +54,22 @@ func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty i
 		return err
 	}
 
-	productStock.DerivedQty -= qty
+	// Handle increase/decrease by movement type
+	switch strings.ToLower(movementType) {
+	case "increase", "in", "purchase", "sale_return", "adjust_in":
+		productStock.DerivedQty += qty
+
+	case "decrease", "out", "sale", "adjust_out":
+		productStock.DerivedQty -= qty
+
+	default:
+		return fmt.Errorf("invalid movement type: %s", movementType)
+	}
+
+	// Optional: prevent negative stock
+	if productStock.DerivedQty < 0 {
+		return fmt.Errorf("insufficient stock for product %s", productID)
+	}
 
 	return db.Save(&productStock).Error
 }

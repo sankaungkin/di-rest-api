@@ -483,3 +483,46 @@ func (h *SaleHandler) GetSalesByDate(c *fiber.Ctx) error {
 			"data":    results,
 		})
 }
+
+// @Summary Return sale items
+// @Description Return sale items
+// @Tags Sales
+// @Accept json
+// @Produce json
+// @Param saleID path string true "Sale ID"
+// @Param returnItems body []models.SaleDetail true "Return items"
+// @Param remark body string true "Remark"
+
+// @Success 200 {object} fiber.Map{data=models.Sale}
+// @Router /api/v1/sales/return-items [post]
+func (h *SaleHandler) ReturnSaleItems(c *fiber.Ctx) error {
+	var dto SaleReturnDTO
+
+	if err := c.BodyParser(&dto); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format: " + err.Error(),
+		})
+	}
+
+	result, err := h.svc.ReturnSaleItems(dto)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Record not found",
+			})
+		}
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Sale items returned successfully",
+		"data":    result,
+	})
+}

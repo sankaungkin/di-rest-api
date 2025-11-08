@@ -48,3 +48,17 @@ type UpdateSaleRemarkDTO struct {
 	ID     string `json:"id"`
 	Remark string `json:"remark"`
 }
+
+type ReturnItem struct {
+	ID        int    `json:"id"`
+	SaleID    string `json:"saleId"`
+	Qty       int    `json:"qty"`
+	UnitPrice int    `json:"unitPrice"`
+	Total     int    `json:"total"`
+}
+
+type SaleReturnDTO struct {
+	SaleID      string       `json:"id"`
+	ReturnItems []ReturnItem `json:"returnItems"`
+	Remark      string       `json:"remark"`
+}

@@ -31,6 +31,7 @@ type SaleRepositoryInterface interface {
 	UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error)
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
+	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
 }
 
 type SaleRepository struct {
@@ -123,7 +124,7 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 
 		tx.Preload("Product").Preload("Uom").First(sd, sd.ID)
 
-		if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "increase"); err != nil {
+		if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "decrease"); err != nil {
 			tx.Rollback()
 			return nil, fmt.Errorf("failed to add stock movement: %v", err)
 		}
@@ -165,6 +166,294 @@ func (r *SaleRepository) UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, err
 	}
 
 	return &existingSale, nil
+}
+
+// func (r *SaleRepository) ReturnSaleItems(dto SaleReturnDTO) (*models.SaleReturn, error) {
+// 	tx := r.db.Begin()
+// 	if err := tx.Error; err != nil {
+// 		return nil, err
+// 	}
+// 	defer func() {
+// 		if r := recover(); r != nil {
+// 			tx.Rollback()
+// 		}
+// 	}()
+
+// 	// 1️⃣ Load sale with details
+// 	var sale models.Sale
+// 	if err := tx.Preload("SaleDetails.Product").First(&sale, "id = ?", dto.SaleID).Error; err != nil {
+// 		tx.Rollback()
+// 		return nil, fmt.Errorf("sale not found: %v", err)
+// 	}
+
+// 	// 2️⃣ Create sale return header
+// 	saleReturn := models.SaleReturn{
+// 		ID:          fmt.Sprintf("SR-%s-%d", time.Now().Format("020106"), time.Now().Unix()%10000),
+// 		SaleID:      dto.SaleID,
+// 		Remark:      dto.Remark,
+// 		ReturnDate:  time.Now(),
+// 		TotalAmount: 0,
+// 	}
+// 	if err := tx.Create(&saleReturn).Error; err != nil {
+// 		tx.Rollback()
+// 		return nil, fmt.Errorf("failed to create sale return header: %v", err)
+// 	}
+
+// 	var totalReturnAmount int64
+
+// 	// 3️⃣ Process each returned item
+// 	for _, item := range dto.ReturnItems {
+// 		var detail models.SaleDetail
+// 		if err := tx.Preload("Product").Where("id = ? AND sale_id = ?", item.ID, dto.SaleID).
+// 			First(&detail).Error; err != nil {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("sale detail not found (ID %d): %v", item.ID, err)
+// 		}
+
+// 		// 🔎 Validate quantity
+// 		if item.Qty <= 0 {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("invalid return quantity (%d) for product %s", item.Qty, detail.ProductId)
+// 		}
+// 		if item.Qty > (detail.Qty - detail.ReturnedQty) {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("return qty %d exceeds remaining %d for %s",
+// 				item.Qty, detail.Qty-detail.ReturnedQty, detail.ProductId)
+// 		}
+
+// 		// 🧮 Update sale detail quantities and totals
+// 		detail.ReturnedQty += item.Qty
+// 		detail.NetQty = detail.Qty - detail.ReturnedQty
+// 		detail.Total = int64(detail.NetQty) * detail.Price
+// 		detail.Qty = detail.NetQty // ensure frontend reflects updated quantity
+// 		detail.Remark = fmt.Sprintf("return quantity (%d)", detail.ReturnedQty)
+
+// 		if err := tx.Save(&detail).Error; err != nil {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("failed to update sale detail: %v", err)
+// 		}
+
+// 		// 4️⃣ Update stock (increase)
+// 		if err := util.AddStockMovement(tx, detail.ProductId, detail.ProductUnitId, item.Qty, "increase"); err != nil {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("failed to update stock for product %s: %v", detail.ProductId, err)
+// 		}
+
+// 		// 5️⃣ Record return item entry
+// 		returnItem := models.SaleReturnItem{
+// 			SaleReturnID: saleReturn.ID,
+// 			SaleDetailID: detail.ID,
+// 			ProductID:    detail.ProductId,
+// 			Qty:          item.Qty,
+// 			UnitPrice:    int64(detail.Price),
+// 			Total:        int64(item.Qty) * detail.Price,
+// 			CreatedAt:    time.Now(),
+// 		}
+// 		if err := tx.Create(&returnItem).Error; err != nil {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("failed to record return item: %v", err)
+// 		}
+
+// 		// 6️⃣ Log transaction
+// 		itemTxn := models.ItemTransaction{
+// 			ProductId:   detail.ProductId,
+// 			TranType:    "SALE_RETURN",
+// 			InQty:       item.Qty,
+// 			Uom:         detail.Uom,
+// 			ReferenceNo: saleReturn.ID,
+// 			Remark:      fmt.Sprintf("Returned %d %s (%s)", item.Qty, detail.Uom, detail.Product.ProductName),
+// 			CreatedAt:   time.Now(),
+// 		}
+// 		if err := tx.Create(&itemTxn).Error; err != nil {
+// 			tx.Rollback()
+// 			return nil, fmt.Errorf("failed to log item transaction: %v", err)
+// 		}
+
+// 		totalReturnAmount += int64(item.Qty) * detail.Price
+// 	}
+
+// 	// 7️⃣ Recalculate sale totals
+// 	var updatedTotal int64
+// 	if err := tx.Model(&models.SaleDetail{}).
+// 		Where("sale_id = ?", sale.ID).
+// 		Select("COALESCE(SUM(total),0)").Scan(&updatedTotal).Error; err != nil {
+// 		tx.Rollback()
+// 		return nil, fmt.Errorf("failed to recalc sale total: %v", err)
+// 	}
+
+// 	sale.Total = updatedTotal
+// 	sale.ReturnAmount += totalReturnAmount
+// 	sale.GrandTotal = sale.Total - sale.Discount
+// 	sale.NetTotal = sale.GrandTotal - sale.ReturnAmount
+
+// 	if err := tx.Save(&sale).Error; err != nil {
+// 		tx.Rollback()
+// 		return nil, fmt.Errorf("failed to update sale totals: %v", err)
+// 	}
+
+// 	// 8️⃣ Update sale return total
+// 	saleReturn.TotalAmount = totalReturnAmount
+// 	if err := tx.Save(&saleReturn).Error; err != nil {
+// 		tx.Rollback()
+// 		return nil, fmt.Errorf("failed to update sale return total: %v", err)
+// 	}
+
+// 	if err := tx.Commit().Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	return &saleReturn, nil
+// }
+
+func (r *SaleRepository) ReturnSaleItems(dto SaleReturnDTO) (*models.SaleReturn, error) {
+	tx := r.db.Begin()
+	if err := tx.Error; err != nil {
+		return nil, err
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var sale models.Sale
+	if err := tx.Preload("SaleDetails.Product").First(&sale, "id = ?", dto.SaleID).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("sale not found: %v", err)
+	}
+
+	// 1️⃣ Create sale return header
+	saleReturn := models.SaleReturn{
+		ID:          fmt.Sprintf("SR-%s-%d", time.Now().Format("020106"), time.Now().Unix()%10000),
+		SaleID:      dto.SaleID,
+		Remark:      dto.Remark,
+		ReturnDate:  time.Now(),
+		TotalAmount: 0,
+	}
+	if err := tx.Create(&saleReturn).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to create sale return header: %v", err)
+	}
+
+	var totalReturnAmount int64
+
+	// 2️⃣ Process return items
+	for _, item := range dto.ReturnItems {
+		var detail models.SaleDetail
+		if err := tx.Preload("Product").Where("id = ? AND sale_id = ?", item.ID, dto.SaleID).
+			First(&detail).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("sale detail not found (ID %d): %v", item.ID, err)
+		}
+
+		// 🧮 Validate qty
+		remainingQty := detail.Qty - detail.ReturnedQty
+		if item.Qty <= 0 || item.Qty > remainingQty {
+			tx.Rollback()
+			return nil, fmt.Errorf("invalid return qty %d for %s (remaining %d)",
+				item.Qty, detail.ProductId, remainingQty)
+		}
+
+		// 🧾 Update sale detail
+		detail.ReturnedQty += item.Qty
+		detail.NetQty = detail.Qty - detail.ReturnedQty
+		detail.Total = int64(detail.NetQty) * detail.Price
+		detail.Qty = detail.NetQty // keep frontend consistent
+		detail.Remark = fmt.Sprintf("return qty (%d)", detail.ReturnedQty)
+
+		if err := tx.Save(&detail).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to update sale detail: %v", err)
+		}
+
+		// 3️⃣ Update stock
+		if err := util.AddStockMovement(tx, detail.ProductId, detail.ProductUnitId, item.Qty, "increase"); err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("stock update failed for product %s: %v", detail.ProductId, err)
+		}
+
+		// 4️⃣ Create sale return line
+		returnItem := models.SaleReturnItem{
+			SaleReturnID: saleReturn.ID,
+			SaleDetailID: detail.ID,
+			ProductID:    detail.ProductId,
+			Qty:          item.Qty,
+			UnitPrice:    int64(detail.Price),
+			Total:        int64(item.Qty) * detail.Price,
+			CreatedAt:    time.Now(),
+		}
+		if err := tx.Create(&returnItem).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to record return item: %v", err)
+		}
+
+		// 5️⃣ Log item transaction
+		itemTxn := models.ItemTransaction{
+			ProductId:   detail.ProductId,
+			TranType:    "SALE_RETURN",
+			InQty:       item.Qty,
+			Uom:         detail.Uom,
+			ReferenceNo: saleReturn.ID,
+			Remark:      fmt.Sprintf("Returned %d %s (%s)", item.Qty, detail.Uom, detail.Product.ProductName),
+			CreatedAt:   time.Now(),
+		}
+		if err := tx.Create(&itemTxn).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to log transaction: %v", err)
+		}
+
+		totalReturnAmount += int64(item.Qty) * detail.Price
+	}
+
+	// 6️⃣ Recalculate totals
+	var updatedTotal int64
+	if err := tx.Model(&models.SaleDetail{}).
+		Where("sale_id = ?", sale.ID).
+		Select("COALESCE(SUM(total),0)").Scan(&updatedTotal).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to recalc sale total: %v", err)
+	}
+
+	sale.Total = updatedTotal
+	sale.ReturnAmount += totalReturnAmount
+	sale.GrandTotal = sale.Total - sale.Discount
+	sale.NetTotal = sale.GrandTotal - sale.ReturnAmount
+	sale.Remark = fmt.Sprintf("Returned %d items", len(dto.ReturnItems))
+	sale.Status = "RETURNED"
+
+	// 7️⃣ Determine status (partial / full return)
+	var remaining int64
+	if err := tx.Model(&models.SaleDetail{}).
+		Where("sale_id = ? AND net_qty > 0", sale.ID).
+		Count(&remaining).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to verify remaining qty: %v", err)
+	}
+
+	if remaining == 0 {
+		sale.Status = "RETURNED"
+		sale.NetTotal = 0
+	} else {
+		sale.Status = "PARTIAL_RETURN"
+	}
+
+	// 8️⃣ Save sale and return header
+	saleReturn.TotalAmount = totalReturnAmount
+
+	if err := tx.Save(&sale).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to update sale: %v", err)
+	}
+	if err := tx.Save(&saleReturn).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to save sale return: %v", err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return &saleReturn, nil
 }
 
 func (r *SaleRepository) GetAll() ([]models.Sale, error) {

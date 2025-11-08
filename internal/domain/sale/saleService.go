@@ -25,6 +25,7 @@ type SaleServiceInterface interface {
 	UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error)
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
+	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
 }
 
 type SaleService struct {
@@ -99,4 +100,8 @@ func (s *SaleService) GetSalesByDate(date time.Time) ([]models.Sale, error) {
 
 func (s *SaleService) GetTodaySaleList() ([]models.Sale, error) {
 	return s.repo.GetTodaySaleList()
+}
+
+func (s *SaleService) ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error) {
+	return s.repo.ReturnSaleItems(returnItem)
 }

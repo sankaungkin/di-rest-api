@@ -61,8 +61,8 @@ type Product struct {
 	// BuyPrice         int64             `json:"buyPrice"`
 	// SellPriceLevel1  int64             `json:"sellPricelvl1" `
 	// DeriveUnitPrice  int64             `json:"deriveUnitPrice" `
-	CreatedAt        int64             `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt        int64             `gorm:"autoUpdateTime:milli" json:"-"`
+	CreatedAt int64 `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt int64 `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
 type ProductPrice struct {
@@ -220,17 +220,20 @@ type PurchaseDetail struct {
 
 type Sale struct {
 	gorm.Model
-	ID          string       `gorm:"primaryKey" json:"id"`
-	CustomerId  uint         `json:"customerId"`
-	Customer    *Customer    `json:"customer"`
-	SaleDetails []SaleDetail `gorm:"foreignKey:SaleId;reference:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"saleDetails"`
-	Discount    int64        `json:"discount"`
-	Total       int64        `json:"total"`
-	GrandTotal  int64        `json:"grandTotal"`
-	Remark      string       `json:"remark"`
-	SaleDate    time.Time    `gorm:"type:timestamptz;default:now()" json:"saleDate"`
-	CreatedAt   int64        `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt   int64        `gorm:"autoUpdateTime:milli" json:"-"`
+	ID           string       `gorm:"primaryKey" json:"id"`
+	CustomerId   uint         `json:"customerId"`
+	Customer     *Customer    `json:"customer"`
+	SaleDetails  []SaleDetail `gorm:"foreignKey:SaleId;reference:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"saleDetails"`
+	Discount     int64        `json:"discount"`
+	Total        int64        `json:"total"`
+	GrandTotal   int64        `json:"grandTotal"`
+	ReturnAmount int64        `json:"returnAmount"` // ✅ NEW: total refunded
+	NetTotal     int64        `json:"netTotal"`     // ✅ NEW: grandTotal - returnAmount
+	Status       string       `json:"status"`       // ✅ NEW: partial / full return
+	Remark       string       `json:"remark"`
+	SaleDate     time.Time    `gorm:"type:timestamptz;default:now()" json:"saleDate"`
+	CreatedAt    int64        `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt    int64        `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
 type SaleDetail struct {
@@ -239,6 +242,9 @@ type SaleDetail struct {
 	ProductId   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Qty         int    `json:"qty"`
+	ReturnedQty int    `json:"returnedQty"` // ✅ how many returned
+	NetQty      int    `json:"netQty"`      // ✅ remaining = Qty - ReturnedQty
+	Remark      string `json:"remark"`
 	// DerivedQty    int         `json:"derivedQty"`
 	Uom           string      `json:"uom"`
 	Price         int64       `json:"price"`
@@ -247,6 +253,28 @@ type SaleDetail struct {
 	ProductUnitId string      `json:"productUnitId"`
 	ProductUnit   ProductUnit `gorm:"foreignKey:ProductUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"productUnit"`
 	Product       Product     `gorm:"foreignKey:ProductId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"product"`
+}
+
+type SaleReturn struct {
+	ID          string           `gorm:"primaryKey;size:30" json:"id"`
+	SaleID      string           `json:"saleId"`
+	Remark      string           `json:"remark"`
+	ReturnDate  time.Time        `json:"returnDate"`
+	TotalAmount int64            `json:"totalAmount"`
+	Sale        Sale             `gorm:"foreignKey:SaleID"`
+	ReturnItems []SaleReturnItem `gorm:"foreignKey:SaleReturnID"`
+	CreatedAt   time.Time        `json:"createdAt"`
+}
+
+type SaleReturnItem struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	SaleReturnID string    `json:"saleReturnId"`
+	SaleDetailID uint      `json:"saleDetailId"`
+	ProductID    string    `json:"productId"`
+	Qty          int       `json:"qty"`
+	UnitPrice    int64     `json:"unitPrice"`
+	Total        int64     `json:"total"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 type ErrorResponse struct {

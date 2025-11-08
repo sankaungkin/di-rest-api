@@ -206,6 +206,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale := api.Group("/sales")
 	sale.Use(middleware.Protected())
 	sale.Post("/", saleService.CreateSale)
+	sale.Post("/return-items", saleService.ReturnSaleItems)
 	sale.Get("/", saleService.GetAllSales)
 	sale.Get("/saleitems", saleService.GetSaleStockItemWithPrice)
 	sale.Get("/today", saleService.GetTodaySales)
