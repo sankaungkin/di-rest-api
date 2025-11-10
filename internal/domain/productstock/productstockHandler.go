@@ -253,6 +253,7 @@ func (h *ProductStockHandler) UpdateProductStocksById(c *fiber.Ctx) error {
 		ProductID:  input.ProductID,
 		DerivedQty: input.DerivedQty,
 		ReorderLvl: input.ReorderLvl,
+		Remark:     input.Remark,
 	})
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

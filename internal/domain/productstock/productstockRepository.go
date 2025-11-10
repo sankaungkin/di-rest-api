@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -135,11 +136,12 @@ func (r *ProductStockRepository) GetAllProductStocksWithCategory() ([]ProductSto
 			c.category_name,
 			ps.derive_unit_id as uom_id,
 			ps.derived_qty as quantity_on_hand,
-			ps.reorder_lvl
+			ps.reorder_lvl,
+			ps.remark
 		`).
 		Joins("JOIN products p ON ps.product_id = p.id").
 		Joins("JOIN categories c ON p.category_id = c.id").
-		Order("c.category_name").
+		Order("ps.product_id").
 		Scan(&results).Error
 
 	if err != nil {
@@ -208,23 +210,56 @@ func (r *ProductStockRepository) CreateProductStocks(productStock *models.Produc
 	err := r.db.Create(&productStock).Error
 	return productStock, err
 }
-
 func (r *ProductStockRepository) UpdateProductStocksById(productStock UpdateProductStockDTO) (*models.ProductStock, error) {
-	var existingProductStock models.ProductStock
-	err := r.db.Where("product_id = ?", strings.ToUpper(productStock.ProductID)).First(&existingProductStock).Error
+	var updatedStock models.ProductStock
+
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		var existingProductStock models.ProductStock
+
+		// 1. Get existing record
+		if err := tx.Where("product_id = ?", strings.ToUpper(productStock.ProductID)).
+			First(&existingProductStock).Error; err != nil {
+			return err
+		}
+
+		// 2. Update fields
+		existingProductStock.DerivedQty = productStock.DerivedQty
+		existingProductStock.ReorderLvl = productStock.ReorderLvl
+		existingProductStock.Remark = productStock.Remark
+
+		// 3. Save product stock changes
+		if err := tx.Save(&existingProductStock).Error; err != nil {
+			return err
+		}
+		//TODO: add the login user name to the transaction
+		// 4. Create item transaction record
+		newItemTransaction := models.ItemTransaction{
+			ProductId: existingProductStock.ProductId,
+			TranType:  "MODIFY_STOCK",
+			InQty:     existingProductStock.DerivedQty, // change amount stored here
+			Remark: fmt.Sprintf(
+				"Stock Modified: Product %s | New Qty: %d | Reorder Level: %d | Note: %s",
+				existingProductStock.ProductId,
+				existingProductStock.DerivedQty,
+				existingProductStock.ReorderLvl,
+				existingProductStock.Remark,
+			),
+			CreatedAt: time.Now().Local(),
+		}
+
+		if err := tx.Create(&newItemTransaction).Error; err != nil {
+			return err
+		}
+
+		updatedStock = existingProductStock
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	existingProductStock.DerivedQty = productStock.DerivedQty
-	existingProductStock.ReorderLvl = productStock.ReorderLvl
 
-	log.Println("existingProductStock to update: ", existingProductStock)
-	err = r.db.Save(&existingProductStock).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return &existingProductStock, nil
+	return &updatedStock, nil
 }
 
 func (r *ProductStockRepository) GetDetailsProductStockByIdOld(productId string) ([]DisplayStock, error) {

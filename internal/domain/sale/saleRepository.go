@@ -65,7 +65,7 @@ func (r *SaleRepository) GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWit
 		pp.unit_price,
 		ps.derived_qty as quantity_on_hand
 FROM public.product_prices pp, public.products p, public.unit_of_measures uom, public.product_stocks ps
-WHERE pp.product_id = p.id AND pp.unit_id = uom.id AND pp.price_type = 'SELL' AND ps.product_id = p.id
+WHERE pp.product_id = p.id AND pp.unit_id = uom.id AND pp.price_type = 'SELL' AND ps.product_id = p.id AND ps.derived_qty > 0
 ORDER BY pp.product_id ASC 
 	`
 

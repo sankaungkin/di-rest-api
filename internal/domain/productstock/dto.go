@@ -7,6 +7,7 @@ type ProductStockListInfoWithCategory struct {
 	UomId          int    `json:"uomId"`
 	QuantityOnHand int    `json:"quantityOnHand"`
 	ReorderLvl     int    `json:"reorderlvl"`
+	Remark         string `json:"remark"`
 }
 
 type ResponseProductStockDTO struct {
@@ -51,6 +52,7 @@ type UpdateProductStockDTO struct {
 	ProductName string `json:"productName"`
 	DerivedQty  int    `json:"derivedQty"`
 	ReorderLvl  int    `json:"reorderlvl"`
+	Remark      string `json:"remark"`
 }
 
 type DisplayStock struct {

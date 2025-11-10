@@ -103,6 +103,7 @@ type ProductStock struct {
 	BaseQty       int           `json:"baseQty" `
 	DerivedQty    int           `json:"derivedQty" validate:"required,min=1"`
 	ReorderLvl    int           `json:"reorderlvl" gorm:"default:1" validate:"required,min=1"`
+	Remark        string        `json:"remark"`
 	UnitOfMeasure UnitOfMeasure `gorm:"foreignKey:BaseUnitId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"unitOfMeasure,omitempty"`
 }
 
