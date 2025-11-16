@@ -56,7 +56,7 @@ func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty i
 
 	// Handle increase/decrease by movement type
 	switch strings.ToLower(movementType) {
-	case "increase", "in", "purchase", "sale_return", "adjust_in":
+	case "increase", "in", "purchase", "sale_return", "adjust_in", "buy":
 		productStock.DerivedQty += qty
 
 	case "decrease", "out", "sale", "adjust_out":

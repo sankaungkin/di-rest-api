@@ -58,7 +58,8 @@ func (r *PurchaseRepository) GetPurchaseLineItems() ([]ResponsePurchaseLineItemD
     uom.unit_name as unit_name,           
     pp.unit_id as price_unit_id,
     pp.price_type,
-    pp.unit_price
+    pp.unit_price,
+	ps.derived_qty as stock_qty
 FROM product_units pu
 JOIN product_prices pp 
     ON pu.product_id = pp.product_id 
@@ -67,6 +68,8 @@ JOIN unit_of_measures uom
     ON uom.id = pu.unit_id
 JOIN products p
 	ON p.id = pu.product_id
+JOIN product_stocks ps
+	ON ps.product_id = pu.product_id
 WHERE 
     pp.price_type = 'BUY'
 	`
@@ -176,7 +179,7 @@ func (r *PurchaseRepository) CreateOld(input *models.Purchase) (*models.Purchase
 
 }
 
-func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+func (r *PurchaseRepository) CreateBug(input *models.Purchase) (*models.Purchase, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Precompute BaseQty for each detail before saving
 		for i := range input.PurchaseDetails {
@@ -258,6 +261,119 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		return nil, err
 	}
 	return input, nil
+}
+
+func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+
+	newPurchase := models.Purchase{
+		ID:              input.ID,
+		SupplierId:      input.SupplierId,
+		Remark:          input.Remark,
+		PurchaseDate:    input.PurchaseDate,
+		Total:           input.Total,
+		Discount:        input.Discount,
+		GrandTotal:      input.GrandTotal,
+		PurchaseDetails: input.PurchaseDetails,
+	}
+
+	// Validate
+	if err := models.ValidateStruct(newPurchase); err != nil {
+		return nil, gorm.ErrCheckConstraintViolated
+	}
+
+	tx := r.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Error; err != nil {
+		return nil, err
+	}
+
+	// Save purchase + details
+	if err := tx.Create(&newPurchase).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// Preload everything needed like in sale repo
+	if err := tx.
+		Preload("PurchaseDetails.Product").
+		First(&newPurchase, "id = ?", newPurchase.ID).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for i := range newPurchase.PurchaseDetails {
+
+		pd := &newPurchase.PurchaseDetails[i]
+
+		// preload product/uom
+		tx.Preload("Product").Preload("Uom").First(pd, pd.ID)
+
+		// ============================
+		// 1. Stock Movement (increase)
+		// ============================
+		if err := util.AddStockMovement(
+			tx,
+			pd.ProductId,
+			pd.ProductUnitId,
+			pd.Qty,
+			"increase",
+		); err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed to add stock movement: %v", err)
+		}
+
+		// ============================
+		// 2. Item Transaction
+		// ============================
+		newItemTransaction := models.ItemTransaction{
+			ProductId:   pd.ProductId,
+			TranType:    "PURCHASE",
+			InQty:       pd.Qty,
+			Uom:         pd.Uom,
+			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(pd.ID)),
+			Remark: fmt.Sprintf(
+				"PurchaseId:%s, PurchaseDetailId %d, ProductId %s : %s, Purchased %d %s",
+				newPurchase.ID, pd.ID, pd.ProductId, pd.Product.ProductName, pd.Qty, pd.Uom,
+			),
+			CreatedAt: time.Now().Local(),
+		}
+		if err := tx.Create(&newItemTransaction).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		// ============================
+		// 3. Product Price History
+		// ============================
+		newHistory := models.ProductPriceHistory{
+			ProductId:     pd.ProductId,
+			ProductName:   pd.Product.ProductName,
+			UnitId:        pd.UnitId,
+			UnitName:      pd.Uom,
+			UnitPrice:     pd.Price,
+			PriceType:     "BUY",
+			Remark:        fmt.Sprintf("PurchaseID:%s, DetailID:%d", newPurchase.ID, pd.ID),
+			EffectiveDate: newPurchase.PurchaseDate.Format("2006-01-02 15:04:05"),
+		}
+
+		if err := tx.Create(&newHistory).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+	} // end loop
+
+	// Commit
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return &newPurchase, nil
 }
 
 // Update stock always in base unit

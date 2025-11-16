@@ -26,6 +26,7 @@ type ResponsePurchaseLineItemDTO struct {
 	PriceUnitId   int    `json:"priceUnitId"`
 	PriceType     string `json:"priceType"`
 	UnitPrice     int    `json:"unitPrice"`
+	StockQty      int    `json:"stockQty"`
 }
 
 type UpdateRemarkPurchaseDTO struct {
