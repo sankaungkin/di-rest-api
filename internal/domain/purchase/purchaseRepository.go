@@ -366,6 +366,15 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 			return nil, err
 		}
 
+		// ============================
+		// 4. Update purchase price
+		// ============================
+		for _, detail := range input.PurchaseDetails {
+			if err := r.updatePurchasePrice(tx, detail.ProductId, detail.Price, detail.ProductUnitId); err != nil {
+				return nil, err
+			}
+		}
+
 	} // end loop
 
 	// Commit
