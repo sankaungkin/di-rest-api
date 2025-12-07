@@ -1,6 +1,8 @@
 package sale
 
 import (
+	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -61,4 +63,24 @@ type SaleReturnDTO struct {
 	SaleID      string       `json:"id"`
 	ReturnItems []ReturnItem `json:"returnItems"`
 	Remark      string       `json:"remark"`
+}
+
+type ResponseMonthlyProfitDataDTO struct {
+	// MonthYear string `json:"month"` // e.g., "November 2025" or "2025-11"
+	Month   sql.NullString `json:"month"`
+	Revenue int64          `json:"revenue"`
+	COGS    int64          `json:"cogs"`
+}
+
+// Add this method to your DTO struct
+func (dto ResponseMonthlyProfitDataDTO) MarshalJSON() ([]byte, error) {
+	type Alias ResponseMonthlyProfitDataDTO // Create an alias to avoid infinite recursion
+
+	return json.Marshal(&struct {
+		Month interface{} `json:"month"` // Override the marshaling for the Month field
+		Alias
+	}{
+		Month: dto.Month.String, // Marshal only the String content
+		Alias: (Alias)(dto),
+	})
 }

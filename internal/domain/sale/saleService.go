@@ -23,6 +23,7 @@ type SaleServiceInterface interface {
 	GetMonthlyGrandTotal() (int64, error)
 	GetTopCustomers() (*ResponseTopCustomerDTO, error)
 	UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error)
+	GetHistoricalProfitData() ([]ResponseMonthlyProfitDataDTO, error)
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
@@ -44,6 +45,10 @@ func NewSaleService(repo SaleRepositoryInterface) SaleServiceInterface {
 		svcInstance = &SaleService{repo: repo}
 	})
 	return svcInstance
+}
+
+func (s *SaleService) GetHistoricalProfitData() ([]ResponseMonthlyProfitDataDTO, error) {
+	return s.repo.GetHistoricalProfitData()
 }
 
 func (s *SaleService) CreateService(sale *models.Sale) (*models.Sale, error) {

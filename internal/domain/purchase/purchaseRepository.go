@@ -27,6 +27,7 @@ type PurchaseRepositoryInterface interface {
 	GetMonthlyGrandTotal() (int64, error)
 	UpdatePurchaseRemark(purchaseRemark UpdateRemarkPurchaseDTO) (*models.Purchase, error)
 	GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error)
+	GetHistoricalMonthlyCOGS() ([]ResponseHistoricalCOGS, error)
 }
 
 type PurchaseRepository struct {
@@ -44,6 +45,34 @@ func NewSaleRepository(db *gorm.DB) PurchaseRepositoryInterface {
 		repoInstance = &PurchaseRepository{db: db}
 	})
 	return repoInstance
+}
+
+// In purchase/repository.go (Add this method)
+
+func (r *PurchaseRepository) GetHistoricalMonthlyCOGS() ([]ResponseHistoricalCOGS, error) {
+	var results []ResponseHistoricalCOGS
+
+	// Calculate the start date (5 months ago, starting from the 1st day of that month)
+	now := time.Now()
+	// Go back 4 full months + current month = 5 months total
+	startDate := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).AddDate(0, -4, 0)
+
+	// SQL query to aggregate monthly purchase grand totals (COGS)
+	query := `
+        SELECT
+            TO_CHAR(DATE_TRUNC('month', purchase_date), 'YYYY-MM') AS month,
+            COALESCE(SUM(grand_total), 0) AS cogs
+        FROM public.purchases
+        WHERE purchase_date >= ?
+        GROUP BY 1
+        ORDER BY 1 ASC
+    `
+
+	if err := r.db.Raw(query, startDate).Scan(&results).Error; err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func (r *PurchaseRepository) GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error) {
@@ -413,7 +442,7 @@ func (r *PurchaseRepository) updatePurchasePrice(tx *gorm.DB, productId string, 
 
 	// Find the productPrice with the same productId and unitId
 	var productPrice models.ProductPrice
-	if err := tx.Where("product_id = ? AND product_unit_id = ?", productId, productUnitId).First(&productPrice).Error; err != nil {
+	if err := tx.Where("product_id = ? AND product_unit_id = ? AND price_type = 'BUY'", productId, productUnitId).First(&productPrice).Error; err != nil {
 		return err
 	}
 

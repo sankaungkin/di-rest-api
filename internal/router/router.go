@@ -207,6 +207,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Use(middleware.Protected())
 	sale.Post("/", saleService.CreateSale)
 	sale.Post("/return-items", saleService.ReturnSaleItems)
+	sale.Get("/historical-profit-data", saleService.GetHistoricalProfitData)
 	sale.Get("/", saleService.GetAllSales)
 	sale.Get("/saleitems", saleService.GetSaleStockItemWithPrice)
 	sale.Get("/today", saleService.GetTodaySales)
@@ -240,4 +241,5 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	purchase.Get("/monthly-grand-total", purchaseService.GetMonthlyGrandTotal)
 	purchase.Get("/:id", purchaseService.GetById)
 	purchase.Put("/:id", purchaseService.UpdatePurchaseRemark)
+	purchase.Get("/historical-monthly-cogs", purchaseService.GetHistoricalMonthlyCOGS)
 }

@@ -526,3 +526,23 @@ func (h *SaleHandler) ReturnSaleItems(c *fiber.Ctx) error {
 		"data":    result,
 	})
 }
+
+// @Summary Get Historical Profit Data
+// @Description Get Historical Profit Data
+// @Tags Sales
+// @Accept json
+// @Produce json
+// @Success 200 {object} fiber.Map{data=[]models.Sale}
+// @Router /api/v1/sales/historical-profit-data [get]
+func (h *SaleHandler) GetHistoricalProfitData(c *fiber.Ctx) error {
+	results, err := h.svc.GetHistoricalProfitData()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Historical Profit Data fetched successfully",
+			"data":    results,
+		})
+}

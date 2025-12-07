@@ -21,6 +21,7 @@ type PurchaseServiceInterface interface {
 	GetPurchaseLineItems() ([]ResponsePurchaseLineItemDTO, error)
 	GetTodayPurchaseList() ([]models.Purchase, error)
 	GetPurchasesByDate(date time.Time) ([]models.Purchase, error)
+	GetHistoricalMonthlyCOGS() ([]ResponseHistoricalCOGS, error)
 }
 
 type PurchaseService struct {
@@ -43,6 +44,10 @@ func NewSaleService(repo PurchaseRepositoryInterface) PurchaseServiceInterface {
 
 func (s *PurchaseService) CreateService(purchase *models.Purchase) (*models.Purchase, error) {
 	return s.repo.Create(purchase)
+}
+
+func (s *PurchaseService) GetHistoricalMonthlyCOGS() ([]ResponseHistoricalCOGS, error) {
+	return s.repo.GetHistoricalMonthlyCOGS()
 }
 
 func (s *PurchaseService) GetAllService() ([]models.Purchase, error) {

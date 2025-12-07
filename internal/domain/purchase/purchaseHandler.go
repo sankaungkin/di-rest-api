@@ -399,3 +399,23 @@ func (h *PurchaseHandler) GetPurchasesByDate(c *fiber.Ctx) error {
 			"data":    results,
 		})
 }
+
+// @Summary Get Historical Monthly COGS
+// @Description Get Historical Monthly COGS
+// @Tags Purchases
+// @Accept json
+// @Produce json
+// @Success 200 {object} fiber.Map{data=[]ResponseHistoricalCOGS}
+// @Router /api/v1/purchases/historical-monthly-cogs [get]
+func (h *PurchaseHandler) GetHistoricalMonthlyCOGS(c *fiber.Ctx) error {
+	results, err := h.svc.GetHistoricalMonthlyCOGS()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Historical Monthly COGS fetched successfully",
+			"data":    results,
+		})
+}

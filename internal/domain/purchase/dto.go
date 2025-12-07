@@ -33,3 +33,8 @@ type UpdateRemarkPurchaseDTO struct {
 	ID     string `json:"id"`
 	Remark string `json:"remark"`
 }
+
+type ResponseHistoricalCOGS struct {
+	MonthYear string `json:"month"` // e.g., "2025-11"
+	COGS      int64  `json:"cogs"`
+}
