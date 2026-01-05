@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
@@ -72,4 +73,46 @@ func AddStockMovement(db *gorm.DB, productID string, productUnitId string, qty i
 	}
 
 	return db.Save(&productStock).Error
+}
+
+// internal/util/customer_stats.go
+
+func UpdateCustomerBalance(tx *gorm.DB, customerID uint, amount int64, isIncrease bool) error {
+	if customerID == 0 {
+		return nil
+	}
+
+	operation := "+"
+	if !isIncrease {
+		operation = "-"
+	}
+
+	return tx.Model(&models.Customer{}).Where("id = ?", customerID).
+		Updates(map[string]interface{}{
+			"total_spent":   gorm.Expr(fmt.Sprintf("total_spent %s ?", operation), amount),
+			"order_count":   gorm.Expr(fmt.Sprintf("order_count %s ?", operation), 1), // Only if you want to decrease count on returns
+			"last_purchase": time.Now(),
+		}).Error
+}
+
+// internal/util/customer_stats.go
+
+func AdjustCustomerStats(tx *gorm.DB, customerID uint, amount int64, isNewSale bool) error {
+	if customerID == 0 {
+		return nil
+	}
+
+	updates := make(map[string]interface{})
+
+	if isNewSale {
+		// New Sale: Increase both Count and Spent
+		updates["order_count"] = gorm.Expr("order_count + ?", 1)
+		updates["total_spent"] = gorm.Expr("total_spent + ?", amount)
+		updates["last_purchase"] = time.Now()
+	} else {
+		// Return: Only reduce the Spent amount
+		updates["total_spent"] = gorm.Expr("total_spent - ?", amount)
+	}
+
+	return tx.Model(&models.Customer{}).Where("id = ?", customerID).Updates(updates).Error
 }

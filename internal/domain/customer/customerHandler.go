@@ -280,3 +280,38 @@ func (h *CustomerHandler) DeleteCustomer(c *fiber.Ctx) error {
 		"message": "Delete successfully",
 	})
 }
+
+// GetCustomerSummary godoc
+//
+//	@Summary		Fetch customer summary by Id
+//	@Description	Fetch customer summary by Id
+//	@Tags			Customers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id					path		string	true	"customer Id"
+//	@Success		200					{object}	CustomerSummaryDTO
+//	@Failure		400					{object}	httputil.HttpError400
+//	@Failure		401					{object}	httputil.HttpError401
+//	@Failure		500					{object}	httputil.HttpError500
+//	@Router			/api/customers/{id}/summary	[get]					"summary"
+//	@Security		Bearer
+func (h *CustomerHandler) GetCustomerSummary(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "fail",
+			"error":  "invalid ID parameter",
+			"detail": err.Error(),
+		})
+	}
+
+	result, err := h.svc.GetCustomerSummary(uint(id))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Customer summary fetched successfully",
+		"data":    result,
+	})
+}

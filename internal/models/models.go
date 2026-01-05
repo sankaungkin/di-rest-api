@@ -165,10 +165,16 @@ type User struct {
 
 type Customer struct {
 	gorm.Model
-	ID        uint   `gorm:"primaryKey:autoIncrement" json:"id"`
-	Name      string `json:"name" validate:"required,min=3"`
-	Address   string `json:"address" validate:"required,min=3"`
-	Phone     string `json:"phone" validate:"required,min=3"`
+	ID      uint   `gorm:"primaryKey:autoIncrement" json:"id"`
+	Name    string `json:"name" validate:"required,min=3"`
+	Address string `json:"address" validate:"required,min=3"`
+	Phone   string `json:"phone" validate:"required,min=3"`
+
+	// --- Refactored Fields ---
+	OrderCount   int       `gorm:"default:0" json:"orderCount"`
+	TotalSpent   int64     `gorm:"default:0" json:"totalSpent"`
+	LastPurchase time.Time `json:"lastPurchase"`
+
 	Sales     []Sale `gorm:"foreignKey:CustomerId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"sales"`
 	CreatedAt int64  `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt int64  `gorm:"autoUpdateTime:milli" json:"-"`

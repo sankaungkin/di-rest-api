@@ -14,23 +14,24 @@ type CustomerServiceInterface interface {
 	GetCustomerById(id uint) (*models.Customer, error)
 	UpdateCustomer(customer *models.Customer) (*models.Customer, error)
 	DeleteCustomer(id uint) error
+	GetCustomerSummary(id uint) (*CustomerSummaryDTO, error)
 }
 
 type CustomerService struct {
 	repo CustomerRepositoryInterface
 }
 
-//! for singletone pattern
+// ! for singletone pattern
 var (
 	svcInstance *CustomerService
-	svcOnce sync.Once
+	svcOnce     sync.Once
 )
 
 // func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterface{
 // 	return &CustomerService{repo:repo}
 // }
 
-//! constructor must be return the Interface, NOT struct, if not, google wire generate fail
+// ! constructor must be return the Interface, NOT struct, if not, google wire generate fail
 func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterface {
 	log.Println(util.Gray + "CustomerService constructor is called " + util.Reset)
 	svcOnce.Do(func() {
@@ -39,25 +40,26 @@ func NewCustomerService(repo CustomerRepositoryInterface) CustomerServiceInterfa
 	return svcInstance
 }
 
-func (s *CustomerService)CreateCustomer(customer *models.Customer) (*models.Customer, error){
+func (s *CustomerService) CreateCustomer(customer *models.Customer) (*models.Customer, error) {
 	return s.repo.CreateCustomer(customer)
 }
 
-
-
-func (s *CustomerService)GetAllCustomers() ([]models.Customer, error){
+func (s *CustomerService) GetAllCustomers() ([]models.Customer, error) {
 	return s.repo.GetAllCustomers()
 }
 
-func (s *CustomerService)GetCustomerById(id uint) (*models.Customer, error){
+func (s *CustomerService) GetCustomerById(id uint) (*models.Customer, error) {
 	return s.repo.GetCustomerById(id)
 }
 
-func (s *CustomerService)UpdateCustomer(customer *models.Customer) (*models.Customer, error){
+func (s *CustomerService) UpdateCustomer(customer *models.Customer) (*models.Customer, error) {
 	return s.repo.UpdateCustomer(customer)
 }
 
-
-func (s *CustomerService)DeleteCustomer(id uint) error{
+func (s *CustomerService) DeleteCustomer(id uint) error {
 	return s.repo.DeleteCustomer(id)
+}
+
+func (s *CustomerService) GetCustomerSummary(id uint) (*CustomerSummaryDTO, error) {
+	return s.repo.GetCustomerSummary(id)
 }

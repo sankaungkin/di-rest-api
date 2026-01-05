@@ -141,6 +141,12 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 		return nil, err
 	}
 
+	// Update stats: Increase Count and Total
+	if err := util.AdjustCustomerStats(tx, newSale.CustomerId, newSale.GrandTotal, true); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
 	// Preload all necessary relationships
 	if err := tx.Preload("SaleDetails.Product").
 		First(&newSale, "id = ?", newSale.ID).Error; err != nil {
@@ -345,6 +351,14 @@ func (r *SaleRepository) ReturnSaleItems(dto SaleReturnDTO) (*models.SaleReturn,
 	if err := tx.Save(&saleReturn).Error; err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to save sale return: %v", err)
+	}
+
+	if sale.CustomerId != 0 {
+		// Update stats: Reduce Total but keep OrderCount same
+		if err := util.AdjustCustomerStats(tx, sale.CustomerId, totalReturnAmount, false); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
