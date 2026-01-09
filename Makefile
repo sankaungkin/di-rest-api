@@ -13,6 +13,12 @@ unitconversion:
 uom:
 	@wire ./internal/domain/unitofmeasurement/di/wire.go
 
+expense:
+	@wire ./internal/domain/expense/di/wire.go
+
+cashbook:
+	@wire ./internal/domain/cashbook/di/wire.go
+
 product:
 	@wire ./internal/domain/product/di/wire.go
 

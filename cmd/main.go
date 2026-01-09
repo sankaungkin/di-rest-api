@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	_ "github.com/sankangkin/di-rest-api/cmd/docs"
 
@@ -49,6 +50,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize product stock service: %v", err)
 	}
+
+	time.Local, _ = time.LoadLocation("Asia/Yangon")
 
 	hub := websocket.NewHub(productStockRepo)
 	go hub.Run()

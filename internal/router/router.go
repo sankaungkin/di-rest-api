@@ -5,8 +5,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	authDi "github.com/sankangkin/di-rest-api/internal/auth/di"
+	cashbookDi "github.com/sankangkin/di-rest-api/internal/domain/cashbook/di"
 	categoryDi "github.com/sankangkin/di-rest-api/internal/domain/category/di"
 	customerDi "github.com/sankangkin/di-rest-api/internal/domain/customer/di"
+	expenseDi "github.com/sankangkin/di-rest-api/internal/domain/expense/di"
 	inventoryDi "github.com/sankangkin/di-rest-api/internal/domain/inventory/di"
 	transactionDi "github.com/sankangkin/di-rest-api/internal/domain/itemtransactions/di"
 	productDi "github.com/sankangkin/di-rest-api/internal/domain/product/di"
@@ -242,4 +244,31 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	purchase.Get("/:id", purchaseService.GetById)
 	purchase.Put("/:id", purchaseService.UpdatePurchaseRemark)
 	purchase.Get("/historical-monthly-cogs", purchaseService.GetHistoricalMonthlyCOGS)
+
+	// cashbook di
+	cashbookService, err := cashbookDi.InitCashbook()
+	if err != nil {
+		log.Fatalf("Failed to initialize cashbook service: %v", err)
+	}
+	// cashbook route
+	cashbook := api.Group("/cashbook")
+	cashbook.Use(middleware.Protected())
+	cashbook.Get("/", cashbookService.GetLedger) // ✅ Add startDate and endDate query params
+	cashbook.Get("/all", cashbookService.GetAllCashbooks)
+	cashbook.Get("/transaction-history", cashbookService.GetTransactionHistory)
+	cashbook.Get("/balance", cashbookService.GetBalance)
+	cashbook.Post("/close-day", cashbookService.CloseDay)
+	cashbook.Post("/entry", cashbookService.CreateEntry)
+
+	// expense di
+	expenseService, err := expenseDi.InitExpense()
+	if err != nil {
+		log.Fatalf("Failed to initialize expense service: %v", err)
+	}
+	// expense route
+	expense := api.Group("/expenses")
+	expense.Use(middleware.Protected())
+	expense.Post("/", expenseService.CreateExpense)
+	expense.Get("/", expenseService.GetAllExpenses)
+
 }

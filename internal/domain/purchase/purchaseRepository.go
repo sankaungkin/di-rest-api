@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -110,206 +109,6 @@ WHERE
 }
 
 func (r *PurchaseRepository) CreateOld(input *models.Purchase) (*models.Purchase, error) {
-
-	newPurchase := models.Purchase{
-		ID:              input.ID,
-		SupplierId:      input.SupplierId,
-		Discount:        input.Discount,
-		GrandTotal:      input.GrandTotal,
-		Remark:          input.Remark,
-		PurchaseDate:    input.PurchaseDate,
-		PurchaseDetails: input.PurchaseDetails,
-		Total:           input.Total,
-	}
-	err := models.ValidateStruct(newPurchase)
-	if err != nil {
-		return nil, gorm.ErrCheckConstraintViolated
-	}
-
-	tx := r.db.Begin()
-
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := tx.Error; err != nil {
-		return nil, err
-	}
-
-	if err := tx.Create(&newPurchase).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	if err := tx.Preload("PurchaseDetails.Product").First(&newPurchase, "id = ?", newPurchase.ID).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	for i := range newPurchase.PurchaseDetails {
-
-		// increase productStock qtyonhand
-		var productStock models.ProductStock
-		result := tx.First(&productStock, "product_id = ?", newPurchase.PurchaseDetails[i].ProductId)
-		if err := result.Error; err != nil {
-			return nil, err
-		}
-		productStock.BaseQty += int(newPurchase.PurchaseDetails[i].Qty)
-		tx.Save(&productStock)
-
-		newItemTransaction := models.ItemTransaction{
-			InQty:       newPurchase.PurchaseDetails[i].Qty,
-			OutQty:      0,
-			ProductId:   newPurchase.PurchaseDetails[i].ProductId,
-			TranType:    "PURCHASE",
-			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)),
-			Uom:         newPurchase.PurchaseDetails[i].UnitName,
-			Remark: fmt.Sprintf(
-				"PurchaseID:%s, purchaseDetail id:%d, buy %s %s %d %s ",
-				newPurchase.ID, newPurchase.PurchaseDetails[i].ID, newPurchase.PurchaseDetails[i].ProductId, newPurchase.PurchaseDetails[i].Product.ProductName, newPurchase.PurchaseDetails[i].Qty, newPurchase.PurchaseDetails[i].UnitName,
-			),
-		}
-		tx.Save(&newItemTransaction)
-
-		newProductPrice := models.ProductPrice{
-			ProductId: newPurchase.PurchaseDetails[i].ProductId,
-			UnitId:    newPurchase.PurchaseDetails[i].UnitId,
-			UnitPrice: newPurchase.PurchaseDetails[i].Price,
-			PriceType: "BUY",
-			Remark:    "PurchaseID:" + newPurchase.ID + ", line item id:" + strconv.Itoa(int(newPurchase.PurchaseDetails[i].ID)) + ", increase quantity: " + strconv.Itoa(newPurchase.PurchaseDetails[i].Qty) + " " + newPurchase.PurchaseDetails[i].UnitName,
-		}
-
-		err := tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "product_id"}, {Name: "unit_id"}, {Name: "price_type"}},
-			DoUpdates: clause.AssignmentColumns([]string{"unit_price", "updated_at"}),
-		}).Create(&newProductPrice).Error
-
-		if err != nil {
-			return nil, err
-		}
-
-		//save new record to ProductPriceHistory
-		newProductPriceHistory := models.ProductPriceHistory{
-			ProductId:     newPurchase.PurchaseDetails[i].ProductId,
-			ProductName:   newPurchase.PurchaseDetails[i].ProductName,
-			UnitName:      newPurchase.PurchaseDetails[i].UnitName,
-			UnitId:        newPurchase.PurchaseDetails[i].UnitId,
-			UnitPrice:     newPurchase.PurchaseDetails[i].Price,
-			PriceType:     "BUY",
-			EffectiveDate: newPurchase.PurchaseDate.Format("2006-01-02 15:04:05"),
-		}
-		tx.Save(&newProductPriceHistory)
-
-	}
-	tx.Commit()
-	return &newPurchase, nil
-
-}
-
-func (r *PurchaseRepository) CreateBug(input *models.Purchase) (*models.Purchase, error) {
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Precompute BaseQty for each detail before saving
-		for i := range input.PurchaseDetails {
-			detail := &input.PurchaseDetails[i]
-
-			// Find ProductUnit
-			var pu models.ProductUnit
-			if err := tx.Where("id = ?", detail.ProductUnitId).First(&pu).Error; err != nil {
-				return fmt.Errorf("product unit not found: %w", err)
-			}
-
-			detail.BaseQty = detail.Qty * pu.ConversionToBase
-		}
-
-		// 2. Save Purchase + PurchaseDetails (so IDs are available)
-		if err := tx.Create(&input).Error; err != nil {
-			return err
-		}
-		// 3. Create ItemTransactions for each detail
-		for _, detail := range input.PurchaseDetails {
-			// Load product to get ProductName
-			var product models.Product
-			if err := tx.Where("id = ?", detail.ProductId).First(&product).Error; err != nil {
-				return fmt.Errorf("product not found: %w", err)
-			}
-
-			// 5. Create ItemTransactions
-			newItemTransaction := models.ItemTransaction{
-				ProductId:   detail.ProductId,
-				InQty:       detail.Qty,
-				TranType:    "PURCHASE",
-				ReferenceNo: fmt.Sprintf("%s-%d", input.ID, detail.ID),
-				Uom:         detail.UnitName,
-				Remark: fmt.Sprintf("PurchaseID:%s, PurchaseDetail id:%d, Buy %s : %s : %d %s",
-					input.ID, detail.ID, detail.ProductId, product.ProductName, detail.Qty, detail.UnitName),
-				CreatedAt: time.Now().Local(),
-			}
-			if err := tx.Create(&newItemTransaction).Error; err != nil {
-				return err
-			}
-
-			// 6. Create ProductPriceHistory
-			newProductPriceHistory := models.ProductPriceHistory{
-				ProductId:   detail.ProductId,
-				ProductName: product.ProductName,
-				UnitName:    detail.UnitName,
-				UnitId:      detail.UnitId,
-				UnitPrice:   detail.Price,
-				PriceType:   "BUY",
-				Remark: fmt.Sprintf("PurchaseID:%s, PurchaseDetail id:%d, Buy %s : %s : %d %s",
-					input.ID, detail.ID, detail.ProductId, product.ProductName, detail.Qty, detail.UnitName),
-				EffectiveDate: input.PurchaseDate.Format("2006-01-02 15:04:05"),
-			}
-
-			if err := tx.Create(&newProductPriceHistory).Error; err != nil {
-				return err
-			}
-
-		}
-
-		// 4. Update stock
-		for _, detail := range input.PurchaseDetails {
-			if err := r.updateStock(tx, detail.ProductId, detail.BaseQty); err != nil {
-				return err
-			}
-		}
-
-		// 5. Update purchase price
-		for _, detail := range input.PurchaseDetails {
-			if err := r.updatePurchasePrice(tx, detail.ProductId, detail.Price, detail.ProductUnitId); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return input, nil
-}
-
-func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
-
-	newPurchase := models.Purchase{
-		ID:              input.ID,
-		SupplierId:      input.SupplierId,
-		Remark:          input.Remark,
-		PurchaseDate:    input.PurchaseDate,
-		Total:           input.Total,
-		Discount:        input.Discount,
-		GrandTotal:      input.GrandTotal,
-		PurchaseDetails: input.PurchaseDetails,
-	}
-
-	// Validate
-	if err := models.ValidateStruct(newPurchase); err != nil {
-		return nil, gorm.ErrCheckConstraintViolated
-	}
-
 	tx := r.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -317,101 +116,283 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		}
 	}()
 
-	if err := tx.Error; err != nil {
-		return nil, err
+	// 1. Initial Validation & Creation
+	if verr := models.ValidateStruct(input); verr != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("validation failed: %v", verr)
 	}
 
-	// Save purchase + details
-	if err := tx.Create(&newPurchase).Error; err != nil {
+	if err := tx.Create(input).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
-	// Preload everything needed like in sale repo
-	if err := tx.
-		Preload("PurchaseDetails.Product").
-		First(&newPurchase, "id = ?", newPurchase.ID).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
+	// ==========================================
+	// 2. CASHBOOK LOGIC (The New Requirement)
+	// ==========================================
+	var lastEntry models.Cashbook
+	tx.Order("id desc").Last(&lastEntry)
+	currentBalance := lastEntry.Balance
+	purchaseAmount := int64(input.GrandTotal)
 
-	for i := range newPurchase.PurchaseDetails {
-
-		pd := &newPurchase.PurchaseDetails[i]
-
-		// preload product/uom
-		tx.Preload("Product").Preload("Uom").First(pd, pd.ID)
-
-		// ============================
-		// 1. Stock Movement (increase)
-		// ============================
-		if err := util.AddStockMovement(
-			tx,
-			pd.ProductId,
-			pd.ProductUnitId,
-			pd.Qty,
-			"increase",
-		); err != nil {
+	// Check if owner needs to inject funds
+	if currentBalance < purchaseAmount {
+		injectionAmount := purchaseAmount - currentBalance
+		injection := models.Cashbook{
+			TransactionDate: input.PurchaseDate,
+			TransactionType: "OWNER_INJECTION",
+			ReferenceID:     input.ID,
+			Description:     fmt.Sprintf("Auto-injection for Purchase %s", input.ID),
+			Debit:           injectionAmount,
+			Credit:          0,
+			Balance:         currentBalance + injectionAmount, // Brings balance up to exactly purchase price
+			CreatedAt:       time.Now(),
+		}
+		if err := tx.Create(&injection).Error; err != nil {
 			tx.Rollback()
-			return nil, fmt.Errorf("failed to add stock movement: %v", err)
+			return nil, fmt.Errorf("failed cash injection: %v", err)
+		}
+		currentBalance = injection.Balance
+	}
+
+	// Record the Purchase payment in Cashbook
+	cashOut := models.Cashbook{
+		TransactionDate: input.PurchaseDate,
+		TransactionType: "PURCHASE",
+		ReferenceID:     input.ID,
+		Description:     fmt.Sprintf("Payment for Purchase %s", input.ID),
+		Debit:           0,
+		Credit:          purchaseAmount,
+		Balance:         currentBalance - purchaseAmount,
+		CreatedAt:       time.Now(),
+	}
+	if err := tx.Create(&cashOut).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed cashbook payment: %v", err)
+	}
+
+	// ==========================================
+	// 3. STOCK & HISTORY PROCESSING
+	// ==========================================
+	for i := range input.PurchaseDetails {
+		pd := &input.PurchaseDetails[i]
+
+		// Load relations for history/logging
+		if err := tx.Preload("Product").Preload("ProductUnit").First(pd, pd.ID).Error; err != nil {
+			tx.Rollback()
+			return nil, err
 		}
 
-		// ============================
-		// 2. Item Transaction
-		// ============================
-		newItemTransaction := models.ItemTransaction{
+		// A. Stock Movement
+		if err := util.AddStockMovement(tx, pd.ProductId, pd.ProductUnitId, pd.Qty, "increase"); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		// B. Item Transaction Log
+		itemTxn := models.ItemTransaction{
 			ProductId:   pd.ProductId,
 			TranType:    "PURCHASE",
 			InQty:       pd.Qty,
 			Uom:         pd.Uom,
-			ReferenceNo: newPurchase.ID + "-" + strconv.Itoa(int(pd.ID)),
-			Remark: fmt.Sprintf(
-				"PurchaseId:%s, PurchaseDetailId %d, ProductId %s : %s, Purchased %d %s",
-				newPurchase.ID, pd.ID, pd.ProductId, pd.Product.ProductName, pd.Qty, pd.Uom,
-			),
-			CreatedAt: time.Now().Local(),
+			ReferenceNo: fmt.Sprintf("%s-%d", input.ID, pd.ID),
+			Remark:      fmt.Sprintf("Purchased %d %s of %s", pd.Qty, pd.Uom, pd.Product.ProductName),
+			CreatedAt:   time.Now(),
 		}
-		if err := tx.Create(&newItemTransaction).Error; err != nil {
+		if err := tx.Create(&itemTxn).Error; err != nil {
 			tx.Rollback()
 			return nil, err
 		}
 
-		// ============================
-		// 3. Product Price History
-		// ============================
-		newHistory := models.ProductPriceHistory{
+		// C. Price History
+		history := models.ProductPriceHistory{
 			ProductId:     pd.ProductId,
 			ProductName:   pd.Product.ProductName,
 			UnitId:        pd.UnitId,
 			UnitName:      pd.Uom,
 			UnitPrice:     pd.Price,
 			PriceType:     "BUY",
-			Remark:        fmt.Sprintf("PurchaseID:%s, DetailID:%d", newPurchase.ID, pd.ID),
-			EffectiveDate: newPurchase.PurchaseDate.Format("2006-01-02 15:04:05"),
+			Remark:        fmt.Sprintf("Purchase ID: %s", input.ID),
+			EffectiveDate: input.PurchaseDate.Format("2006-01-02 15:04:05"),
 		}
-
-		if err := tx.Create(&newHistory).Error; err != nil {
+		if err := tx.Create(&history).Error; err != nil {
 			tx.Rollback()
 			return nil, err
 		}
 
-		// ============================
-		// 4. Update purchase price
-		// ============================
-		for _, detail := range input.PurchaseDetails {
-			if err := r.updatePurchasePrice(tx, detail.ProductId, detail.Price, detail.ProductUnitId); err != nil {
-				return nil, err
-			}
+		// D. Update Master Product Price
+		if err := r.updatePurchasePrice(tx, pd.ProductId, pd.Price, pd.ProductUnitId); err != nil {
+			tx.Rollback()
+			return nil, err
 		}
+	}
 
-	} // end loop
-
-	// Commit
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
 
-	return &newPurchase, nil
+	return input, nil
+}
+
+func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+	tx := r.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1. Initial Validation & Creation
+	if verr := models.ValidateStruct(input); verr != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("validation failed: %v", verr)
+	}
+
+	if err := tx.Create(input).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// ==========================================
+	// 2. CASHBOOK LOGIC (Balance Check & Injection)
+	// ==========================================
+	var lastEntry models.Cashbook
+	err := tx.Order("id desc").First(&lastEntry).Error
+
+	currentBalance := int64(0)
+	if err == nil {
+		currentBalance = lastEntry.Balance
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		tx.Rollback()
+		return nil, err
+	}
+
+	purchaseAmount := int64(input.GrandTotal)
+
+	// Check if owner needs to inject funds
+	if currentBalance < purchaseAmount {
+		injectionAmount := purchaseAmount - currentBalance
+		injection := models.Cashbook{
+			TransactionDate: input.PurchaseDate,
+			TransactionType: "OWNER_INJECTION",
+			ReferenceID:     fmt.Sprint(input.ID),
+			Description:     fmt.Sprintf("Auto-injection for Purchase #%v", input.ID),
+			Debit:           injectionAmount,
+			Credit:          0,
+			Balance:         currentBalance + injectionAmount,
+			CreatedAt:       time.Now(),
+		}
+		if err := tx.Create(&injection).Error; err != nil {
+			tx.Rollback()
+			return nil, fmt.Errorf("failed cash injection: %v", err)
+		}
+		currentBalance = injection.Balance
+	}
+
+	// Record the Purchase payment in Cashbook
+	newBalance := currentBalance - purchaseAmount
+	cashOut := models.Cashbook{
+		TransactionDate: input.PurchaseDate,
+		TransactionType: "PURCHASE",
+		ReferenceID:     fmt.Sprint(input.ID),
+		Description:     fmt.Sprintf("Payment for Purchase #%v", input.ID),
+		Debit:           0,
+		Credit:          purchaseAmount,
+		Balance:         newBalance,
+		CreatedAt:       time.Now(),
+	}
+	if err := tx.Create(&cashOut).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed cashbook payment: %v", err)
+	}
+
+	// ==========================================
+	// 3. DAILY SUMMARY SYNC
+	// ==========================================
+	todayStr := input.PurchaseDate.Format("2006-01-02")
+
+	// Update existing summary
+	result := tx.Model(&models.DailySummaries{}).
+		Where("DATE(summary_date) = ?", todayStr).
+		Update("closing_balance", newBalance)
+
+	if result.Error != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to update daily summary: %v", result.Error)
+	}
+
+	// Auto-create summary if missing (e.g., system reset or first entry of the day)
+	if result.RowsAffected == 0 {
+		newSummary := models.DailySummaries{
+			SummaryDate:    input.PurchaseDate,
+			OpeningBalance: (newBalance + purchaseAmount), // State before this specific purchase
+			ClosingBalance: newBalance,
+			IsClosed:       false,
+		}
+		if err := tx.Create(&newSummary).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	// ==========================================
+	// 4. STOCK & HISTORY PROCESSING
+	// ==========================================
+	for i := range input.PurchaseDetails {
+		pd := &input.PurchaseDetails[i]
+		pd.PurchaseId = input.ID
+
+		var product models.Product
+		if err := tx.Where("id = ?", pd.ProductId).First(&product).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		if err := util.AddStockMovement(tx, pd.ProductId, pd.ProductUnitId, pd.Qty, "increase"); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		itemTxn := models.ItemTransaction{
+			ProductId:   pd.ProductId,
+			TranType:    "PURCHASE",
+			InQty:       pd.Qty,
+			Uom:         pd.Uom,
+			ReferenceNo: fmt.Sprint(input.ID),
+			Remark:      fmt.Sprintf("Purchased %d %s", pd.Qty, pd.Uom),
+			CreatedAt:   time.Now(),
+		}
+		if err := tx.Create(&itemTxn).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		history := models.ProductPriceHistory{
+			ProductId:     pd.ProductId,
+			ProductName:   product.ProductName,
+			UnitId:        pd.UnitId,
+			UnitName:      pd.Uom,
+			UnitPrice:     pd.Price,
+			PriceType:     "BUY",
+			Remark:        fmt.Sprintf("Purchase #%v", input.ID),
+			EffectiveDate: input.PurchaseDate.Format("2006-01-02 15:04:05"),
+		}
+		if err := tx.Create(&history).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		if err := r.updatePurchasePrice(tx, pd.ProductId, pd.Price, pd.ProductUnitId); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return input, nil
 }
 
 // Update stock always in base unit
@@ -650,4 +631,10 @@ func (r *PurchaseRepository) GetPurchasesByDate(date time.Time) ([]models.Purcha
 	}
 
 	return purchases, nil
+}
+
+func (r *PurchaseRepository) getLatestBalance(tx *gorm.DB) int64 {
+	var lastEntry models.Cashbook
+	tx.Last(&lastEntry)
+	return lastEntry.Balance
 }

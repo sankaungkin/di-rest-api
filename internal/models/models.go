@@ -284,6 +284,35 @@ type SaleReturnItem struct {
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
+type DailySummaries struct {
+	ID             uint      `gorm:"primaryKey:autoIncrement" json:"id"`
+	SummaryDate    time.Time `gorm:"type:timestamptz;index" json:"summaryDate"`
+	OpeningBalance int64     `json:"openingBalance"`
+	ClosingBalance int64     `json:"closingBalance"`
+	IsClosed       bool      `json:"isClosed" gorm:"default:false"`
+}
+
+type Cashbook struct {
+	ID              uint      `gorm:"primaryKey:autoIncrement" json:"id"`
+	TransactionDate time.Time `gorm:"type:timestamptz;index" json:"transactionDate"`
+	ReferenceID     string    `json:"referenceId"` // ID from Sale, Purchase, or Expense
+	Description     string    `json:"description"`
+	Debit           int64     `json:"debit"`   // Cash In (+)
+	Credit          int64     `json:"credit"`  // Cash Out (-)
+	Balance         int64     `json:"balance"` // Running Balance
+	CreatedAt       time.Time `json:"createdAt"`
+	TransactionType string    `json:"transactionType"` // OPENING, CLOSING, etc.
+}
+
+type Expense struct {
+	gorm.Model
+	ID          uint      `gorm:"primaryKey:autoIncrement" json:"id"`
+	Category    string    `json:"category"` // Rent, Electricity, etc.
+	Amount      int64     `json:"amount"`
+	Description string    `json:"description"`
+	ExpenseDate time.Time `json:"expenseDate"`
+}
+
 type ErrorResponse struct {
 	Field string                                 `json:"field"`
 	Tag   string                                 `json:"tag"`
@@ -339,6 +368,8 @@ func MigrateModels(db *gorm.DB) error {
 		&Purchase{},
 		&PurchaseDetail{},
 		&ItemTransaction{},
+		&Cashbook{},
+		&Expense{},
 		&User{},
 	)
 	return err

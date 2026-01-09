@@ -74,6 +74,10 @@ func NewDB() (*gorm.DB, error) {
 			&models.Purchase{},
 			&models.PurchaseDetail{},
 			&models.ItemTransaction{},
+			&models.DailySummaries{},
+			&models.Cashbook{},
+			&models.Expense{},
+
 			&models.User{})
 		if err != nil {
 			log.Fatal(err)
