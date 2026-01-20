@@ -1,6 +1,7 @@
 package sale
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -55,14 +56,15 @@ func (h *SaleHandler) CreateSale(c *fiber.Ctx) error {
 		})
 	}
 	newSale := models.Sale{
-		ID:          input.ID,
-		CustomerId:  input.CustomerId,
-		Discount:    input.Discount,
-		GrandTotal:  input.GrandTotal,
-		Remark:      input.Remark,
-		SaleDate:    input.SaleDate,
-		SaleDetails: input.SaleDetails,
-		Total:       input.Total,
+		ID:            input.ID,
+		CustomerId:    input.CustomerId,
+		Discount:      input.Discount,
+		GrandTotal:    input.GrandTotal,
+		Remark:        input.Remark,
+		SaleDate:      input.SaleDate,
+		PaymentMethod: input.PaymentMethod,
+		SaleDetails:   input.SaleDetails,
+		Total:         input.Total,
 	}
 	errors := models.ValidateStruct(newSale)
 	if errors != nil {
@@ -544,5 +546,58 @@ func (h *SaleHandler) GetHistoricalProfitData(c *fiber.Ctx) error {
 			"status":  "SUCCESS",
 			"message": "Historical Profit Data fetched successfully",
 			"data":    results,
+		})
+}
+
+// @Summary Collect Debt
+// @Description Collect Debt for a specific sale invoice
+// @Tags Sales
+// @Accept json
+// @Produce json
+// @Param id path string true "Sale ID"
+// @Param payment body models.Payment true "Payment Data"
+// @Success 200 {object} fiber.Map
+// @Router /api/v1/sales/{id}/collect-debt [post]
+func (h *SaleHandler) CollectDebt(c *fiber.Ctx) error {
+	saleID := c.Params("id")
+	var payment models.Payment
+
+	if err := c.BodyParser(&payment); err != nil {
+		return c.Status(400).JSON(fiber.Map{"message": err.Error()})
+	}
+
+	// ✅ Fix 1: Generate a unique ID for the payment record
+	payment.ID = fmt.Sprintf("PAY-%d", time.Now().UnixNano())
+
+	// ✅ Fix 2: Set the current time if not provided by frontend
+	if payment.PaymentDate.IsZero() {
+		payment.PaymentDate = time.Now()
+	}
+
+	if err := h.svc.CollectDebt(&payment, saleID); err != nil {
+		return c.Status(500).JSON(fiber.Map{"status": "FAIL", "message": err.Error()})
+	}
+
+	return c.Status(200).JSON(fiber.Map{"status": "SUCCESS"})
+}
+
+// @Summary Get Sales With Receivables
+// @Description Get Sales With Receivables
+// @Tags Sales
+// @Accept json
+// @Produce json
+// @Success 200 {object} fiber.Map{data=[]models.Sale}
+// @Router /api/v1/sales/with-receivables [get]
+func (h *SaleHandler) GetSalesWithReceivables(c *fiber.Ctx) error {
+	results, err := h.svc.GetSalesWithReceivables()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(results)) + " records found",
+			"data":    results,
+			"count":   len(results),
 		})
 }

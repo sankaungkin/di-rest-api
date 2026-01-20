@@ -12,6 +12,7 @@ import (
 type SaleServiceInterface interface {
 	CreateService(sale *models.Sale) (*models.Sale, error)
 	GetAllService() ([]models.Sale, error)
+	GetSalesWithReceivables() ([]models.Sale, error)
 	GetTodaySales() ([]models.Sale, error)
 	GetTopTenSoleProducts() ([]ResponseTopTenSoleProductsDTO, error)
 	GetDailySales() ([]ResponseDailySalesDTO, error)
@@ -27,6 +28,7 @@ type SaleServiceInterface interface {
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
+	CollectDebt(payment *models.Payment, saleID string) error
 }
 
 type SaleService struct {
@@ -109,4 +111,12 @@ func (s *SaleService) GetTodaySaleList() ([]models.Sale, error) {
 
 func (s *SaleService) ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error) {
 	return s.repo.ReturnSaleItems(returnItem)
+}
+
+func (s *SaleService) CollectDebt(payment *models.Payment, saleID string) error {
+	return s.repo.CollectDebt(payment, saleID)
+}
+
+func (s *SaleService) GetSalesWithReceivables() ([]models.Sale, error) {
+	return s.repo.GetSalesWithReceivables()
 }

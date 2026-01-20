@@ -272,3 +272,133 @@ func (h *CashbookHandler) GetTransactionHistory(c *fiber.Ctx) error {
 			"data":    cashbook,
 		})
 }
+
+// GetCashBalance godoc
+//
+//	@Summary		Fetch current cash balance
+//	@Description	Fetch current cash balance
+//	@Tags			Cashbooks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{object}	models.Cashbook
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/cashbook/balance	[get]
+//	@Security		Bearer
+func (h *CashbookHandler) GetCashBalance(c *fiber.Ctx) error {
+	balance, err := h.svc.GetCashBalance()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Cash balance fetched successfully",
+			"data":    balance,
+		})
+}
+
+// GetDashboardSummary godoc
+//
+//	@Summary		Fetch dashboard summary
+//	@Description	Fetch dashboard summary
+//	@Tags			Cashbooks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{object}	models.DashboardSummary
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/cashbook/summary	[get]
+//	@Security		Bearer
+func (h *CashbookHandler) GetDashboardSummary(c *fiber.Ctx) error {
+	summary, err := h.svc.GetDashboardSummary()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Dashboard summary fetched successfully",
+			"data":    summary,
+		})
+}
+
+// GetCurrentDrawerBalance godoc
+//
+//	@Summary		Fetch current drawer balance
+//	@Description	Fetch current drawer balance
+//	@Tags			Cashbooks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{object}	int64
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/cashbook/balance	[get]
+//	@Security		Bearer
+func (h *CashbookHandler) GetCurrentDrawerBalance(c *fiber.Ctx) error {
+	balance, err := h.svc.GetCurrentDrawerBalance()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Current drawer balance fetched successfully",
+			"data":    balance,
+		})
+}
+
+// GetPastSummaries godoc
+//
+//	@Summary		Fetch past daily summaries
+//	@Description	Fetch past daily summaries
+//	@Tags			Cashbooks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.DailySummaries
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/cashbook/past-summaries	[get]
+//	@Security		Bearer
+func (h *CashbookHandler) GetPastSummaries(c *fiber.Ctx) error {
+	summaries, err := h.svc.GetPastSummaries()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Past daily summaries fetched successfully",
+			"data":    summaries,
+		})
+}
+
+// ReconcileToday godoc
+//
+//	@Summary		Reconcile today's cashbook
+//	@Description	Reconcile today's cashbook
+//	@Tags			Cashbooks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		map[string]interface{}
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/cashbook/reconcile-today	[get]
+//	@Security		Bearer
+func (h *CashbookHandler) ReconcileToday(c *fiber.Ctx) error {
+	results, err := h.svc.ReconcileToday()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Reconcile today's cashbook fetched successfully",
+			"data":    results,
+		})
+}

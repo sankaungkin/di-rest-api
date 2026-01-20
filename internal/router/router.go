@@ -210,6 +210,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Post("/", saleService.CreateSale)
 	sale.Post("/return-items", saleService.ReturnSaleItems)
 	sale.Get("/historical-profit-data", saleService.GetHistoricalProfitData)
+	sale.Get("/receivables", saleService.GetSalesWithReceivables)
 	sale.Get("/", saleService.GetAllSales)
 	sale.Get("/saleitems", saleService.GetSaleStockItemWithPrice)
 	sale.Get("/today", saleService.GetTodaySales)
@@ -223,6 +224,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Get("/toptenproducts", saleService.GetTopTenSoleProducts)
 	sale.Get("/:id", saleService.GetById)
 	sale.Put("/:id", saleService.UpdateSaleRemark)
+	sale.Post("/:id/collect-debt", saleService.CollectDebt)
 
 	// purchase di
 	purchaseService, err := purchaseDi.InitPurchaseDI()
@@ -257,8 +259,13 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	cashbook.Get("/all", cashbookService.GetAllCashbooks)
 	cashbook.Get("/transaction-history", cashbookService.GetTransactionHistory)
 	cashbook.Get("/balance", cashbookService.GetBalance)
+	cashbook.Get("/cash-balance", cashbookService.GetCashBalance)
 	cashbook.Post("/close-day", cashbookService.CloseDay)
 	cashbook.Post("/entry", cashbookService.CreateEntry)
+	cashbook.Get("/summary", cashbookService.GetDashboardSummary)
+	cashbook.Get("/past-summaries", cashbookService.GetPastSummaries)
+	cashbook.Get("/current-drawer-balance", cashbookService.GetCurrentDrawerBalance)
+	cashbook.Post("/reconsile-today", cashbookService.ReconcileToday)
 
 	// expense di
 	expenseService, err := expenseDi.InitExpense()

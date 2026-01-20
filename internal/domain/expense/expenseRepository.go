@@ -1,7 +1,6 @@
 package expense
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -34,57 +33,6 @@ func NewExpenseRepository(db *gorm.DB) ExpenseRepositoryInterface {
 	return repoInstance
 }
 
-func (r *ExpenseRepository) CreateOld(input *models.Expense) (*models.Expense, error) {
-	tx := r.db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// 1. Save the Expense record
-	if err := tx.Create(input).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	// ==========================================
-	// 2. CASHBOOK LOGIC (Cash Out)
-	// ==========================================
-	var lastEntry models.Cashbook
-	var currentBalance int64 = 0
-
-	// Safety Check: Get the most recent balance.
-	// If no records exist, currentBalance stays 0.
-	result := tx.Order("id desc").Limit(1).Find(&lastEntry)
-	if result.Error == nil && result.RowsAffected > 0 {
-		currentBalance = lastEntry.Balance
-	}
-
-	cashOutEntry := models.Cashbook{
-		TransactionDate: input.ExpenseDate,
-		TransactionType: "EXPENSE",
-		// Using fmt.Sprint to safely handle uint ID to string
-		ReferenceID: fmt.Sprintf("%d", input.ID),
-		Description: fmt.Sprintf("[%s] %s", input.Category, input.Description),
-		Debit:       0,
-		Credit:      int64(input.Amount), // Ensure matching types
-		Balance:     currentBalance - int64(input.Amount),
-		CreatedAt:   time.Now(),
-	}
-
-	if err := tx.Create(&cashOutEntry).Error; err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("failed to record expense in cashbook: %v", err)
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
-
-	return input, nil
-}
-
 func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, error) {
 	tx := r.db.Begin()
 	defer func() {
@@ -100,58 +48,46 @@ func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, erro
 	}
 
 	// ==========================================
-	// 2. CASHBOOK LOGIC
+	// 2. CASHBOOK LOGIC (Physical Drawer Sync)
 	// ==========================================
 	var lastEntry models.Cashbook
-	var currentBalance int64 = 0
-
-	err := tx.Order("id desc").First(&lastEntry).Error
-	if err == nil {
-		currentBalance = lastEntry.Balance
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		tx.Rollback()
-		return nil, err
-	}
+	tx.Order("id desc").Limit(1).Find(&lastEntry)
 
 	expenseAmount := int64(input.Amount)
+	currentBalance := lastEntry.Balance
 
-	// AUTO-INJECTION logic
+	// Auto-Injection if drawer doesn't have enough cash
 	if currentBalance < expenseAmount {
-		injectionAmount := expenseAmount - currentBalance
+		injectionAmt := expenseAmount - currentBalance
 		injection := models.Cashbook{
 			TransactionDate: input.ExpenseDate,
 			TransactionType: "OWNER_INJECTION",
-			ReferenceID:     fmt.Sprint(input.ID),
-			Description:     fmt.Sprintf("Auto-injection to cover %s expense", input.Category),
-			Debit:           injectionAmount,
-			Credit:          0,
-			Balance:         currentBalance + injectionAmount,
+			PaymentMethod:   "CASH",
+			Description:     fmt.Sprintf("Injection to cover %s", input.Category),
+			Debit:           injectionAmt,
+			Balance:         currentBalance + injectionAmt,
 			CreatedAt:       time.Now(),
 		}
-
-		if err := tx.Create(&injection).Error; err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("failed auto-injection: %v", err)
-		}
+		tx.Create(&injection)
 		currentBalance = injection.Balance
 	}
 
-	// Record Expense Cash Out
+	// Record the Expense in Cashbook
 	newBalance := currentBalance - expenseAmount
-	cashOutEntry := models.Cashbook{
+	cashbookEntry := models.Cashbook{
 		TransactionDate: input.ExpenseDate,
 		TransactionType: "EXPENSE",
-		ReferenceID:     fmt.Sprint(input.ID),
+		PaymentMethod:   "CASH",
+		ReferenceID:     fmt.Sprintf("EXP-%d", input.ID),
 		Description:     fmt.Sprintf("[%s] %s", input.Category, input.Description),
-		Debit:           0,
 		Credit:          expenseAmount,
 		Balance:         newBalance,
 		CreatedAt:       time.Now(),
 	}
 
-	if err := tx.Create(&cashOutEntry).Error; err != nil {
+	if err := tx.Create(&cashbookEntry).Error; err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("failed to record expense in cashbook: %v", err)
+		return nil, err
 	}
 
 	// ==========================================
@@ -159,35 +95,28 @@ func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, erro
 	// ==========================================
 	todayStr := input.ExpenseDate.Format("2006-01-02")
 
-	// Attempt to update the closing balance for today
+	// Update existing summary record
 	result := tx.Model(&models.DailySummaries{}).
 		Where("DATE(summary_date) = ?", todayStr).
-		Update("closing_balance", newBalance)
+		Updates(map[string]interface{}{
+			"closing_balance": gorm.Expr("closing_balance - ?", expenseAmount),
+			"expense_total":   gorm.Expr("expense_total + ?", expenseAmount),
+		})
 
-	if result.Error != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("failed to update daily summary: %v", result.Error)
-	}
-
-	// If no summary exists yet for today, create one
+	// If summary doesn't exist for today yet
 	if result.RowsAffected == 0 {
-		newSummary := models.DailySummaries{
+		var lastSum models.DailySummaries
+		tx.Order("summary_date desc").Limit(1).Find(&lastSum)
+
+		tx.Create(&models.DailySummaries{
 			SummaryDate:    input.ExpenseDate,
-			OpeningBalance: (newBalance + expenseAmount), // The balance before the expense (but after injection)
-			ClosingBalance: newBalance,
-			IsClosed:       false,
-		}
-		if err := tx.Create(&newSummary).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
+			OpeningBalance: lastSum.ClosingBalance,
+			ClosingBalance: lastSum.ClosingBalance - expenseAmount,
+			ExpenseTotal:   expenseAmount,
+		})
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
-
-	return input, nil
+	return input, tx.Commit().Error
 }
 
 func (r *ExpenseRepository) Getall() ([]models.Expense, error) {

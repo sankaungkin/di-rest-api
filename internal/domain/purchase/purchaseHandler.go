@@ -61,6 +61,9 @@ func (h *PurchaseHandler) CreatePurchase(c *fiber.Ctx) error {
 		Remark:          input.Remark,
 		PurchaseDate:    input.PurchaseDate,
 		PurchaseDetails: input.PurchaseDetails,
+		PaymentSource:   input.PaymentSource,
+		AmountFromCash:  input.AmountFromCash,
+		AmountFromOwner: input.AmountFromOwner,
 		Total:           input.Total,
 	}
 	errors := models.ValidateStruct(newPurchase)

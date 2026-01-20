@@ -200,11 +200,16 @@ type Purchase struct {
 	PurchaseDetails []PurchaseDetail `gorm:"foreignKey:PurchaseId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"purchaseDetails"`
 	Discount        int              `json:"discount"`
 	Total           int              `json:"total"`
-	GrandTotal      int              `json:"grandTotal"`
+	GrandTotal      int64            `json:"grandTotal"`
 	Remark          string           `json:"remark"`
-	PurchaseDate    time.Time        `gorm:"type:timestamptz;default:now()" json:"purchaseDate"`
-	CreatedAt       int64            `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt       int64            `gorm:"autoUpdateTime:milli" json:"-"`
+
+	PaymentSource   string `json:"paymentSource"` // "CASH", "OWNER"
+	AmountFromCash  int64  `json:"amountFromCash"`
+	AmountFromOwner int64  `json:"amountFromOwner"`
+
+	PurchaseDate time.Time `gorm:"type:timestamptz;default:now()" json:"purchaseDate"`
+	CreatedAt    int64     `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt    int64     `gorm:"autoUpdateTime:milli" json:"-"`
 }
 
 type PurchaseDetail struct {
@@ -227,20 +232,33 @@ type PurchaseDetail struct {
 
 type Sale struct {
 	gorm.Model
-	ID           string       `gorm:"primaryKey" json:"id"`
-	CustomerId   uint         `json:"customerId"`
-	Customer     *Customer    `json:"customer"`
-	SaleDetails  []SaleDetail `gorm:"foreignKey:SaleId;reference:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"saleDetails"`
-	Discount     int64        `json:"discount"`
-	Total        int64        `json:"total"`
-	GrandTotal   int64        `json:"grandTotal"`
-	ReturnAmount int64        `json:"returnAmount"` // ✅ NEW: total refunded
-	NetTotal     int64        `json:"netTotal"`     // ✅ NEW: grandTotal - returnAmount
-	Status       string       `json:"status"`       // ✅ NEW: partial / full return
-	Remark       string       `json:"remark"`
-	SaleDate     time.Time    `gorm:"type:timestamptz;default:now()" json:"saleDate"`
-	CreatedAt    int64        `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt    int64        `gorm:"autoUpdateTime:milli" json:"-"`
+	ID            string       `gorm:"primaryKey" json:"id"`
+	CustomerId    uint         `json:"customerId"`
+	Customer      *Customer    `json:"customer"`
+	SaleDetails   []SaleDetail `gorm:"foreignKey:SaleId;reference:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"saleDetails"`
+	Discount      int64        `json:"discount"`
+	Total         int64        `json:"total"`
+	GrandTotal    int64        `json:"grandTotal"`
+	PaymentMethod string       `validate:"required" json:"paymentMethod"` // "CASH", "KPAY", "DEBT"
+	PaidAmount    int64        `json:"paid_amount"`                       // ✅ Track how much has been paid so far
+	PaymentStatus string       `json:"paymentStatus"`                     // ✅ "UNPAID", "PARTIAL", "PAID"
+	ReturnAmount  int64        `json:"returnAmount"`                      // ✅ NEW: total refunded
+	NetTotal      int64        `json:"netTotal"`                          // ✅ NEW: grandTotal - returnAmount
+	Status        string       `json:"status"`                            // ✅ NEW: partial / full return
+	Remark        string       `json:"remark"`
+	SaleDate      time.Time    `gorm:"type:timestamptz;default:now()" json:"saleDate"`
+	CreatedAt     int64        `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt     int64        `gorm:"autoUpdateTime:milli" json:"-"`
+}
+
+type Payment struct {
+	ID            string    `gorm:"primaryKey" json:"id"`
+	CustomerID    uint      `json:"customerId"`
+	Amount        int64     `json:"amount"`
+	PaymentDate   time.Time `json:"paymentDate"`
+	PaymentMethod string    `validate:"required" json:"paymentMethod"` // CASH or KPAY
+	Remark        string    `json:"remark"`
+	CreatedAt     time.Time `json:"createdAt"`
 }
 
 type SaleDetail struct {
@@ -287,8 +305,13 @@ type SaleReturnItem struct {
 type DailySummaries struct {
 	ID             uint      `gorm:"primaryKey:autoIncrement" json:"id"`
 	SummaryDate    time.Time `gorm:"type:timestamptz;index" json:"summaryDate"`
-	OpeningBalance int64     `json:"openingBalance"`
-	ClosingBalance int64     `json:"closingBalance"`
+	OpeningBalance int64     `json:"openingBalance"` // Physical cash at start
+	ClosingBalance int64     `json:"closingBalance"` // Physical cash in drawer
+	KPayTotal      int64     `json:"kpayTotal"`      // Digital money received
+	DebtTotal      int64     `json:"debtTotal"`      // On credit sales
+	ExpenseTotal   int64     `json:"expenseTotal"`   // Cash paid out
+	CashTotal      int64     `json:"cashTotal"`      // Cash received
+	TotalSale      int64     `json:"totalSale"`      // Sum of CASH + KPAY + DEBT
 	IsClosed       bool      `json:"isClosed" gorm:"default:false"`
 }
 
@@ -301,7 +324,8 @@ type Cashbook struct {
 	Credit          int64     `json:"credit"`  // Cash Out (-)
 	Balance         int64     `json:"balance"` // Running Balance
 	CreatedAt       time.Time `json:"createdAt"`
-	TransactionType string    `json:"transactionType"` // OPENING, CLOSING, etc.
+	TransactionType string    `json:"transactionType"`                   // OPENING, CLOSING, etc.
+	PaymentMethod   string    `validate:"required" json:"paymentMethod"` // CASH, KPAY, DEBT
 }
 
 type Expense struct {

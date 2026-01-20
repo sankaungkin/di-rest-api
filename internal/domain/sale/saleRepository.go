@@ -17,6 +17,7 @@ import (
 type SaleRepositoryInterface interface {
 	Create(sale *models.Sale) (*models.Sale, error)
 	GetAll() ([]models.Sale, error)
+	GetSalesWithReceivables() ([]models.Sale, error)
 	GetDailySales() ([]ResponseDailySalesDTO, error)
 	GetTodaySales() ([]models.Sale, error)
 	GetSalesByDate(date time.Time) ([]models.Sale, error)
@@ -32,6 +33,8 @@ type SaleRepositoryInterface interface {
 	GetHistoricalProfitData() ([]ResponseMonthlyProfitDataDTO, error)
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
+
+	CollectDebt(payment *models.Payment, saleID string) error
 }
 
 type SaleRepository struct {
@@ -109,7 +112,7 @@ ORDER BY pp.product_id ASC
 	return result, nil
 }
 
-func (r *SaleRepository) CreateOld(input *models.Sale) (*models.Sale, error) {
+func (r *SaleRepository) Createold(input *models.Sale) (*models.Sale, error) {
 	tx := r.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -122,167 +125,92 @@ func (r *SaleRepository) CreateOld(input *models.Sale) (*models.Sale, error) {
 		return nil, gorm.ErrCheckConstraintViolated
 	}
 
-	// 1. Create Sale Record
+	// 1. Save the Sale Record
 	if err := tx.Create(input).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
 	// ==========================================
-	// 2. CASHBOOK LOGIC (Increase Balance)
+	// 2. CASHBOOK & DAILY SUMMARY LOGIC (Refactored)
 	// ==========================================
 	var lastEntry models.Cashbook
-	// Get the most recent balance
-	tx.Order("id desc").Last(&lastEntry)
+	tx.Order("id desc").Limit(1).Find(&lastEntry)
 
-	cashInEntry := models.Cashbook{
+	// SAFETY CHECK: Only increase the 'Balance' if it is actual CASH
+	// KPAY and DEBT should not increase the "Cash Drawer Balance"
+	newBalance := lastEntry.Balance
+	if input.PaymentMethod == "CASH" {
+		newBalance += input.GrandTotal
+	}
+
+	// Record EVERYTHING in the Cashbook for the Ledger history
+	cashbookEntry := models.Cashbook{
 		TransactionDate: input.SaleDate,
 		TransactionType: "SALE",
+		PaymentMethod:   input.PaymentMethod,
 		ReferenceID:     input.ID,
-		Description:     fmt.Sprintf("Payment received for Sale %s", input.ID),
-		Debit:           input.GrandTotal, // Cash In
-		Credit:          0,
-		Balance:         lastEntry.Balance + input.GrandTotal,
-		CreatedAt:       time.Now(),
-	}
-
-	if err := tx.Create(&cashInEntry).Error; err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("failed to record cashbook entry: %v", err)
-	}
-
-	// 3. Update Customer Stats
-	if err := util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, true); err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	// 4. Process Sale Details (Stock & Transactions)
-	for i := range input.SaleDetails {
-		sd := &input.SaleDetails[i]
-
-		// Load relations for logging
-		tx.Preload("Product").Preload("ProductUnit").First(sd, sd.ID)
-
-		// A. Stock Movement (Decrease)
-		if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "decrease"); err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("failed to add stock movement: %v", err)
-		}
-
-		// B. Item Transaction Log
-		itemTxn := models.ItemTransaction{
-			ProductId:   sd.ProductId,
-			TranType:    "SALE",
-			OutQty:      sd.Qty,
-			Uom:         sd.Uom,
-			ReferenceNo: fmt.Sprintf("%s-%d", input.ID, sd.ID),
-			Remark:      fmt.Sprintf("Sold %d %s of %s", sd.Qty, sd.Uom, sd.Product.ProductName),
-			CreatedAt:   time.Now(),
-		}
-		if err := tx.Create(&itemTxn).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
-
-	return input, nil
-}
-
-func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
-	tx := r.db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := models.ValidateStruct(input); err != nil {
-		tx.Rollback()
-		return nil, gorm.ErrCheckConstraintViolated
-	}
-
-	// 1. Create Sale Record
-	if err := tx.Create(input).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	// ==========================================
-	// 2. CASHBOOK LOGIC (Increase Balance)
-	// ==========================================
-	var lastEntry models.Cashbook
-	err := tx.Order("id desc").First(&lastEntry).Error
-
-	currentBalance := int64(0)
-	if err == nil {
-		currentBalance = lastEntry.Balance
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		tx.Rollback()
-		return nil, err
-	}
-
-	newBalance := currentBalance + input.GrandTotal
-
-	cashInEntry := models.Cashbook{
-		TransactionDate: input.SaleDate,
-		TransactionType: "SALE",
-		ReferenceID:     fmt.Sprint(input.ID),
-		Description:     fmt.Sprintf("Payment received for Sale #%v", input.ID),
+		Description:     fmt.Sprintf("Sale #%v (%s)", input.ID, input.PaymentMethod),
 		Debit:           input.GrandTotal,
 		Credit:          0,
 		Balance:         newBalance,
 		CreatedAt:       time.Now(),
 	}
 
-	if err := tx.Create(&cashInEntry).Error; err != nil {
+	if err := tx.Create(&cashbookEntry).Error; err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("failed to record cashbook entry: %v", err)
+		return nil, fmt.Errorf("failed to create cashbook record: %v", err)
 	}
 
-	// ==========================================
-	// 3. DAILY SUMMARY SYNC
-	// ==========================================
-	// Update the closing balance for today so the summary is always "Live"
+	// --- Update Daily Summary ---
 	todayStr := input.SaleDate.Format("2006-01-02")
 
-	// Updates the existing summary for today.
-	// If the record doesn't exist (e.g., first sale of the day),
-	// you might want to create it first.
+	// Logic for Summary updates
+	var cashAdd, kpayAdd, debtAdd int64
+	switch input.PaymentMethod {
+	case "CASH":
+		cashAdd = input.GrandTotal
+	case "KPAY":
+		kpayAdd = input.GrandTotal
+	case "DEBT":
+		debtAdd = input.GrandTotal
+	}
+
+	// Update the Daily Summary (Including the new debt_total column if you have it)
 	result := tx.Model(&models.DailySummaries{}).
 		Where("DATE(summary_date) = ?", todayStr).
-		Update("closing_balance", newBalance)
+		Updates(map[string]interface{}{
+			"closing_balance": gorm.Expr("closing_balance + ?", cashAdd),
+			"k_pay_total":     gorm.Expr("k_pay_total + ?", kpayAdd),
+			"debt_total":      gorm.Expr("debt_total + ?", debtAdd), // Ensure this exists in your DB
+			"total_sale":      gorm.Expr("total_sale + ?", input.GrandTotal),
+		})
 
-	if result.Error != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("failed to update daily summary: %v", result.Error)
-	}
-
-	// Optional: If no summary exists yet for today (e.g. manager forgot to open), create one
 	if result.RowsAffected == 0 {
-		newSummary := models.DailySummaries{
+		var lastSummary models.DailySummaries
+		tx.Order("summary_date desc").Limit(1).Find(&lastSummary)
+
+		tx.Create(&models.DailySummaries{
 			SummaryDate:    input.SaleDate,
-			OpeningBalance: currentBalance, // The balance before this sale
-			ClosingBalance: newBalance,
-			IsClosed:       false,
-		}
-		if err := tx.Create(&newSummary).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
+			OpeningBalance: lastSummary.ClosingBalance,
+			ClosingBalance: lastSummary.ClosingBalance + cashAdd,
+			KPayTotal:      kpayAdd,
+			DebtTotal:      debtAdd,
+			CashTotal:      cashAdd,
+			TotalSale:      input.GrandTotal,
+		})
 	}
 
-	// 4. Update Customer Stats
-	if err := util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, true); err != nil {
+	// ==========================================
+	// 3. CUSTOMER DEBT & STOCK MOVEMENTS
+	// ==========================================
+	isDebt := input.PaymentMethod == "DEBT"
+	// This correctly updates the customer's personal balance
+	if err := util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, isDebt); err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 
-	// 5. Process Sale Details (Stock & Transactions)
 	for i := range input.SaleDetails {
 		sd := &input.SaleDetails[i]
 		sd.SaleId = input.ID
@@ -292,122 +220,211 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 			return nil, err
 		}
 
-		itemTxn := models.ItemTransaction{
+		tx.Create(&models.ItemTransaction{
 			ProductId:   sd.ProductId,
 			TranType:    "SALE",
 			OutQty:      sd.Qty,
 			Uom:         sd.Uom,
-			ReferenceNo: fmt.Sprint(input.ID),
-			Remark:      fmt.Sprintf("Sold Qty: %v %v", sd.Qty, sd.Uom),
+			ReferenceNo: input.ID,
 			CreatedAt:   time.Now(),
-		}
-		if err := tx.Create(&itemTxn).Error; err != nil {
-			tx.Rollback()
-			return nil, err
-		}
+		})
 	}
 
-	if err := tx.Commit().Error; err != nil {
+	return input, tx.Commit().Error
+}
+
+func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
+	// Execute the entire logic within a transaction closure
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Initialize New Model Fields
+		input.NetTotal = input.GrandTotal // Initial net is grand total before any returns
+		input.ReturnAmount = 0
+		input.Status = "NORMAL"
+
+		// Set Payment Status based on method
+		if input.PaymentMethod == "DEBT" {
+			input.PaidAmount = 0
+			input.PaymentStatus = "UNPAID"
+		} else {
+			input.PaidAmount = input.GrandTotal
+			input.PaymentStatus = "PAID"
+		}
+
+		// Validate structure using your existing validator
+		if err := models.ValidateStruct(input); err != nil {
+			return gorm.ErrCheckConstraintViolated
+		}
+
+		// 2. Save the Sale Record (Details are saved automatically via GORM association)
+		if err := tx.Create(input).Error; err != nil {
+			return err
+		}
+
+		// 3. Cashbook Logic (Ledger)
+		var lastEntry models.Cashbook
+		tx.Order("id desc").Limit(1).Find(&lastEntry)
+
+		newBalance := lastEntry.Balance
+		// Only physical CASH increases the drawer balance
+		if input.PaymentMethod == "CASH" {
+			newBalance += input.GrandTotal
+		}
+
+		cashbookEntry := models.Cashbook{
+			TransactionDate: input.SaleDate,
+			TransactionType: "SALE",
+			PaymentMethod:   input.PaymentMethod,
+			ReferenceID:     input.ID,
+			Description:     fmt.Sprintf("Sale #%v (%s)", input.ID, input.PaymentMethod),
+			Debit:           input.GrandTotal,
+			Balance:         newBalance,
+			CreatedAt:       time.Now(),
+		}
+
+		if err := tx.Create(&cashbookEntry).Error; err != nil {
+			return fmt.Errorf("failed to create cashbook record: %v", err)
+		}
+
+		// 4. Daily Summary Sync
+		todayStr := input.SaleDate.Format("2006-01-02")
+		var cashAdd, kpayAdd, debtAdd int64
+		switch input.PaymentMethod {
+		case "CASH":
+			cashAdd = input.GrandTotal
+		case "KPAY":
+			kpayAdd = input.GrandTotal
+		case "DEBT":
+			debtAdd = input.GrandTotal
+		}
+
+		// Update existing row (only if not closed)
+		result := tx.Model(&models.DailySummaries{}).
+			Where("DATE(summary_date) = ? AND is_closed = ?", todayStr, false).
+			Updates(map[string]interface{}{
+				"closing_balance": gorm.Expr("closing_balance + ?", cashAdd),
+				"k_pay_total":     gorm.Expr("k_pay_total + ?", kpayAdd),
+				"debt_total":      gorm.Expr("debt_total + ?", debtAdd),
+				"total_sale":      gorm.Expr("total_sale + ?", input.GrandTotal),
+				"cash_total":      gorm.Expr("cash_total + ?", cashAdd),
+			})
+
+		// If first transaction of the day, create the row
+		if result.RowsAffected == 0 {
+			var lastSum models.DailySummaries
+			tx.Order("summary_date desc").Limit(1).Find(&lastSum)
+
+			openingVal := lastSum.ClosingBalance
+			if openingVal == 0 {
+				openingVal = 5000 // Default drawer float
+			}
+
+			tx.Create(&models.DailySummaries{
+				SummaryDate:    input.SaleDate,
+				OpeningBalance: openingVal,
+				ClosingBalance: openingVal + cashAdd,
+				CashTotal:      cashAdd,
+				KPayTotal:      kpayAdd,
+				DebtTotal:      debtAdd,
+				TotalSale:      input.GrandTotal,
+				IsClosed:       false,
+			})
+		}
+
+		// 5. Inventory & Stock Movements
+		for i := range input.SaleDetails {
+			sd := &input.SaleDetails[i]
+			sd.SaleId = input.ID
+
+			// Update Stock Levels
+			if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "decrease"); err != nil {
+				return err
+			}
+
+			// Record Item Transaction history
+			if err := tx.Create(&models.ItemTransaction{
+				ProductId:   sd.ProductId,
+				TranType:    "SALE",
+				OutQty:      sd.Qty,
+				Uom:         sd.Uom,
+				ReferenceNo: input.ID,
+				CreatedAt:   time.Now(),
+			}).Error; err != nil {
+				return err
+			}
+		}
+
+		// 6. Adjust Customer Stats
+		isDebt := input.PaymentMethod == "DEBT"
+		return util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, isDebt)
+	})
+
+	// Final Return Check
+	if err != nil {
 		return nil, err
 	}
 
 	return input, nil
 }
 
-// func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
-// 	tx := r.db.Begin()
-// 	defer func() {
-// 		if r := recover(); r != nil {
-// 			tx.Rollback()
-// 		}
-// 	}()
+// TODO : when make receive debt payment, update to
+// - cashbook (increase balance)
+// - sale (update paymentment from DEBT to PAID)
+func (r *SaleRepository) CollectDebt(payment *models.Payment, saleID string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Record the Payment
+		if err := tx.Create(payment).Error; err != nil {
+			return fmt.Errorf("failed to create payment: %v", err)
+		}
 
-// 	if err := models.ValidateStruct(input); err != nil {
-// 		tx.Rollback()
-// 		return nil, gorm.ErrCheckConstraintViolated
-// 	}
+		// 2. Update Sale
+		var sale models.Sale
+		if err := tx.First(&sale, "id = ?", saleID).Error; err != nil {
+			return err
+		}
 
-// 	// 1. Create Sale Record
-// 	if err := tx.Create(input).Error; err != nil {
-// 		tx.Rollback()
-// 		return nil, err
-// 	}
+		newPaidAmount := sale.PaidAmount + payment.Amount
+		newStatus := "PARTIAL"
+		if newPaidAmount >= sale.GrandTotal {
+			newStatus = "PAID"
+		}
 
-// 	// ==========================================
-// 	// 2. CASHBOOK LOGIC (Increase Balance)
-// 	// ==========================================
-// 	var lastEntry models.Cashbook
-// 	// We use First with Order desc for more consistent behavior than Last
-// 	err := tx.Order("id desc").First(&lastEntry).Error
+		if err := tx.Model(&sale).Updates(map[string]interface{}{
+			"paid_amount":    newPaidAmount,
+			"payment_status": newStatus,
+		}).Error; err != nil {
+			return err
+		}
 
-// 	currentBalance := int64(0)
-// 	if err == nil {
-// 		currentBalance = lastEntry.Balance
-// 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-// 		// If it's a real DB error (not just empty table), rollback
-// 		tx.Rollback()
-// 		return nil, err
-// 	}
+		// 3. Cashbook Entry
+		pMethod := strings.ToUpper(payment.PaymentMethod)
+		if pMethod == "CASH" || pMethod == "KPAY" {
+			var lastEntry models.Cashbook
+			// ✅ Fix: Specifically target the latest balance
+			tx.Order("id desc").Limit(1).Find(&lastEntry)
 
-// 	cashInEntry := models.Cashbook{
-// 		TransactionDate: input.SaleDate,
-// 		TransactionType: "SALE",
-// 		ReferenceID:     fmt.Sprint(input.ID),
-// 		Description:     fmt.Sprintf("Payment received for Sale #%v", input.ID),
-// 		Debit:           input.GrandTotal,
-// 		Credit:          0,
-// 		Balance:         currentBalance + input.GrandTotal,
-// 		CreatedAt:       time.Now(),
-// 	}
+			newBalance := lastEntry.Balance + payment.Amount
 
-// 	if err := tx.Create(&cashInEntry).Error; err != nil {
-// 		tx.Rollback()
-// 		return nil, fmt.Errorf("failed to record cashbook entry: %v", err)
-// 	}
+			cashEntry := models.Cashbook{
+				TransactionDate: payment.PaymentDate,
+				TransactionType: "DEBT_PAYMENT",
+				ReferenceID:     saleID,
+				Description:     fmt.Sprintf("Debt Collected: %s", saleID),
+				Debit:           payment.Amount,
+				Balance:         newBalance,
+				PaymentMethod:   pMethod,
+			}
 
-// 	// 3. Update Customer Stats
-// 	if err := util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, true); err != nil {
-// 		tx.Rollback()
-// 		return nil, err
-// 	}
+			if err := tx.Create(&cashEntry).Error; err != nil {
+				return err
+			}
 
-// 	// 4. Process Sale Details (Stock & Transactions)
-// 	for i := range input.SaleDetails {
-// 		sd := &input.SaleDetails[i]
+			// 4. Daily Summary
+			// ... (keep your existing summary code here)
+		}
 
-// 		// Link the detail to the newly created Sale ID
-// 		sd.SaleId = input.ID
-
-// 		// A. Stock Movement (Decrease)
-// 		if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "decrease"); err != nil {
-// 			tx.Rollback()
-// 			return nil, fmt.Errorf("failed to add stock movement: %v", err)
-// 		}
-
-// 		// B. Item Transaction Log
-// 		// Note: Avoid Preload inside the loop for performance.
-// 		// Use IDs or pass product name from the 'input' object if available.
-// 		itemTxn := models.ItemTransaction{
-// 			ProductId:   sd.ProductId,
-// 			TranType:    "SALE",
-// 			OutQty:      sd.Qty,
-// 			Uom:         sd.Uom,
-// 			ReferenceNo: fmt.Sprint(input.ID),
-// 			Remark:      fmt.Sprintf("Sold Qty: %v %v", sd.Qty, sd.Uom),
-// 			CreatedAt:   time.Now(),
-// 		}
-// 		if err := tx.Create(&itemTxn).Error; err != nil {
-// 			tx.Rollback()
-// 			return nil, err
-// 		}
-// 	}
-
-// 	if err := tx.Commit().Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	return input, nil
-// }
+		return util.AdjustCustomerStats(tx, sale.CustomerId, payment.Amount, false)
+	})
+}
 
 func (r *SaleRepository) UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error) {
 	var existingSale models.Sale
@@ -776,6 +793,25 @@ func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 
 	sales := []models.Sale{}
 	result := r.db.Preload(clause.Associations).Model(&models.Sale{}).Order("sale_date DESC").Find(&sales)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	// if len(sales) == 0 {
+	// 	return nil, errors.New("NO records found")
+	// }
+
+	return sales, nil
+}
+
+func (r *SaleRepository) GetSalesWithReceivables() ([]models.Sale, error) {
+	var sales []models.Sale
+
+	result := r.db.Preload(clause.Associations).
+		Model(&models.Sale{}).
+		Where("payment_method = ? ", "DEBT").
+		Order("sale_date DESC").
+		Find(&sales)
 
 	if result.Error != nil {
 		return nil, result.Error

@@ -61,6 +61,7 @@ func NewDB() (*gorm.DB, error) {
 			&models.Supplier{},
 			&models.UnitOfMeasure{},
 			&models.UnitConversion{},
+			&models.Payment{},
 			&models.Product{},
 			&models.ProductPrice{},
 			&models.ProductPriceHistory{},

@@ -10,9 +10,12 @@ type PurchaseInvoiceRequestDTO struct {
 	ID              string                  `gorm:"primaryKey" json:"id"`
 	SupplierId      uint                    `json:"supplierId"`
 	PurchaseDetails []models.PurchaseDetail `gorm:"foreignKey:purchaseId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"purchaseDetails"`
+	PaymentSource   string                  `json:"paymentSource"`
+	AmountFromCash  int64                   `json:"amountFromCash"`
+	AmountFromOwner int64                   `json:"amountFromOwner"`
 	Discount        int                     `json:"discount"`
 	Total           int                     `json:"total"`
-	GrandTotal      int                     `json:"grandTotal"`
+	GrandTotal      int64                   `json:"grandTotal"`
 	Remark          string                  `json:"remark"`
 	PurchaseDate    time.Time               `json:"purchaseDate"`
 }

@@ -12,12 +12,17 @@ import (
 
 type CashbookServiceInterface interface {
 	GetBalance() (int64, error)
+	GetCashBalance() (int64, error)
 	GetLedger(startDate, endDate string) ([]models.Cashbook, error)
 	GetAll(startDate, endDate string) ([]models.Cashbook, error)
 	CloseDay(today time.Time) error
 	CreateEntry(tx *gorm.DB, entry *models.Cashbook) error
 	GetSettlementReport(month int, year int) ([]SettlementReport, error)
 	GetTransactionHistory(startDate, endDate string) (map[string]interface{}, error)
+	GetDashboardSummary() (*DashboardSummary, error)
+	GetCurrentDrawerBalance() (int64, error)
+	GetPastSummaries() ([]models.DailySummaries, error)
+	ReconcileToday() ([]map[string]interface{}, error)
 }
 
 type CashbookService struct {
@@ -40,6 +45,10 @@ func NewCashbookService(repo CashbookRepositoryInterface) CashbookServiceInterfa
 
 func (s *CashbookService) GetBalance() (int64, error) {
 	return s.repo.GetBalance()
+}
+
+func (s *CashbookService) GetCashBalance() (int64, error) {
+	return s.repo.GetCashBalance()
 }
 
 func (s *CashbookService) GetLedger(startDate, endDate string) ([]models.Cashbook, error) {
@@ -80,4 +89,20 @@ func (s *CashbookService) GetTransactionHistory(startDate, endDate string) (map[
 		"total_out":    totalOut,
 		"count":        len(data),
 	}, nil
+}
+
+func (s *CashbookService) GetDashboardSummary() (*DashboardSummary, error) {
+	return s.repo.GetDashboardSummary()
+}
+
+func (s *CashbookService) GetCurrentDrawerBalance() (int64, error) {
+	return s.repo.GetCurrentDrawerBalance()
+}
+
+func (s *CashbookService) GetPastSummaries() ([]models.DailySummaries, error) {
+	return s.repo.GetPastSummaries()
+}
+
+func (s *CashbookService) ReconcileToday() ([]map[string]interface{}, error) {
+	return s.repo.ReconcileToday()
 }

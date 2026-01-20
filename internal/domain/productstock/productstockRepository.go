@@ -231,7 +231,6 @@ func (r *ProductStockRepository) UpdateProductStocksById(productStock UpdateProd
 		if err := tx.Save(&existingProductStock).Error; err != nil {
 			return err
 		}
-		//TODO: add the login user name to the transaction
 		// 4. Create item transaction record
 		newItemTransaction := models.ItemTransaction{
 			ProductId: existingProductStock.ProductId,
