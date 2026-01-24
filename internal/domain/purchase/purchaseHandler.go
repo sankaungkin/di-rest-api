@@ -422,3 +422,101 @@ func (h *PurchaseHandler) GetHistoricalMonthlyCOGS(c *fiber.Ctx) error {
 			"data":    results,
 		})
 }
+
+// GetPayables godoc
+//
+//	@Summary		Fetch payables aging summary
+//	@Description	Fetch payables aging summary
+//	@Tags			Purchases
+//	@Accept			json
+//	@Produce		json
+//
+// @Success		200				{array}		AgingSummary
+//
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/purchases/payables	[get]
+//	@Security		Bearer
+func (h *PurchaseHandler) GetPayables(c *fiber.Ctx) error {
+	summaries, err := h.svc.GetPayables()
+	if err != nil {
+		return err
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Payables aging summary fetched successfully",
+			"data":    summaries,
+		})
+}
+
+// GetAllPayables godoc
+// @Summary Get all payables
+// @Description Get all payables
+// @Tags Payables
+// @Accept json
+// @Produce json
+// @Success 200 {object} fiber.Map
+// @Failure 400 {object} fiber.Error
+// @Failure 500 {object} fiber.Error
+// @Router /payables [get]
+func (h *PurchaseHandler) GetAllPayables(c *fiber.Ctx) error {
+	payables, err := h.svc.GetAllPayables()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "All payables fetched successfully",
+		"data":    payables,
+	})
+}
+
+// PayOffPurchaseDebt godoc
+//
+//	@Summary        Pay off purchase debt
+//	@Description    Pay off purchase debt
+//	@Tags           Purchases
+//	@Accept         json
+//	@Produce        json
+//	@Param          id                  path        string          true    "Purchase ID"
+//	@Param          paymentData         body        PaymentRequest  true    "Payment Data"
+//	@Success        200                 {object}    map[string]interface{}
+//	@Failure        400                 {object}    httputil.HttpError400
+//	@Router         /api/purchases/{id}/pay-off-debt [post]
+//	@Security       Bearer
+func (h *PurchaseHandler) PayOffPurchaseDebt(c *fiber.Ctx) error {
+	// 1. Get ID from URL. Since router is /:id/pay-off-debt, use "id"
+	id := c.Params("id")
+
+	input := new(PaymentRequest)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  400,
+			"message": "Invalid JSON format: " + err.Error(),
+		})
+	}
+
+	// 2. Ensure the ID from URL is used in the logic
+	// Even if the JSON body is missing purchaseId, we take it from the URL
+	if input.PurchaseId == "" {
+		input.PurchaseId = id
+	}
+
+	log.Printf("Processing Debt Payment for PO: %s, Amount: %d", input.PurchaseId, input.Amount)
+
+	// 3. Call service layer
+	err := h.svc.PayOffPurchaseDebt(*input)
+	if err != nil {
+		// ... (Error handling remains same)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Update Successfully",
+		"data":    input,
+	})
+}

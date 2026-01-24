@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/sankangkin/di-rest-api/internal/models"
@@ -27,7 +28,15 @@ func NewDB() (*gorm.DB, error) {
 
 	dbOnce.Do(func() {
 		log.Println(Blue + "------> NewDB constructor is called <-----" + Reset)
-		err := godotenv.Load(".env")
+
+		// 1. Force the Go application layer to Myanmar Timezone
+		loc, err := time.LoadLocation("Asia/Yangon")
+		if err != nil {
+			log.Printf("Warning: Could not load Asia/Yangon, falling back to system time: %v", err)
+		} else {
+			time.Local = loc
+		}
+		err = godotenv.Load(".env")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -50,11 +59,21 @@ func NewDB() (*gorm.DB, error) {
 
 		log.Print(dsn)
 
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			NowFunc: func() time.Time {
+				return time.Now().Local()
+			},
+			PrepareStmt: true,
+		})
 		if err != nil {
 			// return nil, err
 			log.Fatal(err)
 		}
+		sqlDB, _ := db.DB()
+		sqlDB.SetMaxIdleConns(10)
+		sqlDB.SetMaxOpenConns(100)
+		sqlDB.SetConnMaxLifetime(time.Hour)
+
 		err = db.AutoMigrate(
 			&models.Category{},
 			&models.Customer{},

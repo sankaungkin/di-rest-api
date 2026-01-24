@@ -1,6 +1,7 @@
 package cashbook
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -147,10 +148,12 @@ func (h *CashbookHandler) CloseDay(c *fiber.Ctx) error {
 func (h *CashbookHandler) CreateEntry(c *fiber.Ctx) error {
 	var entry models.Cashbook
 	if err := c.BodyParser(&entry); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+		return c.Status(400).JSON(fiber.Map{"error": "Cannot parse JSON"})
 	}
 
-	err := h.svc.CreateEntry(nil, &entry)
+	fmt.Printf("Received Entry: Type=%s, Debit=%d, Credit=%d\n",
+		entry.TransactionType, entry.Debit, entry.Credit)
+	err := h.svc.CreateEntry(&entry)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -400,5 +403,69 @@ func (h *CashbookHandler) ReconcileToday(c *fiber.Ctx) error {
 			"status":  "SUCCESS",
 			"message": "Reconcile today's cashbook fetched successfully",
 			"data":    results,
+		})
+}
+
+// @Summary Record owner withdrawal
+// @Description Record owner withdrawal
+// @Tags Cashbook
+// @Accept json
+// @Produce json
+// @Param amount body int true "Amount"
+// @Param description body string true "Description"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} httputil.HttpError400
+// @Failure 401 {object} httputil.HttpError401
+// @Failure 500 {object} httputil.HttpError500
+// @Router /api/cashbook/owner-withdrawal [post]
+func (h *CashbookHandler) RecordOwnerWithdrawal(c *fiber.Ctx) error {
+	var payload struct {
+		Amount      int64  `json:"amount"`
+		Description string `json:"description"`
+	}
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	err := h.svc.RecordOwnerWithdrawal(payload.Amount, payload.Description)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(http.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Owner withdrawal recorded successfully",
+			"data":    nil,
+		})
+}
+
+// GetTodayEntries godoc
+//
+//	@Summary		Fetch today's cashbook entries
+//	@Description	Fetch today's cashbook entries
+//	@Tags			Cashbooks
+//	@Accept			json
+//	@Produce		json
+//	@Success		200				{array}		models.Cashbook
+//	@Failure		400				{object}	httputil.HttpError400
+//	@Failure		401				{object}	httputil.HttpError401
+//	@Failure		500				{object}	httputil.HttpError500
+//	@Router			/api/cashbook/today-entries	[get]
+//	@Security		Bearer
+func (h *CashbookHandler) GetTodayOwnerWithdrawalEntries(c *fiber.Ctx) error {
+	// today := time.Now().Format("2006-01-02")
+	transType := "OWNER_WITHDRAWAL"
+
+	entries, err := h.svc.GetEntriesByDateAndType(time.Now(), transType)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": "Today's cashbook entries fetched successfully",
+			"data":    entries,
 		})
 }

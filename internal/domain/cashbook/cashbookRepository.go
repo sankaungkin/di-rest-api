@@ -8,6 +8,7 @@ import (
 
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type SettlementReport struct {
@@ -29,6 +30,8 @@ type CashbookRepositoryInterface interface {
 	GetPastSummaries() ([]models.DailySummaries, error)
 	GetCurrentDrawerBalance() (int64, error)
 	ReconcileToday() ([]map[string]interface{}, error)
+	RecordOwnerWithdrawal(amount int64, description string) error
+	GetEntriesByDateAndType(date time.Time, transType string) ([]models.Cashbook, error)
 }
 
 type CashbookRepository struct {
@@ -141,92 +144,12 @@ func (r *CashbookRepository) GetLedger(startDate, endDate string) ([]models.Cash
 	return entries, err
 }
 
-func (r *CashbookRepository) CloseDayOld(today time.Time) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		todayStr := today.Format("2006-01-02")
-		now := time.Now()
-
-		// 1. Get the current status of the drawer BEFORE reset
-		var lastEntry models.Cashbook
-		tx.Order("id desc").Limit(1).Find(&lastEntry)
-		actualEndOfDayBalance := lastEntry.Balance
-
-		// 2. Mark Today's Summary as Closed
-		// Note: We save the ACTUAL balance here so we know how much was made today.
-		if err := tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ?", todayStr).
-			Updates(map[string]interface{}{
-				"closing_balance": actualEndOfDayBalance,
-				"is_closed":       true,
-			}).Error; err != nil {
-			return err
-		}
-
-		// 3. RESET THE DRAWER (Transfer to Owner)
-		// This moves money out of the "Drawer" and prepares for tomorrow.
-		amountToAdjust := actualEndOfDayBalance - 5000
-
-		if amountToAdjust != 0 {
-			entry := models.Cashbook{
-				TransactionDate: now,
-				CreatedAt:       now,
-				PaymentMethod:   "CASH",
-				ReferenceID:     "RESET-" + todayStr,
-			}
-
-			if amountToAdjust > 0 {
-				// Cashier gives excess profit to owner
-				entry.TransactionType = "OWNER_WITHDRAWAL"
-				entry.Description = fmt.Sprintf("Daily Reset: Profit withdrawal %d", amountToAdjust)
-				entry.Credit = amountToAdjust
-				entry.Balance = 5000
-			} else {
-				// Owner adds money because drawer is below 5000
-				entry.TransactionType = "OWNER_INJECTION"
-				entry.Description = fmt.Sprintf("Daily Reset: Owner added %d to reach float", -amountToAdjust)
-				entry.Debit = -amountToAdjust
-				entry.Balance = 5000
-			}
-			tx.Create(&entry)
-		}
-
-		// 4. PREPARE TOMORROW
-		tomorrow := today.AddDate(0, 0, 1)
-		tomorrowStr := tomorrow.Format("2006-01-02")
-
-		var nextSummary models.DailySummaries
-		result := tx.Where("DATE(summary_date) = ?", tomorrowStr).First(&nextSummary)
-
-		if result.RowsAffected == 0 {
-			// Create Tomorrow's Opening Record in Cashbook
-			tx.Create(&models.Cashbook{
-				TransactionDate: tomorrow,
-				TransactionType: "OPENING",
-				Description:     "Daily Opening Balance (Reset)",
-				Debit:           5000,
-				Balance:         5000,
-				CreatedAt:       now,
-				PaymentMethod:   "CASH",
-			})
-
-			// Create Tomorrow's Daily Summary row
-			tx.Create(&models.DailySummaries{
-				SummaryDate:    tomorrow,
-				OpeningBalance: 5000,
-				ClosingBalance: 5000,
-				IsClosed:       false,
-			})
-		}
-
-		return nil
-	})
-}
 func (r *CashbookRepository) CloseDay(today time.Time) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		todayStr := today.Format("2006-01-02")
 		now := time.Now()
 
-		// 1. Calculate Z-Report Totals from Sales Table
+		// 1. Calculate Sales Totals (Cash, KPay, Debt)
 		var report struct {
 			CashTotal int64
 			KPayTotal int64
@@ -244,11 +167,21 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 			&report.CashTotal, &report.KPayTotal, &report.DebtTotal, &report.TotalSale,
 		)
 
-		// 2. Get Expense Total from Cashbook
-		var expenseTotal int64
-		tx.Raw(`SELECT COALESCE(SUM(credit), 0) FROM cashbooks 
-                WHERE DATE(transaction_date) = ? AND transaction_type = 'EXPENSE'`,
-			todayStr).Scan(&expenseTotal)
+		// 2. Calculate Cashbook Metrics (Recovered Debt, Purchases, and Manual Withdrawals)
+		var metrics struct {
+			DebtCollected     int64
+			TotalOutflow      int64
+			ManualWithdrawals int64
+		}
+		tx.Raw(`
+            SELECT 
+                COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN transaction_type IN ('EXPENSE', 'PURCHASE', 'PURCHASE_PAYMENT') THEN credit ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0)
+            FROM cashbooks 
+            WHERE DATE(transaction_date) = ?`, todayStr).Row().Scan(
+			&metrics.DebtCollected, &metrics.TotalOutflow, &metrics.ManualWithdrawals,
+		)
 
 		// 3. Get Final Drawer Balance BEFORE Reset
 		var lastEntry models.Cashbook
@@ -257,39 +190,44 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 		}
 		actualEndOfDayBalance := lastEntry.Balance
 
-		// 4. Update Today's Summary (Using Updates to ensure we hit the existing row)
-		// We use the ACTUAL cash on hand for cash_total here
-		err := tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ? AND is_closed = ?", todayStr, false).
-			Updates(map[string]interface{}{
-				"cash_total":      report.CashTotal, // Total Cash Sales
-				"k_pay_total":     report.KPayTotal,
-				"debt_total":      report.DebtTotal,
-				"expense_total":   expenseTotal,
-				"total_sale":      report.TotalSale,
-				"closing_balance": actualEndOfDayBalance,
-				"is_closed":       true,
-			}).Error
-		if err != nil {
-			return err
-		}
-
-		// 5. Reset Drawer to 5000 (Owner takes the rest)
+		// 4. Reset Drawer to 5000 (The "Take-Home" Adjustment)
 		amountToAdjust := actualEndOfDayBalance - 5000
-		if amountToAdjust != 0 {
+		finalWithdrawalTotal := metrics.ManualWithdrawals
+
+		if amountToAdjust > 0 {
 			tx.Create(&models.Cashbook{
 				TransactionDate: now,
 				TransactionType: "OWNER_WITHDRAWAL",
 				PaymentMethod:   "CASH",
 				ReferenceID:     "RESET-" + todayStr,
-				Description:     fmt.Sprintf("Daily Reset: Withdrawal %d", amountToAdjust),
+				Description:     fmt.Sprintf("Daily Reset: Withdrawal to Bank %d", amountToAdjust),
 				Credit:          amountToAdjust,
 				Balance:         5000,
 				CreatedAt:       now,
 			})
+			// Add the reset amount to the day's total withdrawal figure
+			finalWithdrawalTotal += amountToAdjust
 		}
 
-		// 6. Setup Tomorrow (FirstOrCreate prevents duplicate ID 13/15 issues)
+		// 5. Update Today's Summary Record
+		err := tx.Model(&models.DailySummaries{}).
+			Where("DATE(summary_date) = ? AND is_closed = ?", todayStr, false).
+			Updates(map[string]interface{}{
+				"cash_total":       report.CashTotal,
+				"k_pay_total":      report.KPayTotal,
+				"debt_total":       report.DebtTotal,
+				"debt_collected":   metrics.DebtCollected,
+				"expense_total":    metrics.TotalOutflow,
+				"total_withdrawal": finalWithdrawalTotal,
+				"total_sale":       report.TotalSale,
+				"closing_balance":  5000, // Drawer is now reset
+				"is_closed":        true,
+			}).Error
+		if err != nil {
+			return err
+		}
+
+		// 6. Setup Tomorrow
 		tomorrow := today.AddDate(0, 0, 1)
 		tomorrowStr := tomorrow.Format("2006-01-02")
 
@@ -305,23 +243,31 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 
 // CreateEntry handles the calculation of the running balance and saves the record
 func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
+
+	executor := tx
+	if executor == nil {
+		executor = r.db
+	}
 	var lastEntry models.Cashbook
 
-	// 1. Get the absolute latest balance
-	// Use 'tx' to ensure this happens inside the parent transaction
-	err := tx.Order("id desc").First(&lastEntry).Error
+	// 1. Get the absolute latest balance with a LOCK
+	// .Clauses(clause.Locking{Strength: "UPDATE"}) prevents other transactions
+	// from reading this row until this one is finished.
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Order("id desc").First(&lastEntry).Error
 
-	currentBalance := int64(5000) // Default if no records exist
+	currentBalance := int64(0)
 	if err == nil {
 		currentBalance = lastEntry.Balance
 	}
 
 	// 2. Calculate new balance
-	// Debit increases balance, Credit decreases it
 	entry.Balance = currentBalance + entry.Debit - entry.Credit
-	entry.TransactionDate = time.Now()
 
-	// 3. Save the record
+	// Use the date from the entry if provided (for backdating), otherwise use Now
+	if entry.TransactionDate.IsZero() {
+		entry.TransactionDate = time.Now()
+	}
+
 	return tx.Create(entry).Error
 }
 
@@ -362,22 +308,30 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	todayStr := time.Now().Format("2006-01-02")
 	var summary DashboardSummary
 
-	// Your business rule for daily start
-	summary.OpeningBalance = 5000
+	// 0. Dynamic Opening Balance
+	var openingBalance int64
+	r.db.Model(&models.DailySummaries{}).
+		Select("COALESCE(closing_balance, 0)").
+		Where("summary_date < ?", todayStr).
+		Order("summary_date DESC").
+		Limit(1).
+		Scan(&openingBalance)
 
+	if openingBalance == 0 {
+		openingBalance = 5000
+	}
+	summary.OpeningBalance = openingBalance
+
+	// 1. Today's Cashbook Movement
 	err := r.db.Model(&models.Cashbook{}).
 		Select(`
-            -- Revenue Metrics
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN debit ELSE 0 END), 0) as total_sale,
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'DEBT' THEN debit ELSE 0 END), 0) as total_new_debt,
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0) as total_cash_sales,
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0) as total_kpay_sales,
-            
-            -- Receivable Recovery
-            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0) as total_debt_collected,
-
-            -- Outflow Metrics (Purchases)
-            COALESCE(SUM(CASE WHEN transaction_type = 'PURCHASE' THEN credit ELSE 0 END), 0) as total_purchase
+            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'DEBT' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type IN ('PURCHASE', 'PURCHASE_PAYMENT') THEN credit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0)
         `).
 		Where("DATE(transaction_date) = ?", todayStr).
 		Row().
@@ -388,18 +342,38 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 			&summary.TotalKPaySales,
 			&summary.TotalDebtCollected,
 			&summary.TotalPurchase,
+			&summary.TotalWithdrawals,
 		)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// Cash in Hand Calculation:
-	// (Start + Cash Sales + KPay + Collected) - (Stock Purchases)
-	summary.ClosingBalance = (summary.OpeningBalance +
-		summary.TotalCashSales +
-		summary.TotalKPaySales +
-		summary.TotalDebtCollected) - summary.TotalPurchase
+	// 2. Total Payables (Suppliers)
+	// Fix: If balance_amount is NULL/0 but status is PENDING, we use grand_total
+	err = r.db.Model(&models.Purchase{}).
+		Select("COALESCE(SUM(grand_total - COALESCE(paid_amount, 0)), 0)").
+		Where("payment_status = ?", "PENDING").
+		Scan(&summary.TotalPayables).Error
+
+	// 3. Total Receivables (Customers)
+	// Using balance_due (check if your column is balance_due or balance_amount for sales)
+	err = r.db.Model(&models.Sale{}).
+		Select("COALESCE(SUM(balance_due), 0)").
+		Where("payment_status != ?", "PAID").
+		Scan(&summary.TotalReceivables).Error
+
+	// 4. Correct Closing Balance Logic
+	// We only subtract cash that actually left the drawer (exclude OWNER_CASH)
+	var drawerCashOut int64
+	r.db.Model(&models.Cashbook{}).
+		Select("COALESCE(SUM(credit), 0)").
+		Where("DATE(transaction_date) = ? AND payment_method NOT IN (?, ?)",
+			todayStr, "OWNER_CASH", "OWNER").
+		Scan(&drawerCashOut)
+
+	// Formula: Opening + (Cash Sales + Debt Collected) - (Physical Cash Out)
+	summary.ClosingBalance = (summary.OpeningBalance + summary.TotalCashSales + summary.TotalDebtCollected) - drawerCashOut
 
 	return &summary, nil
 }
@@ -453,4 +427,42 @@ func (r *CashbookRepository) ReconcileToday() ([]map[string]interface{}, error) 
 
 	err := r.db.Raw(query, today, today).Scan(&results).Error
 	return results, err
+}
+
+func (r *CashbookRepository) RecordOwnerWithdrawal(amount int64, description string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Prepare the Cashbook Entry
+		entry := &models.Cashbook{
+			TransactionType: "OWNER_WITHDRAWAL",
+			Description:     description,
+			Debit:           0,
+			Credit:          amount,
+			PaymentMethod:   "CASH",
+		}
+
+		// 2. Use your existing CreateEntry logic to save and update running balance
+		if err := r.CreateEntry(tx, entry); err != nil {
+			return err
+		}
+
+		// 3. Update Daily Summary (Critical for Dashboard accuracy)
+		today := time.Now().Format("2006-01-02")
+		return tx.Model(&models.DailySummaries{}).
+			Where("DATE(summary_date) = ? AND is_closed = ?", today, false).
+			Update("closing_balance", gorm.Expr("closing_balance - ?", amount)).Error
+	})
+}
+
+func (r *CashbookRepository) GetEntriesByDateAndType(date time.Time, transType string) ([]models.Cashbook, error) {
+	var entries []models.Cashbook
+	// Use BETWEEN to cover the full day from 00:00:00 to 23:59:59
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	err := r.db.Where("transaction_date >= ? AND transaction_date < ? AND transaction_type = ?",
+		startOfDay, endOfDay, transType).
+		Order("transaction_date desc").
+		Find(&entries).Error
+
+	return entries, err
 }

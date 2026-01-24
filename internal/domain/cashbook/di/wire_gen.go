@@ -20,7 +20,7 @@ func InitCashbook() (*cashbook.CashbookHandler, error) {
 		return nil, err
 	}
 	cashbookRepositoryInterface := cashbook.NewCashbookRepository(db)
-	cashbookServiceInterface := cashbook.NewCashbookService(cashbookRepositoryInterface)
+	cashbookServiceInterface := cashbook.NewCashbookService(cashbookRepositoryInterface, db)
 	cashbookHandler := cashbook.NewCashbookHandler(cashbookServiceInterface)
 	return cashbookHandler, nil
 }

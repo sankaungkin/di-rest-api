@@ -17,12 +17,15 @@ type CreaateCashbookEntryRequestDTO struct {
 }
 
 type DashboardSummary struct {
-	OpeningBalance     int64 `json:"openingBalance"`
-	TotalPurchase      int64 `json:"totalPurchase"` // Total volume
-	TotalSale          int64 `json:"totalSale"`     // Total volume
-	TotalNewDebt       int64 `json:"totalNewDebt"`  // Sales on credit today
+	TotalSale          int64 `json:"totalSale"`
+	TotalWithdrawals   int64 `json:"totalWithdrawals"`
+	TotalNewDebt       int64 `json:"totalNewDebt"`
 	TotalCashSales     int64 `json:"totalCashSales"`
-	TotalKPaySales     int64 `json:"totalKpaySales"`
-	TotalDebtCollected int64 `json:"totalDebtCollected"` // Money recovered
-	ClosingBalance     int64 `json:"closingBalance"`     // Actual cash position
+	TotalKPaySales     int64 `json:"totalKPaySales"`
+	TotalDebtCollected int64 `json:"totalDebtCollected"`
+	TotalPurchase      int64 `json:"totalPurchase"`
+	TotalPayables      int64 `json:"totalPayables"` // Will now hold 2891100
+	TotalReceivables   int64 `json:"totalReceivables"`
+	OpeningBalance     int64 `json:"openingBalance"`
+	ClosingBalance     int64 `json:"closingBalance"`
 }

@@ -16,17 +16,21 @@ type CashbookServiceInterface interface {
 	GetLedger(startDate, endDate string) ([]models.Cashbook, error)
 	GetAll(startDate, endDate string) ([]models.Cashbook, error)
 	CloseDay(today time.Time) error
-	CreateEntry(tx *gorm.DB, entry *models.Cashbook) error
+	// CreateEntry(tx *gorm.DB, entry *models.Cashbook) error
+	CreateEntry(entry *models.Cashbook) error
 	GetSettlementReport(month int, year int) ([]SettlementReport, error)
 	GetTransactionHistory(startDate, endDate string) (map[string]interface{}, error)
 	GetDashboardSummary() (*DashboardSummary, error)
 	GetCurrentDrawerBalance() (int64, error)
 	GetPastSummaries() ([]models.DailySummaries, error)
 	ReconcileToday() ([]map[string]interface{}, error)
+	RecordOwnerWithdrawal(amount int64, description string) error
+	GetEntriesByDateAndType(date time.Time, transType string) ([]models.Cashbook, error)
 }
 
 type CashbookService struct {
 	repo CashbookRepositoryInterface
+	db   *gorm.DB
 }
 
 var (
@@ -34,11 +38,11 @@ var (
 	svcOnce     sync.Once
 )
 
-func NewCashbookService(repo CashbookRepositoryInterface) CashbookServiceInterface {
+func NewCashbookService(repo CashbookRepositoryInterface, db *gorm.DB) CashbookServiceInterface {
 	log.Println(util.Cyan + "CashbookService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
-		svcInstance = &CashbookService{repo: repo}
+		svcInstance = &CashbookService{repo: repo, db: db}
 	})
 	return svcInstance
 }
@@ -59,8 +63,14 @@ func (s *CashbookService) CloseDay(today time.Time) error {
 	return s.repo.CloseDay(today)
 }
 
-func (s *CashbookService) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
-	return s.repo.CreateEntry(tx, entry)
+//	func (s *CashbookService) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
+//		return s.repo.CreateEntry(tx, entry)
+//	}
+func (s *CashbookService) CreateEntry(entry *models.Cashbook) error {
+	// Start a transaction here
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return s.repo.CreateEntry(tx, entry)
+	})
 }
 
 func (s *CashbookService) GetSettlementReport(month int, year int) ([]SettlementReport, error) {
@@ -105,4 +115,12 @@ func (s *CashbookService) GetPastSummaries() ([]models.DailySummaries, error) {
 
 func (s *CashbookService) ReconcileToday() ([]map[string]interface{}, error) {
 	return s.repo.ReconcileToday()
+}
+
+func (s *CashbookService) RecordOwnerWithdrawal(amount int64, description string) error {
+	return s.repo.RecordOwnerWithdrawal(amount, description)
+}
+
+func (s *CashbookService) GetEntriesByDateAndType(date time.Time, transType string) ([]models.Cashbook, error) {
+	return s.repo.GetEntriesByDateAndType(date, transType)
 }

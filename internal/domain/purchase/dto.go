@@ -41,3 +41,22 @@ type ResponseHistoricalCOGS struct {
 	MonthYear string `json:"month"` // e.g., "2025-11"
 	COGS      int64  `json:"cogs"`
 }
+type AgingSummary struct {
+	Category     string  `json:"category"`
+	TotalBalance float64 `json:"totalBalance"`
+	PoCount      int     `json:"poCount"`
+}
+
+type PaymentRequest struct {
+	// Matches "amount" in JSON
+	Amount int64 `json:"amount" validate:"required,gt=0"`
+
+	// Matches "paymentMethod" in JSON ("CASH" or "KPAY")
+	PaymentMethod string `json:"paymentMethod" validate:"required"`
+
+	// Matches "paymentDate" ISO string from Angular
+	PaymentDate time.Time `json:"paymentDate"`
+
+	// Matches "purchaseId" in JSON
+	PurchaseId string `json:"purchaseId" validate:"required"`
+}

@@ -22,6 +22,9 @@ type PurchaseServiceInterface interface {
 	GetTodayPurchaseList() ([]models.Purchase, error)
 	GetPurchasesByDate(date time.Time) ([]models.Purchase, error)
 	GetHistoricalMonthlyCOGS() ([]ResponseHistoricalCOGS, error)
+	PayOffPurchaseDebt(paymentData PaymentRequest) error
+	GetPayables() (map[string]interface{}, error)
+	GetAllPayables() ([]models.Purchase, error)
 }
 
 type PurchaseService struct {
@@ -88,4 +91,16 @@ func (s *PurchaseService) GetTodayPurchaseList() ([]models.Purchase, error) {
 
 func (s *PurchaseService) GetPurchasesByDate(date time.Time) ([]models.Purchase, error) {
 	return s.repo.GetPurchasesByDate(date)
+}
+
+func (s *PurchaseService) PayOffPurchaseDebt(paymentData PaymentRequest) error {
+	return s.repo.PayOffPurchaseDebt(paymentData)
+}
+
+func (s *PurchaseService) GetPayables() (map[string]interface{}, error) {
+	return s.repo.GetPayables()
+}
+
+func (s *PurchaseService) GetAllPayables() ([]models.Purchase, error) {
+	return s.repo.GetAllPayables()
 }

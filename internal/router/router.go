@@ -234,6 +234,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	// purchase route
 	purchase := api.Group("/purchases")
 	purchase.Use(middleware.Protected())
+	purchase.Get("/payables", purchaseService.GetAllPayables)
 	purchase.Post("/", purchaseService.CreatePurchase)
 	purchase.Get("/", purchaseService.GetAllPurchases)
 	purchase.Get("/line-items", purchaseService.GetPurchaseLineItems)
@@ -246,6 +247,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	purchase.Get("/:id", purchaseService.GetById)
 	purchase.Put("/:id", purchaseService.UpdatePurchaseRemark)
 	purchase.Get("/historical-monthly-cogs", purchaseService.GetHistoricalMonthlyCOGS)
+	purchase.Post("/:id/pay-off-debt", purchaseService.PayOffPurchaseDebt)
 
 	// cashbook di
 	cashbookService, err := cashbookDi.InitCashbook()
@@ -266,6 +268,8 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	cashbook.Get("/past-summaries", cashbookService.GetPastSummaries)
 	cashbook.Get("/current-drawer-balance", cashbookService.GetCurrentDrawerBalance)
 	cashbook.Post("/reconsile-today", cashbookService.ReconcileToday)
+	cashbook.Post("/owner-withdrawal", cashbookService.RecordOwnerWithdrawal)
+	cashbook.Get("/today-owner-withdrawal-entries", cashbookService.GetTodayOwnerWithdrawalEntries)
 
 	// expense di
 	expenseService, err := expenseDi.InitExpense()
