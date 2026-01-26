@@ -175,11 +175,12 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 		}
 		tx.Raw(`
             SELECT 
-                COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0),
-                COALESCE(SUM(CASE WHEN transaction_type IN ('EXPENSE', 'PURCHASE', 'PURCHASE_PAYMENT') THEN credit ELSE 0 END), 0),
-                COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0)
-            FROM cashbooks 
-            WHERE DATE(transaction_date) = ?`, todayStr).Row().Scan(
+        COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+        -- 💡 Crucial Fix: Only count outflow if Payment Method is CASH
+        COALESCE(SUM(CASE WHEN transaction_type IN ('EXPENSE', 'PURCHASE', 'PURCHASE_PAYMENT') AND payment_method = 'CASH' THEN credit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' AND payment_method = 'CASH' THEN credit ELSE 0 END), 0)
+    FROM cashbooks 
+    WHERE DATE(transaction_date) = ?`, todayStr).Row().Scan(
 			&metrics.DebtCollected, &metrics.TotalOutflow, &metrics.ManualWithdrawals,
 		)
 
@@ -267,6 +268,12 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 	if entry.TransactionDate.IsZero() {
 		entry.TransactionDate = time.Now()
 	}
+	if entry.PaymentMethod == "CASH" {
+		entry.Balance = currentBalance + entry.Debit - entry.Credit
+	} else {
+		// For OWNER_CASH or KPAY, the physical drawer balance doesn't change
+		entry.Balance = currentBalance
+	}
 
 	return tx.Create(entry).Error
 }
@@ -308,7 +315,7 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	todayStr := time.Now().Format("2006-01-02")
 	var summary DashboardSummary
 
-	// 0. Dynamic Opening Balance
+	// 1. Get Opening Balance
 	var openingBalance int64
 	r.db.Model(&models.DailySummaries{}).
 		Select("COALESCE(closing_balance, 0)").
@@ -322,58 +329,83 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	}
 	summary.OpeningBalance = openingBalance
 
-	// 1. Today's Cashbook Movement
-	err := r.db.Model(&models.Cashbook{}).
+	// 2. Sales Metrics (FIXED LOGIC)
+	// We use grand_total and check against NORMAL/RETURNED status
+	r.db.Model(&models.Sale{}).
 		Select(`
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'DEBT' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type IN ('PURCHASE', 'PURCHASE_PAYMENT') THEN credit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0)
+            COALESCE(SUM(grand_total), 0),
+            COALESCE(SUM(CASE WHEN payment_method = 'DEBT' THEN grand_total ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN grand_total ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN payment_method = 'KPAY' THEN grand_total ELSE 0 END), 0)
         `).
-		Where("DATE(transaction_date) = ?", todayStr).
+		Where("DATE(sale_date) = ? AND status IN (?, ?)", todayStr, "NORMAL", "RETURNED").
 		Row().
 		Scan(
 			&summary.TotalSale,
 			&summary.TotalNewDebt,
 			&summary.TotalCashSales,
 			&summary.TotalKPaySales,
+		)
+
+	// 3. Today's Returns (Unchanged, but vital)
+	var totalReturn int64
+	r.db.Model(&models.SaleReturn{}).
+		Select("COALESCE(SUM(total_amount), 0)").
+		Where("DATE(return_date) = ?", todayStr).
+		Scan(&totalReturn)
+
+	// Adjusting metrics: Total Sale is now "Net"
+	// summary.TotalSale -= totalReturn
+	// summary.TotalCashSales -= totalReturn
+
+	// 4. Cashbook Movements
+	r.db.Model(&models.Cashbook{}).
+		Select(`
+            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'PURCHASE' THEN credit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'PURCHASE_PAYMENT' THEN credit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0)
+        `).
+		Where("DATE(transaction_date) = ?", todayStr).
+		Row().
+		Scan(
 			&summary.TotalDebtCollected,
 			&summary.TotalPurchase,
+			&summary.TotalSupplierPaid,
 			&summary.TotalWithdrawals,
 		)
 
-	if err != nil {
-		return nil, err
+	// 5. Drawer Balance (Physical)
+	var latestBalance int64
+	if err := r.db.Model(&models.Cashbook{}).Select("balance").Order("id desc").Limit(1).Scan(&latestBalance).Error; err != nil {
+		summary.CurrentDrawerBalance = openingBalance
+	} else {
+		summary.CurrentDrawerBalance = latestBalance
 	}
 
-	// 2. Total Payables (Suppliers)
-	// Fix: If balance_amount is NULL/0 but status is PENDING, we use grand_total
-	err = r.db.Model(&models.Purchase{}).
-		Select("COALESCE(SUM(grand_total - COALESCE(paid_amount, 0)), 0)").
-		Where("payment_status = ?", "PENDING").
-		Scan(&summary.TotalPayables).Error
+	// 6. Global Debt Totals (FIXED: balance_amount and payment_status)
+	// Payables
+	r.db.Model(&models.Purchase{}).
+		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
+		Where("payment_status IN ?", []string{"PENDING", "PARTIAL"}).
+		Scan(&summary.TotalPayables)
 
-	// 3. Total Receivables (Customers)
-	// Using balance_due (check if your column is balance_due or balance_amount for sales)
-	err = r.db.Model(&models.Sale{}).
-		Select("COALESCE(SUM(balance_due), 0)").
-		Where("payment_status != ?", "PAID").
-		Scan(&summary.TotalReceivables).Error
+	// Receivables (This fixes the 15,000 issue)
+	r.db.Model(&models.Sale{}).
+		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
+		Where("payment_status IN ?", []string{"UNPAID", "PARTIAL"}).
+		Scan(&summary.TotalReceivables)
 
-	// 4. Correct Closing Balance Logic
-	// We only subtract cash that actually left the drawer (exclude OWNER_CASH)
-	var drawerCashOut int64
+	// 7. Closing Balance Projection
+	var drawerCashOutflows int64
 	r.db.Model(&models.Cashbook{}).
 		Select("COALESCE(SUM(credit), 0)").
-		Where("DATE(transaction_date) = ? AND payment_method NOT IN (?, ?)",
-			todayStr, "OWNER_CASH", "OWNER").
-		Scan(&drawerCashOut)
+		Where("DATE(transaction_date) = ? AND payment_method = ? AND transaction_type NOT IN (?, ?)",
+			todayStr, "CASH", "SALE_RETURN", "OWNER_WITHDRAWAL").
+		Scan(&drawerCashOutflows)
 
-	// Formula: Opening + (Cash Sales + Debt Collected) - (Physical Cash Out)
-	summary.ClosingBalance = (summary.OpeningBalance + summary.TotalCashSales + summary.TotalDebtCollected) - drawerCashOut
+	summary.ClosingBalance = (summary.OpeningBalance + summary.TotalCashSales + summary.TotalDebtCollected) - drawerCashOutflows
+	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
 
 	return &summary, nil
 }

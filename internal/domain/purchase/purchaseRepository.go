@@ -597,59 +597,53 @@ func (r *PurchaseRepository) GetPurchasesByDate(date time.Time) ([]models.Purcha
 func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var po models.Purchase
-		// 1. Get PO and Lock
+		// 1. Get PO and Lock for consistency
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&po, "id = ?", paymentData.PurchaseId).Error; err != nil {
 			return err
 		}
 
-		// 2. Update PO Amounts
+		// 2. Update PO Math & Status
 		po.PaidAmount += paymentData.Amount
 		po.BalanceAmount = po.GrandTotal - po.PaidAmount
-		// ... (Payment Status logic remains same)
 
-		// ✅ Add this logic to handle status transitions
 		if po.BalanceAmount <= 0 {
 			po.PaymentStatus = "PAID"
-			po.BalanceAmount = 0 // Prevent negative balances
+			po.BalanceAmount = 0
 		} else {
-			// If some balance remains, it stays PENDING or becomes PARTIAL
 			po.PaymentStatus = "PENDING"
 		}
 
 		if err := tx.Save(&po).Error; err != nil {
 			return err
 		}
-		if err := tx.Save(&po).Error; err != nil {
-			return err
-		}
 
-		// 3. Update Cashbook
+		// 3. Prepare Cashbook Entry
 		var lastEntry models.Cashbook
+		// Get the latest drawer balance
 		tx.Order("id desc").First(&lastEntry)
-
-		// 💡 CHANGE: Balance remains the same because cash came from Owner
-		newDrawerBalance := lastEntry.Balance
 
 		cashbookEntry := models.Cashbook{
 			TransactionDate: paymentData.PaymentDate,
 			TransactionType: "PURCHASE_PAYMENT",
 			ReferenceID:     po.ID,
 			Credit:          paymentData.Amount,
-			Balance:         newDrawerBalance, // ⚠️ DO NOT SUBTRACT amount
-			// 💡 Add a note that this was paid by the owner
-			Description:   fmt.Sprintf("Debt Settlement for PO %s (Paid by Owner)", po.ID),
-			PaymentMethod: "OWNER_CASH", // Or strings.ToUpper(paymentData.PaymentMethod)
+			Balance:         lastEntry.Balance, // Physical drawer stays same (Owner Paid)
+
+			// 💡 Refactor: Include the remaining balance in the description or a specific field
+			// This makes it easy for Ma Zin to see the "Debt Left" in her history
+			Description: fmt.Sprintf("Debt Payoff for %s. (Paid by Owner). Remaining Debt: %d",
+				po.ID, po.BalanceAmount),
+
+			PaymentMethod: "OWNER_CASH",
 			CreatedAt:     time.Now(),
 		}
+
 		if err := tx.Create(&cashbookEntry).Error; err != nil {
 			return err
 		}
 
-		// 4. Update Daily Summary
+		// 4. Financial Summary Update
 		summaryDate := paymentData.PaymentDate.Format("2006-01-02")
-
-		// 💡 CHANGE: We do NOT update closing_balance here
-		// We only track the expense total for reporting
 		return tx.Model(&models.DailySummaries{}).
 			Where("DATE(summary_date) = ? AND is_closed = ?", summaryDate, false).
 			Update("expense_total", gorm.Expr("expense_total + ?", paymentData.Amount)).Error

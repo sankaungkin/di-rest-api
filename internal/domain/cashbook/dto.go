@@ -17,15 +17,18 @@ type CreaateCashbookEntryRequestDTO struct {
 }
 
 type DashboardSummary struct {
-	TotalSale          int64 `json:"totalSale"`
-	TotalWithdrawals   int64 `json:"totalWithdrawals"`
-	TotalNewDebt       int64 `json:"totalNewDebt"`
-	TotalCashSales     int64 `json:"totalCashSales"`
-	TotalKPaySales     int64 `json:"totalKPaySales"`
-	TotalDebtCollected int64 `json:"totalDebtCollected"`
-	TotalPurchase      int64 `json:"totalPurchase"`
-	TotalPayables      int64 `json:"totalPayables"` // Will now hold 2891100
-	TotalReceivables   int64 `json:"totalReceivables"`
-	OpeningBalance     int64 `json:"openingBalance"`
-	ClosingBalance     int64 `json:"closingBalance"`
+	TotalSale            int64 `json:"totalSale"`
+	TotalWithdrawals     int64 `json:"totalWithdrawals"`
+	TotalNewDebt         int64 `json:"totalNewDebt"`
+	TotalCashSales       int64 `json:"totalCashSales"`
+	TotalKPaySales       int64 `json:"totalKPaySales"`
+	TotalDebtCollected   int64 `json:"totalDebtCollected"`
+	TotalCashInflow      int64 `json:"totalCashInflow"`
+	TotalPurchase        int64 `json:"totalPurchase"`
+	TotalPayables        int64 `json:"totalPayables"` // Will now hold 2891100
+	TotalSupplierPaid    int64 `json:"totalSupplierPaid"`
+	TotalReceivables     int64 `json:"totalReceivables"`
+	OpeningBalance       int64 `json:"openingBalance"`
+	ClosingBalance       int64 `json:"closingBalance"`
+	CurrentDrawerBalance int64 `json:"currentDrawerBalance"`
 }
