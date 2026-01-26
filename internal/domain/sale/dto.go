@@ -15,6 +15,7 @@ type SaleInvoiceRequestDTO struct {
 	Discount      int64               `json:"discount"`
 	Total         int64               `json:"total"`
 	GrandTotal    int64               `json:"grandTotal"`
+	PaidAmount    int64               `json:"paidAmount"`
 	Remark        string              `json:"remark"`
 	PaymentMethod string              `json:"paymentMethod"`
 	SaleDate      time.Time           `json:"saleDate"`

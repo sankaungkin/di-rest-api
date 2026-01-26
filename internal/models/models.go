@@ -327,16 +327,17 @@ type DailySummaries struct {
 }
 
 type Cashbook struct {
-	ID              uint      `gorm:"primaryKey:autoIncrement" json:"id"`
-	TransactionDate time.Time `gorm:"type:timestamptz;index" json:"transactionDate"`
-	ReferenceID     string    `json:"referenceId"` // ID from Sale, Purchase, or Expense
-	Description     string    `json:"description"`
-	Debit           int64     `json:"debit"`   // Cash In (+)
-	Credit          int64     `json:"credit"`  // Cash Out (-)
-	Balance         int64     `json:"balance"` // Running Balance
-	CreatedAt       time.Time `json:"createdAt"`
-	TransactionType string    `json:"transactionType"`                   // OPENING, CLOSING, etc.
-	PaymentMethod   string    `validate:"required" json:"paymentMethod"` // CASH, KPAY, DEBT
+	ID                uint      `gorm:"primaryKey:autoIncrement" json:"id"`
+	TransactionDate   time.Time `gorm:"type:timestamptz;index" json:"transactionDate"`
+	ReferenceID       string    `json:"referenceId"` // ID from Sale, Purchase, or Expense
+	Description       string    `json:"description"`
+	Debit             int64     `json:"debit"`   // Cash In (+)
+	Credit            int64     `json:"credit"`  // Cash Out (-)
+	Balance           int64     `json:"balance"` // Running Balance
+	CreatedAt         time.Time `json:"createdAt"`
+	TransactionType   string    `json:"transactionType"`                   // OPENING, CLOSING, etc.
+	PaymentMethod     string    `validate:"required" json:"paymentMethod"` // CASH, KPAY, DEBT
+	TransactionStatus string    `json:"transactionStatus"`
 }
 
 type Expense struct {

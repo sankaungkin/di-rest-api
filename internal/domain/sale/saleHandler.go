@@ -60,6 +60,7 @@ func (h *SaleHandler) CreateSale(c *fiber.Ctx) error {
 		CustomerId:    input.CustomerId,
 		Discount:      input.Discount,
 		GrandTotal:    input.GrandTotal,
+		PaidAmount:    input.PaidAmount,
 		Remark:        input.Remark,
 		SaleDate:      input.SaleDate,
 		PaymentMethod: input.PaymentMethod,
