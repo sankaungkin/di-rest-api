@@ -112,109 +112,6 @@ ORDER BY pp.product_id ASC
 	return result, nil
 }
 
-func (r *SaleRepository) CreateOLD(input *models.Sale) (*models.Sale, error) {
-	err := r.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Initialize Model Fields & Payment Logic
-		input.NetTotal = input.GrandTotal
-		input.ReturnAmount = 0
-		input.Status = "NORMAL"
-
-		// Calculate Balance/Debt
-		balanceAmount := input.GrandTotal - input.PaidAmount
-		input.BalanceAmount = balanceAmount
-
-		// Logic for Payment Status
-		if input.PaidAmount == 0 {
-			input.PaymentStatus = "UNPAID"
-			input.PaidAmount = 0
-		} else if balanceAmount < input.GrandTotal {
-			input.PaymentStatus = "PARTIAL" // 👈 This is what you needed
-		} else {
-			input.PaymentStatus = "PAID"
-			input.BalanceAmount = 0
-		}
-
-		if err := tx.Create(input).Error; err != nil {
-			return err
-		}
-
-		// 2. Cashbook Logic (Physical Drawer)
-		var lastEntry models.Cashbook
-		tx.Order("id desc").Limit(1).Find(&lastEntry)
-
-		// ✅ IMPORTANT: Record what was ACTUALLY paid in cash
-		var cashMovement int64 = 0
-		if input.PaymentMethod == "CASH" {
-			cashMovement = input.PaidAmount
-		}
-
-		cashbookEntry := models.Cashbook{
-			TransactionDate: input.SaleDate,
-			TransactionType: "SALE",
-			PaymentMethod:   input.PaymentMethod,
-			ReferenceID:     input.ID,
-			Description:     fmt.Sprintf("Sale #%v (Paid: %v, Debt: %v)", input.ID, input.PaidAmount, balanceAmount),
-			Debit:           cashMovement,
-			Balance:         lastEntry.Balance + cashMovement,
-			CreatedAt:       time.Now(),
-		}
-
-		if err := tx.Create(&cashbookEntry).Error; err != nil {
-			return err
-		}
-
-		// 3. Daily Summary Logic
-		todayStr := input.SaleDate.Format("2006-01-02")
-
-		// Logic for Summary updates
-		var kpayAdd int64 = 0
-		if input.PaymentMethod == "KPAY" {
-			kpayAdd = input.PaidAmount
-		}
-
-		// Update summary row
-		result := tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ? AND is_closed = ?", todayStr, false).
-			Updates(map[string]interface{}{
-				"closing_balance": gorm.Expr("closing_balance + ?", cashMovement),
-				"k_pay_total":     gorm.Expr("k_pay_total + ?", kpayAdd),
-				"debt_total":      gorm.Expr("debt_total + ?", balanceAmount), // 👈 Tracks new debt
-				"total_sale":      gorm.Expr("total_sale + ?", input.GrandTotal),
-				"cash_total":      gorm.Expr("cash_total + ?", cashMovement),
-			})
-
-		if result.RowsAffected == 0 {
-			var lastSum models.DailySummaries
-			tx.Order("summary_date desc").Limit(1).Find(&lastSum)
-			openingVal := lastSum.ClosingBalance
-
-			tx.Create(&models.DailySummaries{
-				SummaryDate:    input.SaleDate,
-				OpeningBalance: openingVal,
-				ClosingBalance: openingVal + cashMovement,
-				CashTotal:      cashMovement,
-				KPayTotal:      kpayAdd,
-				DebtTotal:      balanceAmount,
-				TotalSale:      input.GrandTotal,
-				IsClosed:       false,
-			})
-		}
-
-		// 4. Inventory (Same as your current logic)
-		for i := range input.SaleDetails {
-			sd := &input.SaleDetails[i]
-			sd.SaleId = input.ID
-			util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "decrease")
-		}
-
-		// 5. Adjust Customer Stats
-		// Passing 'balanceAmount > 0' ensures customer's total debt is updated
-		return util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, balanceAmount > 0)
-	})
-
-	return input, err
-}
-
 func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Core Financial Logic
@@ -244,8 +141,13 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 		tx.Order("id desc").Limit(1).Find(&lastEntry)
 
 		// Record physical cash movement ONLY if PaymentMethod is CASH
+		// var cashMovement int64 = 0
+		// if input.PaymentMethod == "CASH" {
+		// 	cashMovement = input.PaidAmount
+		// }
+
 		var cashMovement int64 = 0
-		if input.PaymentMethod == "CASH" {
+		if input.PaymentMethod == "CASH" || (input.PaymentMethod == "DEBT" && input.PaidAmount > 0) {
 			cashMovement = input.PaidAmount
 		}
 		// ✅ FIXED: Map internal Status to Ma Zin's readable Status

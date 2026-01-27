@@ -253,7 +253,7 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		input.AmountFromCash = 0
 		input.AmountFromOwner = 0
 		input.PaidAmount = 0
-		input.PaymentStatus = "DEBT"
+		input.PaymentStatus = "PENDING"
 	case "SPLIT":
 		input.PaidAmount = input.AmountFromCash + input.AmountFromOwner
 		if input.PaidAmount >= int64(input.GrandTotal) {
@@ -261,7 +261,7 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 		} else if input.PaidAmount > 0 {
 			input.PaymentStatus = "PARTIAL"
 		} else {
-			input.PaymentStatus = "DEBT"
+			input.PaymentStatus = "PENDING"
 		}
 	}
 	input.BalanceAmount = int64(input.GrandTotal) - input.PaidAmount
