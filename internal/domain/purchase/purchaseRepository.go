@@ -110,121 +110,7 @@ WHERE
 	return result, nil
 }
 
-func (r *PurchaseRepository) CreateOld(input *models.Purchase) (*models.Purchase, error) {
-	tx := r.db.Begin()
-	defer func() {
-		if rec := recover(); rec != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// 1. PAYMENT VALIDATION
-	switch input.PaymentSource {
-	case "OWNER":
-		input.AmountFromOwner = int64(input.GrandTotal)
-		input.AmountFromCash = 0
-	case "CASH":
-		input.AmountFromCash = int64(input.GrandTotal)
-		input.AmountFromOwner = 0
-	case "SPLIT":
-		if input.AmountFromCash+input.AmountFromOwner != int64(input.GrandTotal) {
-			tx.Rollback()
-			return nil, fmt.Errorf("split total mismatch: cash(%d) + owner(%d) != total(%d)",
-				input.AmountFromCash, input.AmountFromOwner, input.GrandTotal)
-		}
-	}
-
-	if err := tx.Create(input).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	// 2. CASHBOOK LOGIC
-	var lastEntry models.Cashbook
-	tx.Order("id desc").Limit(1).Find(&lastEntry)
-	runningBalance := lastEntry.Balance
-	now := time.Now()
-
-	// A. Owner Injection (Money In)
-	if input.AmountFromOwner > 0 {
-		runningBalance += input.AmountFromOwner
-		tx.Create(&models.Cashbook{
-			TransactionDate: now,
-			TransactionType: "OWNER_INJECTION",
-			PaymentMethod:   "CASH",
-			ReferenceID:     input.ID,
-			Description:     fmt.Sprintf("Owner Funding for Purchase %s", input.ID),
-			Debit:           input.AmountFromOwner,
-			Balance:         runningBalance,
-			CreatedAt:       now,
-		})
-	}
-
-	// B. Purchase Payment (Money Out)
-	runningBalance -= int64(input.GrandTotal)
-	tx.Create(&models.Cashbook{
-		TransactionDate: now,
-		TransactionType: "PURCHASE",
-		PaymentMethod:   input.PaymentSource,
-		ReferenceID:     input.ID,
-		Description:     fmt.Sprintf("Payment for Purchase %s (Cash: %d, Owner: %d)", input.ID, input.AmountFromCash, input.AmountFromOwner),
-		Credit:          int64(input.GrandTotal),
-		Balance:         runningBalance,
-		CreatedAt:       now,
-	})
-	// 3. DAILY SUMMARY SYNC
-	todayStr := now.Format("2006-01-02")
-	var summary models.DailySummaries
-
-	// Try to find today's summary first
-	err := tx.Where("DATE(summary_date) = ?", todayStr).First(&summary).Error
-
-	if err == nil {
-		// CASE A: Summary exists - Update it
-		// We use Expr to decrement the cash_total correctly
-		tx.Model(&summary).Updates(map[string]interface{}{
-			"closing_balance": runningBalance,
-			"cash_total":      gorm.Expr("cash_total - ?", input.AmountFromCash),
-		})
-	} else {
-		// CASE B: First transaction of the day - Create it
-		var lastSum models.DailySummaries
-		tx.Order("summary_date desc").Limit(1).Find(&lastSum)
-
-		openingVal := lastSum.ClosingBalance
-		if openingVal == 0 {
-			openingVal = 5000
-		}
-
-		// Create the record for today
-		tx.Create(&models.DailySummaries{
-			SummaryDate:    now,
-			OpeningBalance: openingVal,
-			ClosingBalance: runningBalance,
-			CashTotal:      -input.AmountFromCash, // Starting with this purchase deduction
-			IsClosed:       false,
-		})
-	}
-
-	// 4. STOCK & HISTORY
-	for i := range input.PurchaseDetails {
-		pd := &input.PurchaseDetails[i]
-		pd.PurchaseId = input.ID
-
-		util.AddStockMovement(tx, pd.ProductId, pd.ProductUnitId, pd.Qty, "increase")
-
-		tx.Create(&models.ItemTransaction{
-			ProductId: pd.ProductId, TranType: "PURCHASE", InQty: pd.Qty,
-			Uom: pd.Uom, ReferenceNo: input.ID, CreatedAt: now,
-		})
-
-		r.updatePurchasePrice(tx, pd.ProductId, pd.Price, pd.ProductUnitId)
-	}
-
-	return input, tx.Commit().Error
-}
-
-func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+func (r *PurchaseRepository) CreateOLD(input *models.Purchase) (*models.Purchase, error) {
 	tx := r.db.Begin()
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -355,6 +241,143 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 	}
 
 	return input, tx.Commit().Error
+}
+
+func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// --- 0. DATE & INITIALIZATION ---
+		tranTime := input.PurchaseDate
+		tranDateStr := tranTime.Format("2006-01-02")
+
+		// --- 1. PAYMENT VALIDATION ---
+		switch input.PaymentSource {
+		case "OWNER":
+			input.AmountFromOwner = int64(input.GrandTotal)
+			input.AmountFromCash = 0
+			input.PaidAmount = int64(input.GrandTotal)
+			input.PaymentStatus = "PAID"
+		case "CASH":
+			input.AmountFromCash = int64(input.GrandTotal)
+			input.AmountFromOwner = 0
+			input.PaidAmount = int64(input.GrandTotal)
+			input.PaymentStatus = "PAID"
+		case "DEBT":
+			input.AmountFromCash = 0
+			input.AmountFromOwner = 0
+			input.PaidAmount = 0
+			input.PaymentStatus = "PENDING"
+		case "SPLIT":
+			input.PaidAmount = input.AmountFromCash + input.AmountFromOwner
+			if input.PaidAmount >= int64(input.GrandTotal) {
+				input.PaymentStatus = "PAID"
+			} else if input.PaidAmount > 0 {
+				input.PaymentStatus = "PARTIAL"
+			} else {
+				input.PaymentStatus = "PENDING"
+			}
+		}
+		input.BalanceAmount = int64(input.GrandTotal) - input.PaidAmount
+
+		if err := tx.Create(input).Error; err != nil {
+			return err
+		}
+
+		// --- 2. ANCHOR LOGIC (Physical Drawer Tracking) ---
+		var summary models.DailySummaries
+		tx.Where("DATE(summary_date) = ? AND is_closed = ?", tranDateStr, false).First(&summary)
+
+		var startingBalance int64
+		if summary.ID == 0 {
+			var lastSum models.DailySummaries
+			tx.Order("summary_date desc").First(&lastSum)
+			startingBalance = lastSum.ClosingBalance
+			if startingBalance < 5000 {
+				startingBalance = 5000
+			}
+		} else {
+			startingBalance = summary.ClosingBalance
+		}
+
+		currentRunningBalance := startingBalance
+
+		// --- 3. CASHBOOK LOGIC ---
+		if input.PaymentSource == "DEBT" {
+			tx.Create(&models.Cashbook{
+				TransactionDate: tranTime,
+				TransactionType: "PURCHASE_DEBT",
+				ReferenceID:     input.ID,
+				Description:     fmt.Sprintf("Inventory Received on Credit: %s", input.ID),
+				Balance:         currentRunningBalance,
+				PaymentMethod:   "DEBT",
+			})
+		} else {
+			// A. Record Owner Injection if they provided cash
+			if input.AmountFromOwner > 0 {
+				currentRunningBalance += input.AmountFromOwner
+				tx.Create(&models.Cashbook{
+					TransactionDate: tranTime,
+					TransactionType: "OWNER_INJECTION",
+					ReferenceID:     input.ID,
+					Description:     fmt.Sprintf("Owner Funding for Purchase %s", input.ID),
+					Debit:           input.AmountFromOwner,
+					Balance:         currentRunningBalance,
+				})
+			}
+			// B. Record the Purchase (Cash Out)
+			if input.PaidAmount > 0 {
+				currentRunningBalance -= input.PaidAmount
+				tx.Create(&models.Cashbook{
+					TransactionDate: tranTime,
+					TransactionType: "PURCHASE",
+					PaymentMethod:   input.PaymentSource,
+					ReferenceID:     input.ID,
+					Description:     fmt.Sprintf("Cash Out for Purchase %s", input.ID),
+					Credit:          input.PaidAmount,
+					Balance:         currentRunningBalance,
+				})
+			}
+		}
+
+		// --- 4. DAILY SUMMARY SYNC ---
+		// Note: We only decrease 'closing_balance' by the amount taken FROM CASH
+		// If owner paid, injection (debit) and purchase (credit) cancel each other out.
+		// netCashImpact := input.AmountFromOwner - input.AmountFromCash // This is usually negative or zero
+
+		if summary.ID != 0 {
+			// Update existing row
+			if err := tx.Model(&summary).Updates(map[string]interface{}{
+				"closing_balance": currentRunningBalance,
+				"cash_total":      gorm.Expr("cash_total - ?", input.AmountFromCash),
+			}).Error; err != nil {
+				return err // This triggers the tx.Rollback()
+			}
+		} else {
+			// Create new row
+			if err := tx.Create(&models.DailySummaries{
+				SummaryDate:    tranTime,
+				OpeningBalance: startingBalance,
+				ClosingBalance: currentRunningBalance,
+				CashTotal:      -input.AmountFromCash,
+				IsClosed:       false,
+			}).Error; err != nil {
+				return err // This triggers the tx.Rollback()
+			}
+		}
+
+		// --- 5. STOCK & HISTORY ---
+		for i := range input.PurchaseDetails {
+			pd := &input.PurchaseDetails[i]
+			pd.PurchaseId = input.ID
+			util.AddStockMovement(tx, pd.ProductId, pd.ProductUnitId, pd.Qty, "increase")
+			tx.Create(&models.ItemTransaction{
+				ProductId: pd.ProductId, TranType: "PURCHASE", InQty: pd.Qty,
+				Uom: pd.UnitName, ReferenceNo: input.ID, CreatedAt: tranTime,
+			})
+			r.updatePurchasePrice(tx, pd.ProductId, pd.Price, pd.ProductUnitId)
+		}
+		return nil
+	})
+	return input, err
 }
 
 func (r *PurchaseRepository) updatePurchasePrice(tx *gorm.DB, productId string, unitPrice int, productUnitId string) error {
@@ -594,7 +617,7 @@ func (r *PurchaseRepository) GetPurchasesByDate(date time.Time) ([]models.Purcha
 	return purchases, nil
 }
 
-func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) error {
+func (r *PurchaseRepository) PayOffPurchaseDebtOLD(paymentData PaymentRequest) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var po models.Purchase
 		// 1. Get PO and Lock for consistency
@@ -647,6 +670,86 @@ func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) erro
 		return tx.Model(&models.DailySummaries{}).
 			Where("DATE(summary_date) = ? AND is_closed = ?", summaryDate, false).
 			Update("expense_total", gorm.Expr("expense_total + ?", paymentData.Amount)).Error
+	})
+}
+
+func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var po models.Purchase
+		// 1. Get PO and Lock for consistency
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&po, "id = ?", paymentData.PurchaseId).Error; err != nil {
+			return err
+		}
+
+		// 2. Update PO Math & Status
+		po.PaidAmount += paymentData.Amount
+		po.BalanceAmount = po.GrandTotal - po.PaidAmount
+
+		if po.BalanceAmount <= 0 {
+			po.PaymentStatus = "PAID"
+			po.BalanceAmount = 0
+		} else {
+			po.PaymentStatus = "PARTIAL" // Changed from PENDING to PARTIAL for accuracy
+		}
+
+		if err := tx.Save(&po).Error; err != nil {
+			return err
+		}
+
+		// --- 3. ANCHOR LOGIC (Find Current Drawer State) ---
+		summaryDate := paymentData.PaymentDate.Format("2006-01-02")
+		var summary models.DailySummaries
+
+		err := tx.Where("DATE(summary_date) = ? AND is_closed = ?", summaryDate, false).First(&summary).Error
+
+		var startingBalance int64
+		if err != nil {
+			// First transaction of the day - look back
+			var lastSum models.DailySummaries
+			tx.Order("summary_date desc").First(&lastSum)
+			startingBalance = lastSum.ClosingBalance
+			if startingBalance < 5000 {
+				startingBalance = 5000
+			}
+		} else {
+			startingBalance = summary.ClosingBalance
+		}
+
+		// --- 4. CASHBOOK ENTRY ---
+		// Since it's OWNER_CASH, the drawer balance doesn't actually decrease.
+		// We record the transaction so Ma Zin sees the history, but Balance stays at startingBalance.
+		cashbookEntry := models.Cashbook{
+			TransactionDate: paymentData.PaymentDate,
+			TransactionType: "PURCHASE_PAYMENT",
+			ReferenceID:     po.ID,
+			Description:     fmt.Sprintf("Debt Payoff for %s. (Paid by Owner). Remaining Debt: %d", po.ID, po.BalanceAmount),
+			Debit:           0,
+			Credit:          paymentData.Amount,
+			// Since PaymentMethod is OWNER_CASH, the money didn't come from the drawer.
+			// Balance remains exactly what it was before this payment.
+			Balance:       startingBalance,
+			PaymentMethod: "OWNER_CASH",
+			CreatedAt:     time.Now(),
+		}
+
+		if err := tx.Create(&cashbookEntry).Error; err != nil {
+			return err
+		}
+
+		// --- 5. DAILY SUMMARY UPDATE ---
+		// We update expense_total so the profit/loss is correct.
+		// But we DO NOT touch closing_balance or cash_total because it was Owner Cash.
+		if summary.ID != 0 {
+			return tx.Model(&summary).Update("expense_total", gorm.Expr("expense_total + ?", paymentData.Amount)).Error
+		} else {
+			return tx.Create(&models.DailySummaries{
+				SummaryDate:    paymentData.PaymentDate,
+				OpeningBalance: startingBalance,
+				ClosingBalance: startingBalance, // No change to drawer
+				ExpenseTotal:   paymentData.Amount,
+				IsClosed:       false,
+			}).Error
+		}
 	})
 }
 

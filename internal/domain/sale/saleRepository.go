@@ -112,7 +112,7 @@ ORDER BY pp.product_id ASC
 	return result, nil
 }
 
-func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
+func (r *SaleRepository) CreateOLD(input *models.Sale) (*models.Sale, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Core Financial Logic
 		input.NetTotal = input.GrandTotal
@@ -243,7 +243,149 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	return input, err
 }
 
-func (r *SaleRepository) CollectDebt(payment *models.Payment, saleID string) error {
+func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// --- 1. CORE FINANCIAL LOGIC ---
+		input.NetTotal = input.GrandTotal
+		input.ReturnAmount = 0
+		input.Status = "NORMAL"
+
+		// Calculate Debt (Balance Amount)
+		input.BalanceAmount = input.GrandTotal - input.PaidAmount
+
+		if input.PaidAmount <= 0 {
+			input.PaymentStatus = "UNPAID"
+			input.PaidAmount = 0
+		} else if input.PaidAmount < input.GrandTotal {
+			input.PaymentStatus = "PARTIAL"
+		} else {
+			input.PaymentStatus = "PAID"
+			input.BalanceAmount = 0
+		}
+
+		if err := tx.Create(input).Error; err != nil {
+			return err
+		}
+
+		// --- 2. DAILY SUMMARY ANCHOR LOGIC ---
+		// We need the current cash state to calculate the correct Cashbook balance
+		todayStr := input.SaleDate.Format("2006-01-02")
+		var summary models.DailySummaries
+
+		// Try to find an open summary for today
+		err := tx.Where("DATE(summary_date) = ? AND is_closed = ?", todayStr, false).First(&summary).Error
+
+		var startingBalance int64
+		if err != nil {
+			// No summary for today yet, fetch previous day's closing
+			var lastSum models.DailySummaries
+			tx.Order("summary_date desc").First(&lastSum)
+
+			startingBalance = lastSum.ClosingBalance
+			// Safety Floor: Don't start a new day with negative cash
+			if startingBalance < 5000 {
+				startingBalance = 5000
+			}
+		} else {
+			// Summary exists, use its current closing_balance as the anchor
+			startingBalance = summary.ClosingBalance
+		}
+
+		// --- 3. CASHBOOK LOGIC ---
+		var cashMovement int64 = 0
+		// Capture cash if it's a cash sale OR a debt sale with an upfront partial payment
+		if input.PaymentMethod == "CASH" || (input.PaymentMethod == "DEBT" && input.PaidAmount > 0) {
+			cashMovement = input.PaidAmount
+		}
+
+		cashbookStatus := ""
+		switch input.PaymentStatus {
+		case "PAID":
+			cashbookStatus = "FULLY PAID"
+		case "PARTIAL":
+			cashbookStatus = "PARTIAL PAID"
+		case "UNPAID":
+			cashbookStatus = "DEBT"
+		}
+
+		// Only create a cashbook entry if money actually moved
+		if cashMovement > 0 {
+			cashbookEntry := models.Cashbook{
+				TransactionDate:   input.SaleDate,
+				TransactionType:   "SALE",
+				PaymentMethod:     input.PaymentMethod,
+				ReferenceID:       input.ID,
+				Description:       fmt.Sprintf("Sale #%v (%s)", input.ID, cashbookStatus),
+				TransactionStatus: cashbookStatus,
+				Debit:             cashMovement,
+				Credit:            0,
+				Balance:           startingBalance + cashMovement, // Calculating based on Summary Anchor
+				CreatedAt:         time.Now(),
+			}
+
+			if err := tx.Create(&cashbookEntry).Error; err != nil {
+				return err
+			}
+		}
+
+		// --- 4. UPDATE DAILY SUMMARY ---
+		var kpayAdd int64 = 0
+		if input.PaymentMethod == "KPAY" {
+			kpayAdd = input.PaidAmount
+		}
+
+		if summary.ID != 0 {
+			// Update existing summary
+			err = tx.Model(&summary).Updates(map[string]interface{}{
+				"closing_balance": gorm.Expr("closing_balance + ?", cashMovement),
+				"cash_total":      gorm.Expr("cash_total + ?", cashMovement),
+				"k_pay_total":     gorm.Expr("k_pay_total + ?", kpayAdd),
+				"debt_total":      gorm.Expr("debt_total + ?", input.BalanceAmount),
+				"total_sale":      gorm.Expr("total_sale + ?", input.GrandTotal),
+			}).Error
+		} else {
+			// Create new summary for the new day
+			err = tx.Create(&models.DailySummaries{
+				SummaryDate:    input.SaleDate,
+				OpeningBalance: startingBalance,
+				ClosingBalance: startingBalance + cashMovement,
+				CashTotal:      cashMovement,
+				KPayTotal:      kpayAdd,
+				DebtTotal:      input.BalanceAmount,
+				TotalSale:      input.GrandTotal,
+				IsClosed:       false,
+			}).Error
+		}
+		if err != nil {
+			return err
+		}
+
+		// --- 5. INVENTORY & CUSTOMER LOGIC ---
+		for i := range input.SaleDetails {
+			sd := &input.SaleDetails[i]
+			sd.SaleId = input.ID
+
+			if err := util.AddStockMovement(tx, sd.ProductId, sd.ProductUnitId, sd.Qty, "decrease"); err != nil {
+				return err
+			}
+
+			tx.Create(&models.ItemTransaction{
+				ProductId:   sd.ProductId,
+				TranType:    "SALE",
+				OutQty:      sd.Qty,
+				Uom:         sd.Uom,
+				ReferenceNo: input.ID,
+				CreatedAt:   time.Now(),
+			})
+		}
+
+		return util.AdjustCustomerStats(tx, input.CustomerId, input.GrandTotal, input.BalanceAmount > 0)
+	})
+
+	return input, err
+}
+
+func (r *SaleRepository) CollectDebtOLD(payment *models.Payment, saleID string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Record the Payment History
 		if err := tx.Create(payment).Error; err != nil {
@@ -339,6 +481,115 @@ func (r *SaleRepository) CollectDebt(payment *models.Payment, saleID string) err
 
 		// 4. Update Customer's Outstanding Balance logic
 		// passing 'false' for isDebt because this is a payment (reduction)
+		return util.AdjustCustomerStats(tx, sale.CustomerId, payment.Amount, false)
+	})
+}
+
+func (r *SaleRepository) CollectDebt(payment *models.Payment, saleID string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Record the Payment History
+		if err := tx.Create(payment).Error; err != nil {
+			return fmt.Errorf("failed to create payment record: %v", err)
+		}
+
+		// 2. Update Sale Record
+		var sale models.Sale
+		if err := tx.First(&sale, "id = ?", saleID).Error; err != nil {
+			return err
+		}
+
+		newPaidAmount := sale.PaidAmount + payment.Amount
+		newBalanceAmount := sale.GrandTotal - newPaidAmount
+
+		newStatus := "PARTIAL"
+		if newPaidAmount >= sale.GrandTotal {
+			newStatus = "PAID"
+			newBalanceAmount = 0
+		}
+
+		if err := tx.Model(&sale).Updates(map[string]interface{}{
+			"paid_amount":    newPaidAmount,
+			"balance_amount": newBalanceAmount,
+			"payment_status": newStatus,
+		}).Error; err != nil {
+			return err
+		}
+
+		// --- 3. ANCHOR LOGIC (Physical Drawer Tracking) ---
+		pMethod := strings.ToUpper(payment.PaymentMethod)
+		var cashIncrement int64 = 0
+		var kpayIncrement int64 = 0
+
+		if pMethod == "CASH" {
+			cashIncrement = payment.Amount
+		} else if pMethod == "KPAY" {
+			kpayIncrement = payment.Amount
+		}
+
+		// Get the Anchor from Daily Summary to prevent "Broken Chain" balances
+		tranDateStr := payment.PaymentDate.Format("2006-01-02")
+		var summary models.DailySummaries
+
+		err := tx.Where("DATE(summary_date) = ? AND is_closed = ?", tranDateStr, false).First(&summary).Error
+
+		var startingBalance int64
+		if err != nil {
+			// First transaction of the day
+			var lastSum models.DailySummaries
+			tx.Order("summary_date desc").First(&lastSum)
+			startingBalance = lastSum.ClosingBalance
+			// Safety Floor
+			if startingBalance < 5000 {
+				startingBalance = 5000
+			}
+		} else {
+			// Mid-day transaction
+			startingBalance = summary.ClosingBalance
+		}
+
+		// --- CASHBOOK ENTRY ---
+		// We only record in Cashbook if physical CASH was involved
+		// (Optional: You can record KPAY too, but it won't affect the Balance)
+		cashEntry := models.Cashbook{
+			TransactionDate: payment.PaymentDate,
+			TransactionType: "DEBT_PAYMENT",
+			ReferenceID:     saleID,
+			Description:     fmt.Sprintf("Debt Collected (Method: %s): %s", pMethod, saleID),
+			Debit:           payment.Amount,
+			Balance:         startingBalance + cashIncrement, // Anchor-based calculation
+			PaymentMethod:   pMethod,
+			CreatedAt:       time.Now(),
+		}
+		if err := tx.Create(&cashEntry).Error; err != nil {
+			return err
+		}
+
+		// --- DAILY SUMMARY SYNC ---
+		if summary.ID != 0 {
+			// Update existing row
+			err = tx.Model(&summary).Updates(map[string]interface{}{
+				"closing_balance":      gorm.Expr("closing_balance + ?", cashIncrement),
+				"cash_total":           gorm.Expr("cash_total + ?", cashIncrement),
+				"k_pay_total":          gorm.Expr("k_pay_total + ?", kpayIncrement),
+				"debt_collected_total": gorm.Expr("debt_collected_total + ?", payment.Amount),
+			}).Error
+		} else {
+			// Create new row
+			err = tx.Create(&models.DailySummaries{
+				SummaryDate:        payment.PaymentDate,
+				OpeningBalance:     startingBalance,
+				ClosingBalance:     startingBalance + cashIncrement,
+				CashTotal:          cashIncrement,
+				KPayTotal:          kpayIncrement,
+				DebtCollectedTotal: payment.Amount,
+				IsClosed:           false,
+			}).Error
+		}
+		if err != nil {
+			return err
+		}
+
+		// 4. Update Customer's Outstanding Balance logic
 		return util.AdjustCustomerStats(tx, sale.CustomerId, payment.Amount, false)
 	})
 }
