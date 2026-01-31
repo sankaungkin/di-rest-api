@@ -144,6 +144,7 @@ func (r *CashbookRepository) GetLedger(startDate, endDate string) ([]models.Cash
 	return entries, err
 }
 
+// TODO: refactor yourself later
 func (r *CashbookRepository) CloseDay(today time.Time) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		todayStr := today.Format("2006-01-02")
@@ -527,7 +528,7 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 
 	// MATH FIX: Total Cash Inflow = (Sales Paid - KPay) + Debt Collected
 	// This solves the 469,300 vs 819,300 discrepancy.
-	summary.TotalCashInflow = (summary.TotalCashSales - summary.TotalKPaySales) + debtCollected
+	summary.TotalCashInflow = summary.TotalCashSales + debtCollected
 
 	// // 4. GLOBAL DEBT (Cumulative)
 	// r.db.Model(&models.Purchase{}).Select("COALESCE(SUM(grand_total - paid_amount), 0)").
@@ -554,22 +555,24 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	// }
 
 	// 5. CURRENT DRAWER BALANCE (Anchor to Daily Summary)
-	var currentDailyBalance int64
-	err := r.db.Model(&models.DailySummaries{}).
-		Select("closing_balance").
-		Where("DATE(summary_date) = ?", todayStr).
-		Scan(&currentDailyBalance).Error
+	// var currentDailyBalance int64
+	// err := r.db.Model(&models.DailySummaries{}).
+	// 	Select("closing_balance").
+	// 	Where("DATE(summary_date) = ?", todayStr).
+	// 	Scan(&currentDailyBalance).Error
+	summary.CurrentDrawerBalance = (summary.TotalCashSales + summary.TotalDebtCollected) - summary.TotalWithdrawals
 
-	if err != nil || currentDailyBalance == 0 {
-		// Fallback if no transactions happened yet today
-		summary.CurrentDrawerBalance = openingBalance
-	} else {
-		summary.CurrentDrawerBalance = currentDailyBalance
-	}
+	// if err != nil || currentDailyBalance == 0 {
+	// 	// Fallback if no transactions happened yet today
+	// 	summary.CurrentDrawerBalance = openingBalance
+	// } else {
+	// 	summary.CurrentDrawerBalance = currentDailyBalance
+	// }
 
 	// 6. CLOSING PROJECTION
 	// Subtract Withdrawals AND any Cash-based Purchase/Expenses
-	summary.ClosingBalance = summary.OpeningBalance + summary.TotalCashInflow - summary.TotalWithdrawals - cashOutflows
+	// summary.ClosingBalance = summary.OpeningBalance + summary.TotalCashInflow - summary.TotalWithdrawals - cashOutflows
+	summary.ClosingBalance = 0
 
 	return &summary, nil
 }

@@ -39,7 +39,7 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		//TAKE NOTE don't put the space between the AllowOrigins *****************************
-		AllowOrigins:     "http://localhost:4200,http://192.168.100.7:4200,http://127.0.0.1:4200,http://192.168.100.7:5555,http://localhost:5555,http://127.0.0.1:5555,http://192.168.100.3:5555,http://localhost:63651", // your frontend addresses
+		AllowOrigins:     "http://localhost:4200,http://192.168.100.7:4200,http://127.0.0.1:4200,http://192.168.100.7:5555,http://localhost:5555,http://127.0.0.1:5555,http://192.168.100.3:5555,http://localhost:63651,http://localhost:8888,http://127.0.0.1:8888", // your frontend addresses
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		ExposeHeaders:    "Content-Length",
