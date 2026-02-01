@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/cashbook"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
@@ -28,11 +29,12 @@ type SaleServiceInterface interface {
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
-	CollectDebt(payment *models.Payment, saleID string) error
+	CollectDebt(payment *models.PaymentRecord, saleID string) error
 }
 
 type SaleService struct {
-	repo SaleRepositoryInterface
+	repo     SaleRepositoryInterface
+	cashRepo cashbook.CashbookRepositoryInterface
 }
 
 var (
@@ -40,11 +42,12 @@ var (
 	svcOnce     sync.Once
 )
 
-func NewSaleService(repo SaleRepositoryInterface) SaleServiceInterface {
+func NewSaleService(
+	repo SaleRepositoryInterface, cashRepo cashbook.CashbookRepositoryInterface) SaleServiceInterface {
 	log.Println(util.Blue + "SaleService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
-		svcInstance = &SaleService{repo: repo}
+		svcInstance = &SaleService{repo: repo, cashRepo: cashRepo}
 	})
 	return svcInstance
 }
@@ -113,7 +116,7 @@ func (s *SaleService) ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleRet
 	return s.repo.ReturnSaleItems(returnItem)
 }
 
-func (s *SaleService) CollectDebt(payment *models.Payment, saleID string) error {
+func (s *SaleService) CollectDebt(payment *models.PaymentRecord, saleID string) error {
 	return s.repo.CollectDebt(payment, saleID)
 }
 

@@ -9,6 +9,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/sankangkin/di-rest-api/internal/database"
+	"github.com/sankangkin/di-rest-api/internal/domain/cashbook"
 	"github.com/sankangkin/di-rest-api/internal/domain/sale"
 )
 
@@ -19,12 +20,13 @@ func InitSaleDI() (*sale.SaleHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	saleRepositoryInterface := sale.NewSaleRepository(db)
-	saleServiceInterface := sale.NewSaleService(saleRepositoryInterface)
+	cashbookRepositoryInterface := cashbook.NewCashbookRepository(db)
+	saleRepositoryInterface := sale.NewSaleRepository(db, cashbookRepositoryInterface)
+	saleServiceInterface := sale.NewSaleService(saleRepositoryInterface, cashbookRepositoryInterface)
 	saleHandler := sale.NewSaleHandler(saleServiceInterface)
 	return saleHandler, nil
 }
 
 // wire.go:
 
-var SaleWireSet = wire.NewSet(database.NewDB, sale.NewSaleRepository, sale.NewSaleService, sale.NewSaleHandler)
+var SaleWireSet = wire.NewSet(database.NewDB, cashbook.NewCashbookRepository, sale.NewSaleRepository, sale.NewSaleService, sale.NewSaleHandler)

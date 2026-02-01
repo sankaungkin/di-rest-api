@@ -1,7 +1,6 @@
 package sale
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -561,14 +560,14 @@ func (h *SaleHandler) GetHistoricalProfitData(c *fiber.Ctx) error {
 // @Router /api/v1/sales/{id}/collect-debt [post]
 func (h *SaleHandler) CollectDebt(c *fiber.Ctx) error {
 	saleID := c.Params("id")
-	var payment models.Payment
+	var payment models.PaymentRecord
 
 	if err := c.BodyParser(&payment); err != nil {
 		return c.Status(400).JSON(fiber.Map{"message": err.Error()})
 	}
 
-	// ✅ Fix 1: Generate a unique ID for the payment record
-	payment.ID = fmt.Sprintf("PAY-%d", time.Now().UnixNano())
+	// ✅ Fix 1: Generate a unique numeric ID for the payment record (uint)
+	payment.ID = uint(time.Now().UnixNano())
 
 	// ✅ Fix 2: Set the current time if not provided by frontend
 	if payment.PaymentDate.IsZero() {

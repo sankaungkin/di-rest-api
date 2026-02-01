@@ -80,7 +80,7 @@ func NewDB() (*gorm.DB, error) {
 			&models.Supplier{},
 			&models.UnitOfMeasure{},
 			&models.UnitConversion{},
-			&models.Payment{},
+			&models.PaymentRecord{},
 			&models.Product{},
 			&models.ProductPrice{},
 			&models.ProductPriceHistory{},

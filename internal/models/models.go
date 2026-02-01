@@ -256,17 +256,14 @@ type Sale struct {
 	CreatedAt     int64        `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt     int64        `gorm:"autoUpdateTime:milli" json:"-"`
 }
-
-type Payment struct {
-	ID            string    `gorm:"primaryKey" json:"id"`
-	CustomerID    uint      `json:"customerId"`
+type PaymentRecord struct {
+	ID            uint      `gorm:"primaryKey" json:"id"`
+	ReferenceID   string    `gorm:"index" json:"referenceId"` // SaleID or PurchaseID
 	Amount        int64     `json:"amount"`
 	PaymentDate   time.Time `json:"paymentDate"`
-	PaymentMethod string    `validate:"required" json:"paymentMethod"` // CASH or KPAY
-	Remark        string    `json:"remark"`
-	CreatedAt     time.Time `json:"createdAt"`
+	PaymentMethod string    `json:"paymentMethod"` // CASH, KPAY
+	Type          string    `json:"type"`          // "RECEIPT" (from customer) or "PAYMENT" (to supplier)
 }
-
 type SaleDetail struct {
 	gorm.Model
 	ID          uint   `gorm:"primaryKey:autoIncrement" json:"id"`
@@ -319,6 +316,7 @@ type DailySummaries struct {
 	DebtTotal          int64     `json:"debtTotal"`
 	DebtCollected      int64     `json:"debtCollected"`
 	ExpenseTotal       int64     `json:"expenseTotal"`
+	TotalCashSales     int64     `json:"totalCashSales"`
 	CashTotal          int64     `json:"cashTotal"`
 	TotalSale          int64     `json:"totalSale"`
 	TotalWithdrawal    int64     `json:"totalWithdrawal"`
