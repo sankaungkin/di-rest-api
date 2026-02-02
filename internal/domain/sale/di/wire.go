@@ -22,10 +22,6 @@ var SaleWireSet = wire.NewSet(
 	// 1. Add the Cashbook repository constructor
 	cashbook.NewCashbookRepository,
 
-	// 2. Bind the concrete struct to the interface so Wire knows they are the same
-	// Replace *cashbook.CashbookRepository with whatever your actual struct name is
-	// wire.Bind(new(cashbook.CashbookRepositoryInterface), new(*cashbook.CashbookRepository)),
-	// cashbook.NewCashbookRepository,
 	sale.NewSaleRepository,
 	sale.NewSaleService,
 	sale.NewSaleHandler,

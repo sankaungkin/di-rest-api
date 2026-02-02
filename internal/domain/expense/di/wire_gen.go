@@ -9,6 +9,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/sankangkin/di-rest-api/internal/database"
+	"github.com/sankangkin/di-rest-api/internal/domain/cashbook"
 	"github.com/sankangkin/di-rest-api/internal/domain/expense"
 )
 
@@ -19,12 +20,13 @@ func InitExpense() (*expense.ExpenseHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	expenseRepositoryInterface := expense.NewExpenseRepository(db)
-	expenseServiceInterface := expense.NewExpenseService(expenseRepositoryInterface)
+	cashbookRepositoryInterface := cashbook.NewCashbookRepository(db)
+	expenseRepositoryInterface := expense.NewExpenseRepository(db, cashbookRepositoryInterface)
+	expenseServiceInterface := expense.NewExpenseService(expenseRepositoryInterface, cashbookRepositoryInterface)
 	expenseHandler := expense.NewExpenseHandler(expenseServiceInterface)
 	return expenseHandler, nil
 }
 
 // wire.go:
 
-var ExpenseWireSet = wire.NewSet(database.NewDB, expense.NewExpenseRepository, expense.NewExpenseService, expense.NewExpenseHandler)
+var ExpenseWireSet = wire.NewSet(database.NewDB, cashbook.NewCashbookRepository, expense.NewExpenseRepository, expense.NewExpenseService, expense.NewExpenseHandler)

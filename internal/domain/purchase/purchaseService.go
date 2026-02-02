@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/cashbook"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
@@ -28,7 +29,8 @@ type PurchaseServiceInterface interface {
 }
 
 type PurchaseService struct {
-	repo PurchaseRepositoryInterface
+	repo     PurchaseRepositoryInterface
+	cashRepo cashbook.CashbookRepositoryInterface
 }
 
 var (
@@ -36,11 +38,11 @@ var (
 	svcOnce     sync.Once
 )
 
-func NewSaleService(repo PurchaseRepositoryInterface) PurchaseServiceInterface {
+func NewSaleService(repo PurchaseRepositoryInterface, cashRepo cashbook.CashbookRepositoryInterface) PurchaseServiceInterface {
 	log.Println(util.Magenta + "SaleService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
-		svcInstance = &PurchaseService{repo: repo}
+		svcInstance = &PurchaseService{repo: repo, cashRepo: cashRepo}
 	})
 	return svcInstance
 }

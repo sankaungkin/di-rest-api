@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/cashbook"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
@@ -32,7 +33,8 @@ type PurchaseRepositoryInterface interface {
 }
 
 type PurchaseRepository struct {
-	db *gorm.DB
+	db       *gorm.DB
+	cashRepo cashbook.CashbookRepositoryInterface
 }
 
 var (
@@ -40,10 +42,10 @@ var (
 	repoOnce     sync.Once
 )
 
-func NewSaleRepository(db *gorm.DB) PurchaseRepositoryInterface {
+func NewSaleRepository(db *gorm.DB, cashRepo cashbook.CashbookRepositoryInterface) PurchaseRepositoryInterface {
 	log.Println(util.Magenta + "SaleRepository constructor is called" + util.Reset)
 	repoOnce.Do(func() {
-		repoInstance = &PurchaseRepository{db: db}
+		repoInstance = &PurchaseRepository{db: db, cashRepo: cashRepo}
 	})
 	return repoInstance
 }
@@ -110,7 +112,7 @@ WHERE
 	return result, nil
 }
 
-func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+func (r *PurchaseRepository) CreateOLD(input *models.Purchase) (*models.Purchase, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		// --- 0. DATE & INITIALIZATION ---
 		tranTime := input.PurchaseDate
@@ -242,6 +244,130 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 				ProductId: pd.ProductId, TranType: "PURCHASE", InQty: pd.Qty,
 				Uom: pd.UnitName, ReferenceNo: input.ID, CreatedAt: tranTime,
 			})
+
+			r.updatePurchasePrice(tx, pd.ProductId, pd.Price, pd.ProductUnitId)
+		}
+		return nil
+	})
+	return input, err
+}
+
+func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, error) {
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// --- 1. INITIALIZATION & VALIDATION ---
+		tranTime := input.PurchaseDate
+		if tranTime.IsZero() {
+			tranTime = time.Now()
+		}
+		tranDateStr := tranTime.Format("2006-01-02")
+
+		// Set payment logic
+		switch input.PaymentSource {
+		case "OWNER":
+			input.AmountFromOwner = input.GrandTotal
+			input.AmountFromCash = 0
+			input.PaidAmount = input.GrandTotal
+			input.PaymentStatus = "PAID"
+		case "CASH":
+			input.AmountFromCash = input.GrandTotal
+			input.AmountFromOwner = 0
+			input.PaidAmount = input.GrandTotal
+			input.PaymentStatus = "PAID"
+		case "DEBT":
+			input.AmountFromCash = 0
+			input.AmountFromOwner = 0
+			input.PaidAmount = 0
+			input.PaymentStatus = "PENDING"
+		case "SPLIT":
+			input.PaidAmount = input.AmountFromCash + input.AmountFromOwner
+			if input.PaidAmount >= input.GrandTotal {
+				input.PaymentStatus = "PAID"
+			} else if input.PaidAmount > 0 {
+				input.PaymentStatus = "PARTIAL"
+			} else {
+				input.PaymentStatus = "PENDING"
+			}
+		}
+		input.BalanceAmount = input.GrandTotal - input.PaidAmount
+
+		if err := tx.Create(input).Error; err != nil {
+			return err
+		}
+
+		// --- 2. CASHBOOK INTEGRATION (Using specialized Repository) ---
+
+		// Scenario A: Inventory received on credit (No immediate cash impact)
+		if input.PaymentSource == "DEBT" {
+			debtEntry := &models.Cashbook{
+				TransactionDate: tranTime,
+				TransactionType: "PURCHASE_DEBT",
+				ReferenceID:     input.ID,
+				Description:     fmt.Sprintf("Inventory Received on Credit: %s", input.ID),
+				PaymentMethod:   "DEBT",
+			}
+			if err := r.cashRepo.CreateEntry(tx, debtEntry); err != nil {
+				return err
+			}
+		} else {
+			// Scenario B: Owner injects personal money to pay for the purchase
+			if input.AmountFromOwner > 0 {
+				injectionEntry := &models.Cashbook{
+					TransactionDate: tranTime,
+					TransactionType: "OWNER_INJECTION",
+					ReferenceID:     input.ID,
+					Description:     fmt.Sprintf("Owner Funding for Purchase %s", input.ID),
+					Debit:           input.AmountFromOwner, // Cash entering the business
+				}
+				if err := r.cashRepo.CreateEntry(tx, injectionEntry); err != nil {
+					return err
+				}
+			}
+
+			// Scenario C: Cash actually leaving the drawer
+			if input.PaidAmount > 0 {
+				outflowEntry := &models.Cashbook{
+					TransactionDate:   tranTime,
+					TransactionType:   "PURCHASE",
+					ReferenceID:       input.ID,
+					Description:       fmt.Sprintf("Cash Out for Purchase %s", input.ID),
+					Credit:            input.PaidAmount, // Cash leaving the business
+					PaymentMethod:     input.PaymentSource,
+					TransactionStatus: input.PaymentStatus,
+				}
+				if err := r.cashRepo.CreateEntry(tx, outflowEntry); err != nil {
+					return err
+				}
+			}
+		}
+
+		// --- 3. UPDATE DAILY SUMMARY (Non-Balance Metrics) ---
+		// CreateEntry already handled the closing_balance.
+		// We update the 'purchase' metric for the dashboard here.
+		if err := tx.Model(&models.DailySummaries{}).
+			Where("DATE(summary_date) = ?", tranDateStr).
+			Updates(map[string]interface{}{
+				"expense_total": gorm.Expr("expense_total + ?", input.AmountFromCash),
+			}).Error; err != nil {
+			// Note: If no summary exists, CreateEntry will have created one.
+			// But we should handle the case where it might be missing.
+		}
+
+		// --- 4. STOCK & ITEM TRANSACTIONS ---
+		for i := range input.PurchaseDetails {
+			pd := &input.PurchaseDetails[i]
+			pd.PurchaseId = input.ID
+
+			if err := util.AddStockMovement(tx, pd.ProductId, pd.ProductUnitId, pd.Qty, "increase"); err != nil {
+				return err
+			}
+
+			itemTxn := models.ItemTransaction{
+				ProductId: pd.ProductId, TranType: "PURCHASE", InQty: pd.Qty,
+				Uom: pd.UnitName, ReferenceNo: input.ID, CreatedAt: tranTime,
+			}
+			if err := tx.Create(&itemTxn).Error; err != nil {
+				return err
+			}
 
 			r.updatePurchasePrice(tx, pd.ProductId, pd.Price, pd.ProductUnitId)
 		}
@@ -487,87 +613,7 @@ func (r *PurchaseRepository) GetPurchasesByDate(date time.Time) ([]models.Purcha
 	return purchases, nil
 }
 
-func (r *PurchaseRepository) PayOffPurchaseDebtOLD(paymentData PaymentRequest) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		var po models.Purchase
-		// 1. Get PO and Lock for consistency
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&po, "id = ?", paymentData.PurchaseId).Error; err != nil {
-			return err
-		}
-
-		// 2. Update PO Math & Status
-		po.PaidAmount += paymentData.Amount
-		po.BalanceAmount = po.GrandTotal - po.PaidAmount
-
-		if po.BalanceAmount <= 0 {
-			po.PaymentStatus = "PAID"
-			po.BalanceAmount = 0
-		} else {
-			po.PaymentStatus = "PARTIAL" // Changed from PENDING to PARTIAL for accuracy
-		}
-
-		if err := tx.Save(&po).Error; err != nil {
-			return err
-		}
-
-		// --- 3. ANCHOR LOGIC (Find Current Drawer State) ---
-		summaryDate := paymentData.PaymentDate.Format("2006-01-02")
-		var summary models.DailySummaries
-
-		err := tx.Where("DATE(summary_date) = ? AND is_closed = ?", summaryDate, false).First(&summary).Error
-
-		var startingBalance int64
-		if err != nil {
-			// First transaction of the day - look back
-			var lastSum models.DailySummaries
-			tx.Order("summary_date desc").First(&lastSum)
-			startingBalance = lastSum.ClosingBalance
-			if startingBalance < 5000 {
-				startingBalance = 5000
-			}
-		} else {
-			startingBalance = summary.ClosingBalance
-		}
-
-		// --- 4. CASHBOOK ENTRY ---
-		// Since it's OWNER_CASH, the drawer balance doesn't actually decrease.
-		// We record the transaction so Ma Zin sees the history, but Balance stays at startingBalance.
-		cashbookEntry := models.Cashbook{
-			TransactionDate: paymentData.PaymentDate,
-			TransactionType: "PURCHASE_PAYMENT",
-			ReferenceID:     po.ID,
-			Description:     fmt.Sprintf("Debt Payoff for %s. (Paid by Owner). Remaining Debt: %d", po.ID, po.BalanceAmount),
-			Debit:           0,
-			Credit:          paymentData.Amount,
-			// Since PaymentMethod is OWNER_CASH, the money didn't come from the drawer.
-			// Balance remains exactly what it was before this payment.
-			Balance:       startingBalance,
-			PaymentMethod: "OWNER_CASH",
-			CreatedAt:     time.Now(),
-		}
-
-		if err := tx.Create(&cashbookEntry).Error; err != nil {
-			return err
-		}
-
-		// --- 5. DAILY SUMMARY UPDATE ---
-		// We update expense_total so the profit/loss is correct.
-		// But we DO NOT touch closing_balance or cash_total because it was Owner Cash.
-		if summary.ID != 0 {
-			return tx.Model(&summary).Update("expense_total", gorm.Expr("expense_total + ?", paymentData.Amount)).Error
-		} else {
-			return tx.Create(&models.DailySummaries{
-				SummaryDate:    paymentData.PaymentDate,
-				OpeningBalance: startingBalance,
-				ClosingBalance: startingBalance, // No change to drawer
-				ExpenseTotal:   paymentData.Amount,
-				IsClosed:       false,
-			}).Error
-		}
-	})
-}
-
-func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) error {
+func (r *PurchaseRepository) PayOffPurchaseDebtWithoutCreateEntry(paymentData PaymentRequest) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var po models.Purchase
 
@@ -649,6 +695,76 @@ func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) erro
 				IsClosed:       false,
 			}).Error
 		}
+	})
+}
+
+func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var po models.Purchase
+
+		// 1. GET PO AND LOCK (Prevent race conditions on balance)
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&po, "id = ?", paymentData.PurchaseId).Error; err != nil {
+			return err
+		}
+
+		// 2. UPDATE PURCHASE STATUS
+		po.PaidAmount += paymentData.Amount
+		po.BalanceAmount = po.GrandTotal - po.PaidAmount
+
+		if po.BalanceAmount <= 0 {
+			po.PaymentStatus = "PAID"
+			po.BalanceAmount = 0
+		} else {
+			po.PaymentStatus = "PARTIAL"
+		}
+
+		if err := tx.Save(&po).Error; err != nil {
+			return err
+		}
+
+		// 3. CASHBOOK INTEGRATION
+		// If "OWNER_CASH" is used, we must record the injection so the drawer math balances.
+		if paymentData.PaymentMethod == "OWNER_CASH" {
+			injection := &models.Cashbook{
+				TransactionDate: paymentData.PaymentDate,
+				TransactionType: "OWNER_INJECTION",
+				ReferenceID:     po.ID,
+				Description:     fmt.Sprintf("Owner Injection to pay Debt: %s", po.ID),
+				Debit:           paymentData.Amount, // Money into business
+			}
+			if err := r.cashRepo.CreateEntry(tx, injection); err != nil {
+				return err
+			}
+		}
+
+		// Now record the actual outflow
+		paymentEntry := &models.Cashbook{
+			TransactionDate:   paymentData.PaymentDate,
+			TransactionType:   "PURCHASE_PAYMENT",
+			ReferenceID:       po.ID,
+			Description:       fmt.Sprintf("Debt Payoff for %s. Rem: %d", po.ID, po.BalanceAmount),
+			Debit:             0,
+			Credit:            paymentData.Amount, // Money out of business
+			PaymentMethod:     paymentData.PaymentMethod,
+			TransactionStatus: po.PaymentStatus,
+		}
+
+		// CreateEntry handles all locking and DailySummary balance updates
+		if err := r.cashRepo.CreateEntry(tx, paymentEntry); err != nil {
+			return err
+		}
+
+		// 4. UPDATE DAILY SUMMARY METRICS
+		// Only count as expense if it actually came from business cash
+		if paymentData.PaymentMethod == "CASH" {
+			todayStr := paymentData.PaymentDate.Format("2006-01-02")
+			tx.Model(&models.DailySummaries{}).
+				Where("DATE(summary_date) = ?", todayStr).
+				Update("expense_total", gorm.Expr("expense_total + ?", paymentData.Amount))
+		}
+
+		return nil
 	})
 }
 

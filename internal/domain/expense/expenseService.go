@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sankangkin/di-rest-api/internal/domain/cashbook"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 )
@@ -14,7 +15,8 @@ type ExpenseServiceInterface interface {
 }
 
 type ExpenseService struct {
-	repo ExpenseRepositoryInterface
+	repo     ExpenseRepositoryInterface
+	cashRepo cashbook.CashbookRepositoryInterface
 }
 
 var (
@@ -22,11 +24,11 @@ var (
 	svcOnce     sync.Once
 )
 
-func NewExpenseService(repo ExpenseRepositoryInterface) ExpenseServiceInterface {
+func NewExpenseService(repo ExpenseRepositoryInterface, cashRepo cashbook.CashbookRepositoryInterface) ExpenseServiceInterface {
 	log.Println(util.Cyan + "ExpenseService constructor is called" + util.Reset)
 
 	svcOnce.Do(func() {
-		svcInstance = &ExpenseService{repo: repo}
+		svcInstance = &ExpenseService{repo: repo, cashRepo: cashRepo}
 	})
 	return svcInstance
 }
