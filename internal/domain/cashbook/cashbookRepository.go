@@ -285,47 +285,51 @@ func (r *CashbookRepository) GetSettlementReport(month int, year int) ([]Settlem
 }
 
 func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
-	// Use local time to match the "Sale Date" strings in your DB
 	now := time.Now()
 	todayStr := now.Format("2006-01-02")
 	var summary DashboardSummary
 
 	// 1. OPENING BALANCE
-	// Get the closing balance of the previous day
 	r.db.Model(&models.DailySummaries{}).
 		Select("COALESCE(closing_balance, 5000)").
 		Where("summary_date < ?", todayStr).
 		Order("summary_date DESC").
 		Limit(1).Scan(&summary.OpeningBalance)
 
-	// 2. SALES & RETURNS
+	// 2. SALES METRICS (The Fix is here)
 	r.db.Model(&models.Sale{}).
 		Select(`
             COALESCE(SUM(grand_total), 0),
             COALESCE(SUM(grand_total - paid_amount), 0),
-            COALESCE(SUM(paid_amount), 0)
+            COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN paid_amount ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN payment_method = 'KPAY' THEN paid_amount ELSE 0 END), 0)
         `).
 		Where("DATE(sale_date) = ? AND status != 'DELETED'", todayStr).
-		Row().Scan(&summary.TotalSale, &summary.TotalNewDebt, &summary.TotalCashSales)
+		Row().Scan(
+		&summary.TotalSale,
+		&summary.TotalNewDebt,
+		&summary.TotalCashSales, // Now only counts CASH
+		&summary.TotalKPaySales, // Now correctly scans KPAY
+	)
 
-	// 3. PURCHASES (Fixing the 0 value)
+	// 3. PURCHASES
 	r.db.Model(&models.Purchase{}).
 		Select("COALESCE(SUM(grand_total), 0)").
 		Where("DATE(purchase_date) = ?", todayStr).
 		Scan(&summary.TotalPurchase)
 
-	// 4. CASHBOOK MOVEMENTS (Debt Collection, Withdrawals, and Refunds)
+	// 4. CASHBOOK MOVEMENTS
 	var cashRefunds int64
 	r.db.Model(&models.Cashbook{}).
 		Select(`
-            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
         `).
 		Where("DATE(transaction_date) = ?", todayStr).
 		Row().Scan(&summary.TotalDebtCollected, &summary.TotalWithdrawals, &cashRefunds)
 
-	// 5. CURRENT DRAWER BALANCE (Ledger Anchor)
+	// 5. CURRENT DRAWER BALANCE (Source of Truth)
 	var lastBalance int64
 	r.db.Model(&models.Cashbook{}).
 		Select("balance").
@@ -338,8 +342,8 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	}
 
 	// 6. CALCULATED METRICS
+	// Cash Inflow should only include actual Cash received today
 	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
-	// Closing Balance is what we have right now
 	summary.ClosingBalance = summary.CurrentDrawerBalance
 
 	// 7. GLOBAL STATS
