@@ -12,7 +12,7 @@ import (
 var CustomerWireSet = wire.NewSet(
 	database.NewDB,
 	customer.NewCustomerRepository,
-	customer.NewCustomerService,
+	// customer.NewCustomerService,
 	customer.NewCustomerHandler,
 )
 

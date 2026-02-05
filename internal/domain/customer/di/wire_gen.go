@@ -20,11 +20,10 @@ func InitCustomer() (*customer.CustomerHandler, error) {
 		return nil, err
 	}
 	customerRepositoryInterface := customer.NewCustomerRepository(db)
-	customerServiceInterface := customer.NewCustomerService(customerRepositoryInterface)
-	customerHandler := customer.NewCustomerHandler(customerServiceInterface)
+	customerHandler := customer.NewCustomerHandler(customerRepositoryInterface)
 	return customerHandler, nil
 }
 
 // wire.go:
 
-var CustomerWireSet = wire.NewSet(database.NewDB, customer.NewCustomerRepository, customer.NewCustomerService, customer.NewCustomerHandler)
+var CustomerWireSet = wire.NewSet(database.NewDB, customer.NewCustomerRepository, customer.NewCustomerHandler)

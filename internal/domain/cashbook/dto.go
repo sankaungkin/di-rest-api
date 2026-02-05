@@ -23,6 +23,7 @@ type DashboardSummary struct {
 	TotalCashSales       int64 `json:"totalCashSales"`
 	TotalKPaySales       int64 `json:"totalKPaySales"`
 	TotalDebtCollected   int64 `json:"totalDebtCollected"`
+	TotalKPayCollected   int64 `json:"totalKPayCollected"`
 	TotalCashInflow      int64 `json:"totalCashInflow"`
 	TotalPurchase        int64 `json:"totalPurchase"`
 	TotalPayables        int64 `json:"totalPayables"` // Will now hold 2891100

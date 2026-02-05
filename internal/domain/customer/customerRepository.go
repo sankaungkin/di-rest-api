@@ -28,10 +28,6 @@ var (
 	repoOnce     sync.Once
 )
 
-// func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface{
-// 	return &CustomerRepository{db: db}
-// }
-
 func NewCustomerRepository(db *gorm.DB) CustomerRepositoryInterface {
 	log.Println(util.Gray + "CustomerRepository constructor is called" + util.Reset)
 	repoOnce.Do(func() {
@@ -45,19 +41,6 @@ func (r *CustomerRepository) CreateCustomer(customer *models.Customer) (*models.
 
 	err := r.db.Create(&customer).Error
 	return customer, err
-	// input := new(CreateCustomerRequestDTO)
-	// newCustomer := &models.Customer{
-	// 	Name: input.Name,
-	// 	Address: input.Address,
-	// 	Phone: input.Phone,
-	// }
-
-	// err := r.db.Create(newCustomer)
-	// if err != nil {
-	// 	return nil, err.Error
-	// }
-
-	// return newCustomer, nil
 }
 
 func (r *CustomerRepository) GetAllCustomers() ([]models.Customer, error) {

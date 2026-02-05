@@ -198,6 +198,7 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 			}).Error
 	})
 }
+
 func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
 
 	db := tx
@@ -323,11 +324,12 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	r.db.Model(&models.Cashbook{}).
 		Select(`
             COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
         `).
 		Where("DATE(transaction_date) = ?", todayStr).
-		Row().Scan(&summary.TotalDebtCollected, &summary.TotalWithdrawals, &cashRefunds)
+		Row().Scan(&summary.TotalDebtCollected, &summary.TotalKPayCollected, &summary.TotalWithdrawals, &cashRefunds)
 
 	// 5. CURRENT DRAWER BALANCE (Source of Truth)
 	var lastBalance int64
@@ -458,6 +460,7 @@ func (r *CashbookRepository) RecordOwnerWithdrawal(amount int64, description str
 		return nil
 	})
 }
+
 func (r *CashbookRepository) GetEntriesByDateAndType(date time.Time, transType string) ([]models.Cashbook, error) {
 	var entries []models.Cashbook
 	// Use BETWEEN to cover the full day from 00:00:00 to 23:59:59

@@ -1,25 +1,44 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
+# --- Binaries & OS ---
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-./tmp
-*.log
+bin/
+# If you use air for hot-reloading, ignore its temp folder
+tmp/
+
+# --- Config & Secrets (CRITICAL) ---
+# Do NOT commit your environment variables
+.env
+.env.*
+!.env.example
 *settings.json
-.air.toml
 
-# Test binary, built with `go test -c`
-# *.test
+# --- Tools ---
+# If you use 'air' for live reload, you might want to keep the .air.toml
+# but if you have a local-specific one, ignore it. 
+# Usually, keep .air.toml in git, but ignore the output binary:
+main
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# --- Google Wire ---
+# Some people commit wire_gen.go, others don't. 
+# If you want it generated fresh on the server, uncomment the next line:
+# wire_gen.go
+
+# --- Logs & Coverage ---
+*.log
 *.out
+*.test
+coverage.txt
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
-# Go workspace file
+# --- Dependencies ---
+# Only include vendor/ if you are explicitly using it for air-gapped builds
+vendor/
 go.work
+go.work.sum
+
+# --- IDEs ---
+.vscode/
+.idea/
+.DS_Store

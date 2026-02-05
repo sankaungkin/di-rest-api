@@ -13,7 +13,8 @@ import (
 )
 
 type CustomerHandler struct {
-	svc CustomerServiceInterface
+	// svc CustomerServiceInterface
+	svc CustomerRepositoryInterface
 }
 
 // ! singleton pattern
@@ -23,7 +24,7 @@ var (
 )
 
 // constructor
-func NewCustomerHandler(svc CustomerServiceInterface) *CustomerHandler {
+func NewCustomerHandler(svc CustomerRepositoryInterface) *CustomerHandler {
 	log.Println(util.Gray + "CustomerHandler constructor is called " + util.Reset)
 	hdlOnce.Do(func() {
 		hdlInstance = &CustomerHandler{svc: svc}
