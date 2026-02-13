@@ -39,7 +39,7 @@ type UpdateProductRequstDTO struct {
 }
 
 type ProductUnit struct {
-	ProductUnitId    string `json:"productUnitId" `
+	Id               string `json:"id" `
 	ProductId        string `json:"productId" `
 	UnitId           uint   `json:"unitId" `
 	ConversionToBase int    `json:"conversionToBase" gorm:"default:1"`
