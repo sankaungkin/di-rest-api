@@ -286,8 +286,9 @@ func (r *CashbookRepository) GetSettlementReport(month int, year int) ([]Settlem
 }
 
 func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
-	now := time.Now()
-	todayStr := now.Format("2006-01-02")
+	loc, _ := time.LoadLocation("Asia/Yangon")
+	today := time.Now().In(loc)
+	todayStr := today.Format("2006-01-02")
 	var summary DashboardSummary
 
 	// 1. OPENING BALANCE
@@ -300,17 +301,31 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	// 2. SALES METRICS (The Fix is here)
 	r.db.Model(&models.Sale{}).
 		Select(`
-            COALESCE(SUM(grand_total), 0),
-            COALESCE(SUM(grand_total - paid_amount), 0),
-            COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN paid_amount ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN payment_method = 'KPAY' THEN paid_amount ELSE 0 END), 0)
-        `).
-		Where("DATE(sale_date) = ? AND status != 'DELETED'", todayStr).
+    COALESCE(SUM(CASE 
+        WHEN status = 'NORMAL' THEN grand_total 
+        ELSE 0 END), 0),
+
+    COALESCE(SUM(CASE 
+        WHEN status = 'NORMAL' 
+        THEN GREATEST(grand_total - paid_amount, 0)
+        ELSE 0 END), 0),
+
+    COALESCE(SUM(CASE 
+        WHEN status = 'NORMAL' AND payment_method = 'CASH'
+        THEN LEAST(paid_amount, grand_total)
+        ELSE 0 END), 0),
+
+    COALESCE(SUM(CASE 
+        WHEN status = 'NORMAL' AND payment_method = 'KPAY'
+        THEN LEAST(paid_amount, grand_total)
+        ELSE 0 END), 0)
+`).
+		Where("DATE(sale_date AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
 		Row().Scan(
 		&summary.TotalSale,
 		&summary.TotalNewDebt,
-		&summary.TotalCashSales, // Now only counts CASH
-		&summary.TotalKPaySales, // Now correctly scans KPAY
+		&summary.TotalCashSales,
+		&summary.TotalKPaySales,
 	)
 
 	// 3. PURCHASES
@@ -345,7 +360,11 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 
 	// 6. CALCULATED METRICS
 	// Cash Inflow should only include actual Cash received today
+	// 	summary.TotalCashSales = summary.TotalCashSales - cashRefunds
+
+	// totalCashInflow should represent actual NET money into the drawer from all sources
 	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
+
 	summary.ClosingBalance = summary.CurrentDrawerBalance
 
 	// 7. GLOBAL STATS
