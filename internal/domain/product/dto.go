@@ -24,9 +24,9 @@ type Create_Product_UnitConversion_Stock_Price_DTO struct {
 	DeriveUnitId int    `json:"deriveUnitId" validate:"required,min=1"`
 	Qty          int    `json:"qty" validate:"required,min=1"`
 	//Product Units array DTO
-	ProductUnits []ProductUnit `gorm:"many2many:productUnits;"`
+	ProductUnits []ProductUnit `json:"productUnits"`
 	//Product Prices array DTO
-	ProductPrices []ProductPrice `gorm:"many2many:productPrices;"`
+	ProductPrices []ProductPrice `json:"productPrices"`
 }
 
 type UpdateProductRequstDTO struct {
@@ -39,7 +39,7 @@ type UpdateProductRequstDTO struct {
 }
 
 type ProductUnit struct {
-	Id               string `json:"id" `
+	Id               string `json:"productUnitId" `
 	ProductId        string `json:"productId" `
 	UnitId           uint   `json:"unitId" `
 	ConversionToBase int    `json:"conversionToBase" gorm:"default:1"`
