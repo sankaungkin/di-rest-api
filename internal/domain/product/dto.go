@@ -29,13 +29,25 @@ type Create_Product_UnitConversion_Stock_Price_DTO struct {
 	ProductPrices []ProductPrice `json:"productPrices"`
 }
 
+type UpdateProductUnitDTO struct {
+	ProductId    string                  `json:"productId" validate:"required"`
+	ProductUnits []ProductUnitRequestDTO `json:"productUnits"`
+}
+type ProductUnitRequestDTO struct {
+	ID               string `json:"id"`
+	UnitID           uint   `json:"unitId"`
+	ConversionToBase int    `json:"conversionToBase"`
+	IsDefaultUnit    bool   `json:"isDefaultUnit"`
+	ProductID        string `json:"productId"`
+}
+
 type UpdateProductRequstDTO struct {
-	ProductId    string        `json:"productId" validate:"required"`
-	ProductName  string        `json:"productName" validate:"required,min=3"`
-	CategoryId   uint          `json:"categoryId" validate:"required"`
-	BrandName    string        `json:"brandName"`
-	IsActive     bool          `json:"isActive" gorm:"default:true"`
-	ProductUnits []ProductUnit `json:"productUnits" gorm:"many2many:product_units;"`
+	ProductId   string `json:"productId" validate:"required"`
+	ProductName string `json:"productName" validate:"required,min=3"`
+	CategoryId  uint   `json:"categoryId" validate:"required"`
+	BrandName   string `json:"brandName"`
+	IsActive    bool   `json:"isActive" gorm:"default:true"`
+	// ProductUnits []ProductUnit `json:"productUnits" gorm:"many2many:product_units;"`
 }
 
 type ProductUnit struct {

@@ -81,6 +81,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	products.Get("/units/:id", productService.GetProductUnitByProductId)
 
 	products.Put("/:id", productService.UpdateProduct)
+	products.Put("/:id/units", productService.UpdateProductUnit)
 	products.Delete("/:id", productService.DeleteProduct)
 	products.Get("/:id", productService.GetProductById) // ❗️Keep this at the BOTTOM
 

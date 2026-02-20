@@ -22,6 +22,7 @@ type ProductServiceInterface interface {
 	GetUnitConversionsById(id string) (models.UnitConversion, error)
 	GetAllUnitConversions() ([]models.UnitConversion, error)
 	Update(input UpdateProductRequstDTO) (*models.Product, error)
+	UpdateProductUnit(input UpdateProductUnitDTO) (*models.Product, error)
 	DeleteSerive(id string) error
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
 	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
@@ -90,6 +91,10 @@ func (s *ProductService) GetProductUnitPricesByIdSerive(productId string) ([]Res
 
 func (s *ProductService) Update(product UpdateProductRequstDTO) (*models.Product, error) {
 	return s.repo.Update(product)
+}
+
+func (s *ProductService) UpdateProductUnit(input UpdateProductUnitDTO) (*models.Product, error) {
+	return s.repo.UpdateProductUnit(input)
 }
 
 func (s *ProductService) DeleteSerive(id string) error {

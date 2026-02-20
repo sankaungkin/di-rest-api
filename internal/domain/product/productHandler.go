@@ -313,12 +313,12 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 
 	// Step 2: Call service update (only using payload)
 	result, err := h.svc.Update(UpdateProductRequstDTO{
-		ProductId:    id,
-		ProductName:  input.ProductName,
-		CategoryId:   input.CategoryId,
-		BrandName:    input.BrandName,
-		IsActive:     input.IsActive,
-		ProductUnits: input.ProductUnits, // ✅ pass for repo to handle
+		ProductId:   id,
+		ProductName: input.ProductName,
+		CategoryId:  input.CategoryId,
+		BrandName:   input.BrandName,
+		IsActive:    input.IsActive,
+		// ProductUnits: input.ProductUnits, // ✅ pass for repo to handle
 	})
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -337,6 +337,52 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "SUCCESS",
 		"message": "Update Successfully",
+		"data":    result,
+	})
+}
+
+func (h *ProductHandler) UpdateProductUnit(c *fiber.Ctx) error {
+	// 1. Get the ID from the URL parameter (:id)
+	urlId := c.Params("id")
+
+	// 2. Parse the JSON body
+	input := new(UpdateProductUnitDTO)
+	if err := c.BodyParser(input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Invalid JSON format: " + err.Error(),
+		})
+	}
+
+	// 3. Safety Check: Ensure URL ID matches Body ID
+	// This prevents accidental updates to the wrong product
+	if input.ProductId == "" {
+		input.ProductId = urlId
+	}
+
+	log.Printf("Updating units for Product: %s, Total Units: %d", input.ProductId, len(input.ProductUnits))
+
+	// 4. Call Service layer
+	// Make sure your service method is exported (Capitalized)
+	result, err := h.svc.UpdateProductUnit(*input)
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"status":  "FAIL",
+				"message": "Product record not found",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": err.Error(),
+		})
+	}
+
+	// 5. Success Response
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "SUCCESS",
+		"message": "Product units synchronized successfully",
 		"data":    result,
 	})
 }

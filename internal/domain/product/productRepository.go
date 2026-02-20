@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/sankangkin/di-rest-api/internal/domain/util"
 	"github.com/sankangkin/di-rest-api/internal/models"
 	"gorm.io/gorm"
@@ -33,6 +32,7 @@ type ProductRepositoryInterface interface {
 	GetAllUnitConversions() ([]models.UnitConversion, error)
 	UpdateUnitConversion(input *models.UnitConversion) (*models.UnitConversion, error)
 	Update(input UpdateProductRequstDTO) (*models.Product, error)
+	UpdateProductUnit(input UpdateProductUnitDTO) (*models.Product, error)
 	Delete(id string) error
 	GetAllUnitOfMeasurement() ([]models.UnitOfMeasure, error)
 	GetUniofMeasurementById(id string) (models.UnitOfMeasure, error)
@@ -321,7 +321,7 @@ func (r *ProductRepository) GetById(id string) (*models.Product, error) {
 	var product models.Product
 	result := r.db.
 		Preload("Category").
-		Preload("UnitOfMeasure").Preload("ProductUnits").
+		Preload("UnitOfMeasure").Preload("ProductUnits").Preload("ProductUnits.UnitOfMeasure").
 		First(&product, "id = ?", strings.ToUpper(id))
 	if err := result.Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -391,80 +391,6 @@ func (r *ProductRepository) GetProductUnitByProductId(id string) ([]models.Produ
 	return results, nil
 }
 
-func (r *ProductRepository) UpdateOLD(input UpdateProductRequstDTO) (*models.Product, error) {
-	var existingProduct models.Product
-
-	// 1. Load product with its units
-	if err := r.db.Preload("ProductUnits").
-		Where("id = ?", input.ProductId).
-		First(&existingProduct).Error; err != nil {
-		return nil, err
-	}
-
-	// 2. Validate required fields
-	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
-		return nil, fmt.Errorf("missing required fields")
-	}
-
-	// 3. Update main product fields
-	existingProduct.BrandName = input.BrandName
-	existingProduct.ProductName = input.ProductName
-	existingProduct.IsActive = input.IsActive
-	existingProduct.CategoryId = input.CategoryId
-
-	// 4. Process product units (update existing and create new)
-	for _, u := range input.ProductUnits {
-		// Skip if unit data is invalid
-		if u.UnitId == 0 {
-			continue
-		}
-
-		var unit models.ProductUnit
-
-		// Check if this is an existing unit (has valid ProductUnitId)
-		if u.Id != "" {
-			// Try to find existing record
-			err := r.db.Where("product_id = ? AND id = ?", existingProduct.ID, u.Id).
-				First(&unit).Error
-
-			if err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					// Existing unit not found, but we have an ID - log and treat as new unit
-					// Alternatively, you could return an error here
-					r.createNewProductUnit(existingProduct.ID, u)
-					continue
-				}
-				return nil, err
-			}
-
-			// Update existing unit
-			unit.ConversionToBase = u.ConversionToBase
-			unit.IsDefaultUnit = u.IsDefaultUnit
-			unit.UnitId = u.UnitId
-
-			if err := r.db.Save(&unit).Error; err != nil {
-				return nil, err
-			}
-		} else {
-			// Create new product unit
-			r.createNewProductUnit(existingProduct.ID, u)
-		}
-	}
-
-	// 5. Save main product
-	if err := r.db.Save(&existingProduct).Error; err != nil {
-		return nil, err
-	}
-
-	// 6. Reload with units for response
-	if err := r.db.Preload("ProductUnits").
-		First(&existingProduct, "id = ?", input.ProductId).Error; err != nil {
-		return nil, err
-	}
-
-	return &existingProduct, nil
-}
-
 func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
 	// 1. Validate required fields immediately to save DB calls
 	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
@@ -473,19 +399,19 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 
 	// 2. Map DTO units to Model units
 	// We do this first to ensure the data is ready before starting DB operations
-	var updatedUnits []models.ProductUnit
-	for _, u := range input.ProductUnits {
-		if u.UnitId == 0 {
-			continue
-		}
-		updatedUnits = append(updatedUnits, models.ProductUnit{
-			ID:               u.Id,            // e.g., "P1030FEET"
-			ProductId:        input.ProductId, // e.g., "P1030"
-			UnitId:           u.UnitId,
-			ConversionToBase: u.ConversionToBase,
-			IsDefaultUnit:    u.IsDefaultUnit,
-		})
-	}
+	// var updatedUnits []models.ProductUnit
+	// for _, u := range input.ProductUnits {
+	// 	if u.UnitId == 0 {
+	// 		continue
+	// 	}
+	// 	updatedUnits = append(updatedUnits, models.ProductUnit{
+	// 		ID:               u.Id,            // e.g., "P1030FEET"
+	// 		ProductId:        input.ProductId, // e.g., "P1030"
+	// 		UnitId:           u.UnitId,
+	// 		ConversionToBase: u.ConversionToBase,
+	// 		IsDefaultUnit:    u.IsDefaultUnit,
+	// 	})
+	// }
 
 	// 3. Perform the update in a Transaction
 	// Use a transaction to ensure that if the units fail to update,
@@ -496,7 +422,6 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 			return err
 		}
 
-		// Update Parent Fields
 		product.BrandName = input.BrandName
 		product.ProductName = input.ProductName
 		product.IsActive = input.IsActive
@@ -506,12 +431,18 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 			return err
 		}
 
-		// 4. The Magic Step: Replace Associations
-		// This updates records with existing IDs, creates new ones if ID is missing/new,
-		// and removes links for any units not present in the 'updatedUnits' slice.
-		if err := tx.Model(&product).Association("ProductUnits").Replace(updatedUnits); err != nil {
-			return err
-		}
+		// 🔥 DELETE old units first
+		// if err := tx.Where("product_id = ?", input.ProductId).
+		// 	Delete(&models.ProductUnit{}).Error; err != nil {
+		// 	return err
+		// }
+
+		// 🔥 INSERT new units
+		// if len(updatedUnits) > 0 {
+		// 	if err := tx.Create(&updatedUnits).Error; err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		return nil
 	})
@@ -526,24 +457,66 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 	return &finalProduct, nil
 }
 
-// Helper function to create new product unit
-func (r *ProductRepository) createNewProductUnit(productID string, u ProductUnit) error {
-	// If ID is empty, generate a new UUID
-	id := u.Id
-	if id == "" {
-		id = uuid.New().String()
+func (r *ProductRepository) UpdateProductUnit(input UpdateProductUnitDTO) (*models.Product, error) {
+	var product models.Product
+
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Verify product exists
+		if err := tx.Where("id = ?", input.ProductId).First(&product).Error; err != nil {
+			return err
+		}
+
+		// 2. Map DTO to Models
+		var units []models.ProductUnit
+		for _, u := range input.ProductUnits {
+			units = append(units, models.ProductUnit{
+				ID:               u.ID,
+				UnitId:           u.UnitID,
+				ConversionToBase: u.ConversionToBase,
+				IsDefaultUnit:    u.IsDefaultUnit,
+				ProductId:        input.ProductId, // Use parent ID
+			})
+		}
+
+		// 3. Fix: Use FullSaveAssociations to force update of fields like isDefaultUnit
+		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).
+			Model(&product).
+			Association("ProductUnits").
+			Replace(&units); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
-	newUnit := models.ProductUnit{
-		ID:               id,
-		ProductId:        productID,
-		ConversionToBase: u.ConversionToBase,
-		IsDefaultUnit:    u.IsDefaultUnit,
-		UnitId:           u.UnitId,
-	}
+	// 4. Reload product with units
+	r.db.Preload("ProductUnits").First(&product, "id = ?", input.ProductId)
 
-	return r.db.Create(&newUnit).Error
+	return &product, nil
 }
+
+// Helper function to create new product unit
+// func (r *ProductRepository) createNewProductUnit(productID string, u ProductUnit) error {
+// 	// If ID is empty, generate a new UUID
+// 	id := u.Id
+// 	if id == "" {
+// 		id = uuid.New().String()
+// 	}
+
+// 	newUnit := models.ProductUnit{
+// 		ID:               id,
+// 		ProductId:        productID,
+// 		ConversionToBase: u.ConversionToBase,
+// 		IsDefaultUnit:    u.IsDefaultUnit,
+// 		UnitId:           u.UnitId,
+// 	}
+
+// 	return r.db.Create(&newUnit).Error
+// }
 
 func (r *ProductRepository) UpdateUnit(input *models.UnitOfMeasure) (*models.UnitOfMeasure, error) {
 	var existingUnit models.UnitOfMeasure
