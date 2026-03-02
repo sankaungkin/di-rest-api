@@ -224,6 +224,7 @@ func Initialize(app *fiber.App, hub *websocket.Hub) {
 	sale.Get("/top-customers", saleService.TopCustomers)
 	sale.Get("/toptenproducts", saleService.GetTopTenSoleProducts)
 	sale.Get("/:id", saleService.GetById)
+	sale.Get("/:id/payment-history", saleService.GetPaymentHistory) // New route to get payment history for a sale
 	sale.Put("/:id", saleService.UpdateSaleRemark)
 	sale.Post("/:id/collect-debt", saleService.CollectDebt)
 

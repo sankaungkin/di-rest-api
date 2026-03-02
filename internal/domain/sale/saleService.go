@@ -30,6 +30,7 @@ type SaleServiceInterface interface {
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
 	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
 	CollectDebt(payment *models.PaymentRecord, saleID string) error
+	GetPaymentHistory(saleID string) ([]models.PaymentRecord, error)
 }
 
 type SaleService struct {
@@ -118,6 +119,10 @@ func (s *SaleService) ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleRet
 
 func (s *SaleService) CollectDebt(payment *models.PaymentRecord, saleID string) error {
 	return s.repo.CollectDebt(payment, saleID)
+}
+
+func (s *SaleService) GetPaymentHistory(saleID string) ([]models.PaymentRecord, error) {
+	return s.repo.GetPaymentHistory(saleID)
 }
 
 func (s *SaleService) GetSalesWithReceivables() ([]models.Sale, error) {

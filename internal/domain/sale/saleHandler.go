@@ -601,3 +601,28 @@ func (h *SaleHandler) GetSalesWithReceivables(c *fiber.Ctx) error {
 			"count":   len(results),
 		})
 }
+
+func (h *SaleHandler) GetPaymentHistory(c *fiber.Ctx) error {
+	saleID := c.Params("id")
+	if saleID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "FAIL",
+			"message": "Sale ID is required",
+		})
+	}
+
+	results, err := h.svc.GetPaymentHistory(saleID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(
+		&fiber.Map{
+			"status":  "SUCCESS",
+			"message": strconv.Itoa(len(results)) + " records found",
+			"data":    results,
+			"count":   len(results),
+		})
+
+}

@@ -36,6 +36,7 @@ type SaleRepositoryInterface interface {
 	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
 
 	CollectDebt(payment *models.PaymentRecord, saleID string) error
+	GetPaymentHistory(saleID string) ([]models.PaymentRecord, error)
 }
 
 type SaleRepository struct {
@@ -195,123 +196,11 @@ func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	return input, err
 }
 
-func (r *SaleRepository) CollectDebtOLD(payment *models.PaymentRecord, saleID string) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		// 1. RECORD THE PAYMENT HISTORY
-		if err := tx.Create(payment).Error; err != nil {
-			return fmt.Errorf("failed to create payment record: %v", err)
-		}
-
-		// 2. UPDATE SALE RECORD (With Lock to prevent overpayment if two people pay at once)
-		var sale models.Sale
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&sale, "id = ?", saleID).Error; err != nil {
-			return err
-		}
-
-		newPaidAmount := sale.PaidAmount + payment.Amount
-		newBalanceAmount := sale.GrandTotal - newPaidAmount
-
-		newStatus := "PARTIAL"
-		if newPaidAmount >= sale.GrandTotal {
-			newStatus = "PAID"
-			newBalanceAmount = 0
-		}
-
-		if err := tx.Model(&sale).Updates(map[string]interface{}{
-			"paid_amount":    newPaidAmount,
-			"balance_amount": newBalanceAmount,
-			"payment_status": newStatus,
-		}).Error; err != nil {
-			return err
-		}
-
-		// 3. LOCK DAILY SUMMARY & CALCULATE DRAWER ANCHOR
-		pMethod := strings.ToUpper(payment.PaymentMethod)
-		var cashIncrement int64 = 0
-		var kpayIncrement int64 = 0
-
-		if pMethod == "CASH" {
-			cashIncrement = payment.Amount
-		} else if pMethod == "KPAY" {
-			kpayIncrement = payment.Amount
-		}
-
-		tranDateStr := payment.PaymentDate.Format("2006-01-02")
-		var summary models.DailySummaries
-
-		// Lock the summary row for today
-		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("DATE(summary_date) = ? AND is_closed = ?", tranDateStr, false).
-			First(&summary).Error
-
-		var startingBalance int64
-		if err != nil {
-			// First transaction of the day, fetch yesterday's closing
-			var lastSum models.DailySummaries
-			tx.Order("summary_date desc").First(&lastSum)
-			startingBalance = lastSum.ClosingBalance
-			if startingBalance < 0 {
-				startingBalance = 0
-			}
-		} else {
-			// Mid-day transaction, anchor to current closing
-			startingBalance = summary.ClosingBalance
-		}
-
-		// Calculate the exact new balance for the ledger
-		newRunningBalance := startingBalance + cashIncrement
-
-		// 4. CASHBOOK ENTRY (Impacts Physical Drawer)
-		// We use the newRunningBalance derived from the locked summary
-		cashEntry := models.Cashbook{
-			TransactionDate:   payment.PaymentDate,
-			TransactionType:   "DEBT_PAYMENT",
-			ReferenceID:       saleID,
-			Description:       fmt.Sprintf("Debt Collected (%s): %s", pMethod, saleID),
-			Debit:             payment.Amount,
-			Credit:            0,
-			Balance:           newRunningBalance,
-			PaymentMethod:     pMethod,
-			TransactionStatus: newStatus,
-			CreatedAt:         time.Now(),
-		}
-		if err := tx.Create(&cashEntry).Error; err != nil {
-			return err
-		}
-
-		// 5. UPDATE DAILY SUMMARY (Atomic Update)
-		if summary.ID != 0 {
-			err = tx.Model(&summary).Updates(map[string]interface{}{
-				"closing_balance":      newRunningBalance,
-				"cash_total":           gorm.Expr("cash_total + ?", cashIncrement),
-				"k_pay_total":          gorm.Expr("k_pay_total + ?", kpayIncrement),
-				"debt_collected_total": gorm.Expr("debt_collected_total + ?", payment.Amount),
-				// Crucial: Decrement the global debt total as it is now collected
-				"debt_total": gorm.Expr("debt_total - ?", payment.Amount),
-			}).Error
-		} else {
-			err = tx.Create(&models.DailySummaries{
-				SummaryDate:        payment.PaymentDate,
-				OpeningBalance:     startingBalance,
-				ClosingBalance:     newRunningBalance,
-				CashTotal:          cashIncrement,
-				KPayTotal:          kpayIncrement,
-				DebtCollectedTotal: payment.Amount,
-				DebtTotal:          -payment.Amount, // Negative debt increment because debt decreased
-				IsClosed:           false,
-			}).Error
-		}
-		if err != nil {
-			return err
-		}
-
-		// 6. UPDATE CUSTOMER STATS
-		return util.AdjustCustomerStats(tx, sale.CustomerId, payment.Amount, false)
-	})
-}
-
 func (r *SaleRepository) CollectDebt(payment *models.PaymentRecord, saleID string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		payment.ReferenceID = saleID
+		payment.Type = "DEBT_COLLECTION"
+
 		// 1. RECORD THE PAYMENT HISTORY
 		if err := tx.Create(payment).Error; err != nil {
 			return fmt.Errorf("failed to create payment record: %v", err)
@@ -382,6 +271,17 @@ func (r *SaleRepository) CollectDebt(payment *models.PaymentRecord, saleID strin
 		// 5. UPDATE CUSTOMER STATS
 		return util.AdjustCustomerStats(tx, sale.CustomerId, payment.Amount, false)
 	})
+}
+
+func (r *SaleRepository) GetPaymentHistory(saleID string) ([]models.PaymentRecord, error) {
+	var history []models.PaymentRecord
+
+	// Fetch all payments linked to this sale, newest first
+	err := r.db.Where("reference_id = ?", saleID).
+		Order("payment_date DESC").
+		Find(&history).Error
+
+	return history, err
 }
 
 func (r *SaleRepository) UpdateSale(sale UpdateSaleRemarkDTO) (*models.Sale, error) {
@@ -715,7 +615,7 @@ func (r *SaleRepository) GetAll() ([]models.Sale, error) {
 	return sales, nil
 }
 
-func (r *SaleRepository) GetSalesWithReceivables() ([]models.Sale, error) {
+func (r *SaleRepository) GetSalesWithReceivablesOld() ([]models.Sale, error) {
 	var sales []models.Sale
 
 	result := r.db.Preload(clause.Associations).
@@ -731,6 +631,32 @@ func (r *SaleRepository) GetSalesWithReceivables() ([]models.Sale, error) {
 	// if len(sales) == 0 {
 	// 	return nil, errors.New("NO records found")
 	// }
+
+	return sales, nil
+}
+
+func (r *SaleRepository) GetSalesWithReceivables() ([]models.Sale, error) {
+	var sales []models.Sale
+
+	// 1. Get the current time and find the start of today (Midnight)
+	now := time.Now()
+	// time.Local is the correct *time.Location to use here
+	todayTime := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+
+	// 2. Convert to Milliseconds (matching your 13+ digit IDs/timestamps)
+	// Use .Unix() if your DB stores 10-digit seconds instead.
+	todayUnix := todayTime.UnixMilli()
+
+	result := r.db.Preload(clause.Associations).
+		Preload("PaymentRecords"). // Vital for the "Trace Back" tab
+		// Use the numeric Unix value to match the int8/BigInt column
+		Where("payment_status != ? OR updated_at >= ?", "PAID", todayUnix).
+		Order("updated_at DESC").
+		Find(&sales)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
 	return sales, nil
 }

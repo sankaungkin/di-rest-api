@@ -255,6 +255,8 @@ type Sale struct {
 	SaleDate      time.Time    `gorm:"type:timestamptz;default:now()" json:"saleDate"`
 	CreatedAt     int64        `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt     int64        `gorm:"autoUpdateTime:milli" json:"-"`
+
+	PaymentRecords []PaymentRecord `gorm:"foreignKey:ReferenceID" json:"paymentRecords"`
 }
 type PaymentRecord struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
