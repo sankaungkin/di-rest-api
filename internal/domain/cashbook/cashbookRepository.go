@@ -333,38 +333,32 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 		Select("COALESCE(SUM(grand_total), 0)").
 		Where("DATE(purchase_date) = ?", todayStr).
 		Scan(&summary.TotalPurchase)
-
-	// 4. CASHBOOK MOVEMENTS
+		// 4. CASHBOOK MOVEMENTS (Separating Cash vs KPay)
 	var cashRefunds int64
 	r.db.Model(&models.Cashbook{}).
 		Select(`
             COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
-			COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type IN ('OWNER_WITHDRAWAL', 'EXPENSE') THEN credit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
         `).
-		Where("DATE(transaction_date) = ?", todayStr).
+		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
 		Row().Scan(&summary.TotalDebtCollected, &summary.TotalKPayCollected, &summary.TotalWithdrawals, &cashRefunds)
 
-	// 5. CURRENT DRAWER BALANCE (Source of Truth)
-	var lastBalance int64
-	r.db.Model(&models.Cashbook{}).
-		Select("balance").
-		Order("id DESC").
-		Limit(1).Scan(&lastBalance)
-
-	summary.CurrentDrawerBalance = lastBalance
-	if lastBalance == 0 {
-		summary.CurrentDrawerBalance = summary.OpeningBalance
-	}
+	// 5. CURRENT DRAWER BALANCE (The Calculated Source of Truth)
+	// We calculate this manually to avoid "Balance Drift" from KPay transactions
+	// Formula: Opening + Today's Cash In - Today's Cash Out
+	summary.CurrentDrawerBalance = summary.OpeningBalance +
+		summary.TotalCashSales +
+		summary.TotalDebtCollected -
+		summary.TotalWithdrawals -
+		cashRefunds
 
 	// 6. CALCULATED METRICS
-	// Cash Inflow should only include actual Cash received today
-	// 	summary.TotalCashSales = summary.TotalCashSales - cashRefunds
-
-	// totalCashInflow should represent actual NET money into the drawer from all sources
+	// Total Cash Inflow (Money that actually entered the business today, regardless of drawer)
 	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
 
+	// Summary Closing Balance (Usually matches drawer)
 	summary.ClosingBalance = summary.CurrentDrawerBalance
 
 	// 7. GLOBAL STATS
