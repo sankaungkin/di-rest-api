@@ -334,24 +334,32 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 		Where("DATE(purchase_date) = ?", todayStr).
 		Scan(&summary.TotalPurchase)
 		// 4. CASHBOOK MOVEMENTS (Separating Cash vs KPay)
+	// 4. CASHBOOK MOVEMENTS (Separated for clarity)
 	var cashRefunds int64
 	r.db.Model(&models.Cashbook{}).
 		Select(`
-            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type IN ('OWNER_WITHDRAWAL', 'EXPENSE') THEN credit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
-        `).
+        COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'EXPENSE' THEN credit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
+    `).
 		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
-		Row().Scan(&summary.TotalDebtCollected, &summary.TotalKPayCollected, &summary.TotalWithdrawals, &cashRefunds)
+		Row().Scan(
+		&summary.TotalDebtCollected,
+		&summary.TotalKPayCollected,
+		&summary.TotalWithdrawals, // Now will be 0 based on your data
+		&summary.TotalExpenses,    // Now will be 1500 (500 + 1000)
+		&cashRefunds,
+	)
 
-	// 5. CURRENT DRAWER BALANCE (The Calculated Source of Truth)
-	// We calculate this manually to avoid "Balance Drift" from KPay transactions
-	// Formula: Opening + Today's Cash In - Today's Cash Out
+	// 5. CURRENT DRAWER BALANCE
+	// Subtract both Withdrawals AND Expenses to get the correct drawer total
 	summary.CurrentDrawerBalance = summary.OpeningBalance +
 		summary.TotalCashSales +
 		summary.TotalDebtCollected -
 		summary.TotalWithdrawals -
+		summary.TotalExpenses - // Added this
 		cashRefunds
 
 	// 6. CALCULATED METRICS

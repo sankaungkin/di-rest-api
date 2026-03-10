@@ -19,6 +19,7 @@ type CreaateCashbookEntryRequestDTO struct {
 type DashboardSummary struct {
 	TotalSale            int64 `json:"totalSale"`
 	TotalWithdrawals     int64 `json:"totalWithdrawals"`
+	TotalExpenses        int64 `json:"totalExpenses"`
 	TotalNewDebt         int64 `json:"totalNewDebt"`
 	TotalCashSales       int64 `json:"totalCashSales"`
 	TotalKPaySales       int64 `json:"totalKPaySales"`
