@@ -285,7 +285,7 @@ func (r *CashbookRepository) GetSettlementReport(month int, year int) ([]Settlem
 	return reports, err
 }
 
-func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
+func (r *CashbookRepository) GetDashboardSummaryOld() (*DashboardSummary, error) {
 	loc, _ := time.LoadLocation("Asia/Yangon")
 	today := time.Now().In(loc)
 	todayStr := today.Format("2006-01-02")
@@ -302,21 +302,21 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	r.db.Model(&models.Sale{}).
 		Select(`
     COALESCE(SUM(CASE 
-        WHEN status = 'NORMAL' THEN grand_total 
+    WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') THEN grand_total
         ELSE 0 END), 0),
 
     COALESCE(SUM(CASE 
-        WHEN status = 'NORMAL' 
+        WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') 
         THEN GREATEST(grand_total - paid_amount, 0)
         ELSE 0 END), 0),
 
     COALESCE(SUM(CASE 
-        WHEN status = 'NORMAL' AND payment_method = 'CASH'
+        WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') AND payment_method = 'CASH'
         THEN LEAST(paid_amount, grand_total)
         ELSE 0 END), 0),
 
     COALESCE(SUM(CASE 
-        WHEN status = 'NORMAL' AND payment_method = 'KPAY'
+        WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') AND payment_method = 'KPAY'
         THEN LEAST(paid_amount, grand_total)
         ELSE 0 END), 0)
 `).
@@ -370,6 +370,97 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	summary.ClosingBalance = summary.CurrentDrawerBalance
 
 	// 7. GLOBAL STATS
+	r.db.Model(&models.Sale{}).
+		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
+		Where("payment_status NOT IN ?", []string{"PAID", "FULLY PAID"}).
+		Scan(&summary.TotalReceivables)
+
+	r.db.Model(&models.Purchase{}).
+		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
+		Where("payment_status != ?", "PAID").
+		Scan(&summary.TotalPayables)
+
+	return &summary, nil
+}
+
+func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
+	loc, _ := time.LoadLocation("Asia/Yangon")
+	today := time.Now().In(loc)
+	todayStr := today.Format("2006-01-02")
+	var summary DashboardSummary
+
+	// 1. OPENING BALANCE (Unchanged)
+	r.db.Model(&models.DailySummaries{}).
+		Select("COALESCE(closing_balance, 5000)").
+		Where("summary_date < ?", todayStr).
+		Order("summary_date DESC").
+		Limit(1).Scan(&summary.OpeningBalance)
+
+	// 2. SALES METRICS (Fixed: Now includes PARTIAL_RETURN and RETURNED statuses)
+	r.db.Model(&models.Sale{}).
+		Select(`
+            COALESCE(SUM(grand_total), 0),
+            COALESCE(SUM(CASE 
+                WHEN payment_status NOT IN ('PAID', 'FULLY PAID') 
+                THEN (grand_total - paid_amount) 
+                ELSE 0 END), 0),
+            COALESCE(SUM(CASE 
+                WHEN payment_method = 'CASH' 
+                THEN LEAST(paid_amount, grand_total) 
+                ELSE 0 END), 0),
+            COALESCE(SUM(CASE 
+                WHEN payment_method = 'KPAY' 
+                THEN LEAST(paid_amount, grand_total) 
+                ELSE 0 END), 0)
+        `).
+		Where("DATE(sale_date AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
+		// Removed the "NORMAL" status filter to include returns
+		Where("status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED')").
+		Row().Scan(
+		&summary.TotalSale,
+		&summary.TotalNewDebt,
+		&summary.TotalCashSales,
+		&summary.TotalKPaySales,
+	)
+
+	// 3. PURCHASES (Unchanged)
+	r.db.Model(&models.Purchase{}).
+		Select("COALESCE(SUM(grand_total), 0)").
+		Where("DATE(purchase_date) = ?", todayStr).
+		Scan(&summary.TotalPurchase)
+
+	// 4. CASHBOOK MOVEMENTS
+	var cashRefunds int64
+	r.db.Model(&models.Cashbook{}).
+		Select(`
+            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'EXPENSE' THEN credit ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
+        `).
+		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
+		Row().Scan(
+		&summary.TotalDebtCollected,
+		&summary.TotalKPayCollected,
+		&summary.TotalWithdrawals,
+		&summary.TotalExpenses,
+		&cashRefunds,
+	)
+
+	// 5. CURRENT DRAWER BALANCE
+	// Formula: Opening + (Cash Sales + Debt Collected) - (Withdrawals + Expenses + Returns)
+	summary.CurrentDrawerBalance = summary.OpeningBalance +
+		summary.TotalCashSales +
+		summary.TotalDebtCollected -
+		summary.TotalWithdrawals -
+		summary.TotalExpenses -
+		cashRefunds
+
+	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
+	summary.ClosingBalance = summary.CurrentDrawerBalance
+
+	// 6. GLOBAL RECEIVABLES/PAYABLES
 	r.db.Model(&models.Sale{}).
 		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
 		Where("payment_status NOT IN ?", []string{"PAID", "FULLY PAID"}).
