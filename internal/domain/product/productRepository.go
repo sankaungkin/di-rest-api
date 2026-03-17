@@ -151,7 +151,7 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 			PriceType:     p.PriceType,
 			UnitPrice:     p.UnitPrice,
 			Remark:        fmt.Sprintf("%s : %s : %s was changed to %d in %s", p.ProductId, p.ProductUnitId, p.PriceType, p.UnitPrice, time.Now().Local().Format("2006-01-02")),
-			EffectiveDate: time.Now().Local().Format("2006-01-02"),
+			EffectiveDate: time.Now(),
 		})
 	}
 	if len(histories) > 0 {

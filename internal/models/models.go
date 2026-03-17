@@ -89,7 +89,7 @@ type ProductPriceHistory struct {
 	PriceType     string `json:"priceType" ` // "BUY"	or "SELL"
 	UnitPrice     int    `json:"price" `
 	Remark        string `json:"remark"`
-	EffectiveDate string `gorm:"not null"`
+	EffectiveDate time.Time
 	CreatedAt     time.Time
 }
 

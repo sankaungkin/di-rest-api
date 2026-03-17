@@ -1,6 +1,7 @@
 package purchase
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -376,22 +377,88 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 	return input, err
 }
 
+// func (r *PurchaseRepository) updatePurchasePriceOld(tx *gorm.DB, productId string, unitPrice int, productUnitId string) error {
+// 	var newPrice models.ProductPrice
+// 	if err := tx.Where("product_id = ? AND price_type = 'BUY'", productId).First(&newPrice).Error; err != nil {
+// 		return err
+// 	}
+
+// 	// Find the productPrice with the same productId and unitId
+// 	var productPrice models.ProductPrice
+// 	if err := tx.Where("product_id = ? AND product_unit_id = ? AND price_type = 'BUY'", productId, productUnitId).First(&productPrice).Error; err != nil {
+// 		return err
+// 	}
+
+// 	// Update the productPrice
+// 	productPrice.UnitPrice = unitPrice
+// 	return tx.Save(&productPrice).Error
+
+// }
+
 func (r *PurchaseRepository) updatePurchasePrice(tx *gorm.DB, productId string, unitPrice int, productUnitId string) error {
-	var newPrice models.ProductPrice
-	if err := tx.Where("product_id = ? AND price_type = 'BUY'", productId).First(&newPrice).Error; err != nil {
-		return err
-	}
-
-	// Find the productPrice with the same productId and unitId
 	var productPrice models.ProductPrice
-	if err := tx.Where("product_id = ? AND product_unit_id = ? AND price_type = 'BUY'", productId, productUnitId).First(&productPrice).Error; err != nil {
+
+	// 1. Find existing record
+	err := tx.Where("product_id = ? AND product_unit_id = ? AND price_type = 'BUY'",
+		productId, productUnitId).First(&productPrice).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Log history even for the first time creation
+			return r.createNewPurchasePrice(tx, productId, unitPrice, productUnitId)
+		}
 		return err
 	}
 
-	// Update the productPrice
-	productPrice.UnitPrice = unitPrice
-	return tx.Save(&productPrice).Error
+	// 2. Check if the price actually changed
+	// Comparing int to float64 (assuming ProductPrice.UnitPrice is float64 in DB)
+	if int(productPrice.UnitPrice) == unitPrice {
+		return nil
+	}
 
+	// 3. Prepare Remark and Data
+	oldPrice := int(productPrice.UnitPrice)
+	remark := fmt.Sprintf("Price updated via Purchase. Product: %s, Unit: %s. Old: %d -> New: %d",
+		productId, productUnitId, oldPrice, unitPrice)
+
+	// Update Master Table
+	productPrice.UnitPrice = (unitPrice)
+	productPrice.Remark = remark
+	productPrice.UpdatedAt = time.Now()
+
+	if err := tx.Save(&productPrice).Error; err != nil {
+		return err
+	}
+
+	// 4. Create History Record (Mapped to your struct)
+	history := models.ProductPriceHistory{
+		ProductId:     productPrice.ProductId,
+		ProductUnitId: productUnitId, // Explicitly mapped now
+		UnitId:        productPrice.UnitId,
+		PriceType:     "BUY",
+		UnitPrice:     unitPrice, // matches your int type
+		Remark:        remark,
+		EffectiveDate: time.Now(),
+		CreatedAt:     time.Now(),
+	}
+
+	if err := tx.Create(&history).Error; err != nil {
+		return fmt.Errorf("failed to create price history: %w", err)
+	}
+
+	return nil
+}
+
+// Helper for when a product is purchased at a new unit/price for the first time
+func (r *PurchaseRepository) createNewPurchasePrice(tx *gorm.DB, productId string, unitPrice int, productUnitId string) error {
+	newPrice := models.ProductPrice{
+		ProductId:     productId,
+		ProductUnitId: productUnitId,
+		PriceType:     "BUY",
+		UnitPrice:     (unitPrice),
+		Remark:        "Initial purchase price set",
+	}
+	return tx.Create(&newPrice).Error
 }
 
 func (r *PurchaseRepository) GetAll() ([]models.Purchase, error) {

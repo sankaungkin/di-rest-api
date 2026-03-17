@@ -65,7 +65,7 @@ func (r *ProductPriceRepository) Create(productPrice *models.ProductPrice) (*mod
 		UnitId:        productPrice.UnitId,
 		PriceType:     productPrice.PriceType,
 		UnitPrice:     productPrice.UnitPrice,
-		EffectiveDate: time.Now().Format("2006-01-02"),
+		EffectiveDate: time.Now(),
 		CreatedAt:     time.Now(),
 	}
 	_ = r.db.Create(&history) // optional: handle error if needed
@@ -92,7 +92,7 @@ func (r *ProductPriceRepository) CreateBulkWithTransaction(productPrices []*mode
 	// Create history records
 	histories := make([]models.ProductPriceHistory, len(productPrices))
 	now := time.Now()
-	effectiveDate := now.Format("2006-01-02")
+	effectiveDate := time.Now()
 
 	for i, pp := range productPrices {
 		histories[i] = models.ProductPriceHistory{
@@ -218,16 +218,58 @@ func (r *ProductPriceRepository) GetById(id string) (*[]ProductPriceResponseDTO,
 	return &result, nil
 }
 
-func (r *ProductPriceRepository) Update(productPrice UpdateProductPriceDTO) (*models.ProductPrice, error) {
+func (r *ProductPriceRepository) Update(dto UpdateProductPriceDTO) (*models.ProductPrice, error) {
 	var existingProductPrice models.ProductPrice
-	err := r.db.Where("product_id = ? AND product_unit_id = ? AND price_type = ?", productPrice.ProductId, productPrice.ProductUnitId, productPrice.PriceType).First(&existingProductPrice).Error
-	if err != nil {
-		return nil, err
-	}
-	existingProductPrice.UnitPrice = productPrice.Price
 
-	log.Println("existingProductPrice to update: ", existingProductPrice)
-	err = r.db.Save(&existingProductPrice).Error
+	// Use a transaction to ensure both Master and History are updated together
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Fetch the existing record
+		err := tx.Where("product_id = ? AND product_unit_id = ? AND price_type = ?",
+			dto.ProductId, dto.ProductUnitId, dto.PriceType).First(&existingProductPrice).Error
+		if err != nil {
+			return fmt.Errorf("price record not found: %v", err)
+		}
+
+		// 2. Check if the price actually changed
+		// (Assuming existingProductPrice.UnitPrice is float64 and dto.Price is float64 or int)
+		if existingProductPrice.UnitPrice == (dto.Price) {
+			return nil // No change, just return
+		}
+
+		// 3. Prepare Audit Info
+		oldPrice := int(existingProductPrice.UnitPrice)
+		newPrice := int(dto.Price)
+		remark := fmt.Sprintf("Manual Update via Management. Type: %s. Old: %d -> New: %d",
+			dto.PriceType, oldPrice, newPrice)
+
+		// 4. Update the Master Record
+		existingProductPrice.UnitPrice = (dto.Price)
+		existingProductPrice.Remark = remark
+		existingProductPrice.UpdatedAt = time.Now()
+
+		if err := tx.Save(&existingProductPrice).Error; err != nil {
+			return err
+		}
+
+		// 5. Insert into History Table
+		history := models.ProductPriceHistory{
+			ProductId:     existingProductPrice.ProductId,
+			ProductUnitId: existingProductPrice.ProductUnitId,
+			UnitId:        existingProductPrice.UnitId,
+			PriceType:     existingProductPrice.PriceType,
+			UnitPrice:     newPrice, // Your struct uses int
+			Remark:        remark,
+			EffectiveDate: time.Now(),
+			CreatedAt:     time.Now(),
+		}
+
+		if err := tx.Create(&history).Error; err != nil {
+			return fmt.Errorf("failed to create price history: %v", err)
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +317,7 @@ func (r *ProductPriceRepository) UpdateProductPrice(input *models.ProductPrice) 
 			PriceType:     existingProductPrice.PriceType,
 			UnitPrice:     input.UnitPrice,
 			Remark:        remark,
-			EffectiveDate: time.Now().Local().Format("2006-01-02"),
+			EffectiveDate: time.Now(),
 			CreatedAt:     time.Now().Local(),
 		}
 
@@ -310,7 +352,7 @@ func (r *ProductPriceRepository) DeleteProductPrice(id int) error {
 		UnitId:        productPrice.UnitId,
 		PriceType:     productPrice.PriceType,
 		UnitPrice:     productPrice.UnitPrice,
-		EffectiveDate: time.Now().Local().Format("2006-01-02"),
+		EffectiveDate: time.Now(),
 		CreatedAt:     time.Now().Local(),
 	}
 	_ = r.db.Create(&history)
