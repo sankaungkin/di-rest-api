@@ -199,7 +199,7 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 	})
 }
 
-func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
+func (r *CashbookRepository) CreateEntryOLD(tx *gorm.DB, entry *models.Cashbook) error {
 
 	db := tx
 	if db == nil {
@@ -250,6 +250,86 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 			Where("DATE(summary_date) = ?", todayStr).
 			Update("closing_balance", entry.Balance).Error
 	})
+}
+
+func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
+	return tx.Transaction(func(subTx *gorm.DB) error {
+		// 1. Find the balance as of the MOMENT BEFORE this transaction date
+		var previousEntry models.Cashbook
+		err := subTx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("transaction_date <= ?", entry.TransactionDate).
+			Order("transaction_date DESC, id DESC").
+			First(&previousEntry).Error
+
+		var startingBalance int64
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				startingBalance = 5000 // Your safety floor
+			} else {
+				return err
+			}
+		} else {
+			startingBalance = previousEntry.Balance
+		}
+
+		// 2. Calculate New Balance
+		if entry.PaymentMethod == "CASH" {
+			entry.Balance = startingBalance + entry.Debit - entry.Credit
+		} else {
+			entry.Balance = startingBalance
+		}
+
+		// 3. Save the record
+		if err := subTx.Create(entry).Error; err != nil {
+			return err
+		}
+
+		// 4. THE RIPPLE EFFECT (Crucial for Backdating)
+		// If we inserted a past transaction, every transaction AFTER it
+		// needs its balance updated.
+		if entry.PaymentMethod == "CASH" {
+			changeAmount := entry.Debit - entry.Credit
+			if changeAmount != 0 {
+				err := subTx.Model(&models.Cashbook{}).
+					Where("transaction_date > ? OR (transaction_date = ? AND id > ?)",
+						entry.TransactionDate, entry.TransactionDate, entry.ID).
+					Update("balance", gorm.Expr("balance + ?", changeAmount)).Error
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		// 5. Update Daily Summaries
+		// We must update the closing balance for the entry date AND all subsequent dates
+		return r.syncDailySummaries(subTx, entry.TransactionDate)
+	})
+}
+
+func (r *CashbookRepository) syncDailySummaries(tx *gorm.DB, startDate time.Time) error {
+	// Get all unique dates in the cashbook from the startDate onwards
+	var dates []time.Time
+	tx.Model(&models.Cashbook{}).
+		Where("transaction_date >= ?", startDate).
+		Distinct().
+		Order("transaction_date ASC").
+		Pluck("transaction_date", &dates)
+
+	for _, d := range dates {
+		var lastBalance int64
+		// Get the final balance of this specific day
+		tx.Model(&models.Cashbook{}).
+			Where("DATE(transaction_date) = ?", d.Format("2006-01-02")).
+			Order("id DESC").
+			Limit(1).
+			Pluck("balance", &lastBalance)
+
+		// Update the Daily Summary for that day
+		tx.Model(&models.DailySummaries{}).
+			Where("DATE(summary_date) = ?", d.Format("2006-01-02")).
+			Update("closing_balance", lastBalance)
+	}
+	return nil
 }
 
 // IsDayClosed checks if a CLOSING entry exists for the given date
