@@ -255,6 +255,7 @@ func (r *CashbookRepository) CreateEntryOLD(tx *gorm.DB, entry *models.Cashbook)
 func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
 	return tx.Transaction(func(subTx *gorm.DB) error {
 		// 1. Find the balance as of the MOMENT BEFORE this transaction date
+		// Use a row-level lock to prevent race conditions during simultaneous sales
 		var previousEntry models.Cashbook
 		err := subTx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("transaction_date <= ?", entry.TransactionDate).
@@ -264,7 +265,7 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 		var startingBalance int64
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				startingBalance = 5000 // Your safety floor
+				startingBalance = 5000 // Default base float
 			} else {
 				return err
 			}
@@ -272,24 +273,34 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 			startingBalance = previousEntry.Balance
 		}
 
-		// 2. Calculate New Balance
+		// 2. SAFETY CHECK: Prevent the drawer from going into impossible negatives
+		// If it's a Cash Withdrawal or Expense, ensure we actually have the cash.
+		if entry.PaymentMethod == "CASH" && entry.Credit > 0 {
+			if entry.TransactionType == "OWNER_WITHDRAWAL" || entry.TransactionType == "EXPENSE" {
+				if startingBalance < entry.Credit {
+					return fmt.Errorf("insufficient cash in drawer (Available: %d, Requested: %d)", startingBalance, entry.Credit)
+				}
+			}
+		}
+
+		// 3. Calculate New Balance (Only for CASH)
 		if entry.PaymentMethod == "CASH" {
 			entry.Balance = startingBalance + entry.Debit - entry.Credit
 		} else {
+			// Non-cash transactions (KPAY) don't affect the physical drawer balance
 			entry.Balance = startingBalance
 		}
 
-		// 3. Save the record
+		// 4. Save the record
 		if err := subTx.Create(entry).Error; err != nil {
 			return err
 		}
 
-		// 4. THE RIPPLE EFFECT (Crucial for Backdating)
-		// If we inserted a past transaction, every transaction AFTER it
-		// needs its balance updated.
+		// 5. THE RIPPLE EFFECT (Crucial for Backdating)
 		if entry.PaymentMethod == "CASH" {
 			changeAmount := entry.Debit - entry.Credit
 			if changeAmount != 0 {
+				// Update every subsequent record's balance snapshot
 				err := subTx.Model(&models.Cashbook{}).
 					Where("transaction_date > ? OR (transaction_date = ? AND id > ?)",
 						entry.TransactionDate, entry.TransactionDate, entry.ID).
@@ -300,8 +311,8 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 			}
 		}
 
-		// 5. Update Daily Summaries
-		// We must update the closing balance for the entry date AND all subsequent dates
+		// 6. Update Daily Summaries
+		// This ensures the Dashboard JSON reflects the changes immediately
 		return r.syncDailySummaries(subTx, entry.TransactionDate)
 	})
 }
