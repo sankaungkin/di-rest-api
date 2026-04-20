@@ -144,7 +144,7 @@ func (r *CashbookRepository) GetLedger(startDate, endDate string) ([]models.Cash
 	return entries, err
 }
 
-func (r *CashbookRepository) CloseDay(today time.Time) error {
+func (r *CashbookRepository) CloseDayOld(today time.Time) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		todayStr := today.Format("2006-01-02")
 		tomorrowStr := today.AddDate(0, 0, 1).Format("2006-01-02")
@@ -196,6 +196,68 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 				ClosingBalance: 5000,
 				IsClosed:       false,
 			}).Error
+	})
+}
+
+func (r *CashbookRepository) CloseDay(today time.Time) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		loc, _ := time.LoadLocation("Asia/Yangon")
+		// Use the passed 'today' but ensure we are looking at the YMD part correctly
+		todayStr := today.In(loc).Format("2006-01-02")
+		tomorrow := today.In(loc).AddDate(0, 0, 1)
+		// tomorrowStr := tomorrow.Format("2006-01-02")
+
+		// 1. Get the LATEST balance snapshot in the ledger (FOR UPDATE)
+		var lastEntry models.Cashbook
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Order("transaction_date DESC, id DESC"). // Better sorting for consistency
+			First(&lastEntry).Error; err != nil {
+			return fmt.Errorf("ledger empty: %v", err)
+		}
+
+		// 2. Calculate the "Take Home"
+		currentBalance := lastEntry.Balance
+		amountToWithdraw := currentBalance - 5000
+
+		// 3. Record the Withdrawal ONLY if there is surplus cash
+		if amountToWithdraw > 0 {
+			sweep := models.Cashbook{
+				// Crucial: Use the END of the day for the timestamp to keep it as the last entry
+				TransactionDate:   today.In(loc),
+				TransactionType:   "OWNER_WITHDRAWAL",
+				PaymentMethod:     "CASH",
+				ReferenceID:       "EOD-" + todayStr,
+				Description:       fmt.Sprintf("End of Day Reset (Float: 5000)"),
+				Debit:             0,
+				Credit:            amountToWithdraw,
+				Balance:           5000,
+				TransactionStatus: "COMPLETED",
+			}
+			if err := tx.Create(&sweep).Error; err != nil {
+				return err
+			}
+		}
+
+		// 4. Update Today's Summary
+		if err := tx.Model(&models.DailySummaries{}).
+			Where("DATE(summary_date) = ?", todayStr).
+			Updates(map[string]interface{}{
+				"closing_balance": 5000,
+				"is_closed":       true,
+			}).Error; err != nil {
+			return err
+		}
+
+		// 5. Upsert Tomorrow's Summary (Using Upsert to avoid duplicate errors)
+		return tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "summary_date"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{"opening_balance": 5000}),
+		}).Create(&models.DailySummaries{
+			SummaryDate:    tomorrow,
+			OpeningBalance: 5000,
+			ClosingBalance: 5000,
+			IsClosed:       false,
+		}).Error
 	})
 }
 
@@ -317,30 +379,62 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 	})
 }
 
-func (r *CashbookRepository) syncDailySummaries(tx *gorm.DB, startDate time.Time) error {
-	// Get all unique dates in the cashbook from the startDate onwards
-	var dates []time.Time
-	tx.Model(&models.Cashbook{}).
-		Where("transaction_date >= ?", startDate).
-		Distinct().
-		Order("transaction_date ASC").
-		Pluck("transaction_date", &dates)
+func (r *CashbookRepository) syncDailySummaries(tx *gorm.DB, transactionDate time.Time) error {
+	dateStr := transactionDate.Format("2006-01-02")
 
-	for _, d := range dates {
-		var lastBalance int64
-		// Get the final balance of this specific day
-		tx.Model(&models.Cashbook{}).
-			Where("DATE(transaction_date) = ?", d.Format("2006-01-02")).
-			Order("id DESC").
-			Limit(1).
-			Pluck("balance", &lastBalance)
-
-		// Update the Daily Summary for that day
-		tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ?", d.Format("2006-01-02")).
-			Update("closing_balance", lastBalance)
+	// 1. Get totals from CASHBOOK (Money actually received/spent)
+	var cb struct {
+		CashIn        int64 // cash_total
+		KPayIn        int64 // k_pay_total
+		Expenses      int64 // expense_total
+		Withdrawals   int64 // total_withdrawal
+		DebtCollected int64 // debt_collected_total
 	}
-	return nil
+	tx.Model(&models.Cashbook{}).
+		Select(`
+            SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'CASH' THEN debit ELSE 0 END) as cash_in,
+            SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'KPAY' THEN debit ELSE 0 END) as k_pay_in,
+            SUM(CASE WHEN transaction_type = 'EXPENSE' THEN credit ELSE 0 END) as expenses,
+            SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END) as withdrawals,
+            SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' THEN debit ELSE 0 END) as debt_collected
+        `).
+		Where("DATE(transaction_date) = ?", dateStr).
+		Scan(&cb)
+
+	// 2. Get totals from SALES (Total revenue and New Debt created)
+	var s struct {
+		GrandTotal int64 // total_sale
+		NewDebt    int64 // debt_total
+	}
+	tx.Model(&models.Sale{}).
+		Select(`
+            SUM(grand_total) as grand_total,
+            SUM(balance_amount) as new_debt
+        `).
+		Where("DATE(sale_date) = ?", dateStr).
+		Scan(&s)
+
+	// 3. Get Final Balance
+	var finalBalance int64
+	tx.Model(&models.Cashbook{}).
+		Where("DATE(transaction_date) = ?", dateStr).
+		Order("transaction_date DESC, id DESC").
+		Limit(1).Pluck("balance", &finalBalance)
+
+	// 4. MAPPING TO DATABASE (Ensure keys match your DB column names exactly)
+	return tx.Model(&models.DailySummaries{}).
+		Where("DATE(summary_date) = ?", dateStr).
+		Updates(map[string]interface{}{
+			"total_sale":           s.GrandTotal, // All Sales (Paid + Unpaid)
+			"cash_total":           cb.CashIn,    // Actual Cash from Sales
+			"total_cash_sales":     cb.CashIn,
+			"k_pay_total":          cb.KPayIn,
+			"debt_total":           s.NewDebt,        // New Debt created today
+			"debt_collected_total": cb.DebtCollected, // Debt paid back today
+			"expense_total":        cb.Expenses,
+			"total_withdrawal":     cb.Withdrawals,
+			"closing_balance":      finalBalance,
+		}).Error
 }
 
 // IsDayClosed checks if a CLOSING entry exists for the given date
@@ -376,151 +470,40 @@ func (r *CashbookRepository) GetSettlementReport(month int, year int) ([]Settlem
 	return reports, err
 }
 
-func (r *CashbookRepository) GetDashboardSummaryOld() (*DashboardSummary, error) {
-	loc, _ := time.LoadLocation("Asia/Yangon")
-	today := time.Now().In(loc)
-	todayStr := today.Format("2006-01-02")
-	var summary DashboardSummary
-
-	// 1. OPENING BALANCE
-	r.db.Model(&models.DailySummaries{}).
-		Select("COALESCE(closing_balance, 5000)").
-		Where("summary_date < ?", todayStr).
-		Order("summary_date DESC").
-		Limit(1).Scan(&summary.OpeningBalance)
-
-	// 2. SALES METRICS (The Fix is here)
-	r.db.Model(&models.Sale{}).
-		Select(`
-    COALESCE(SUM(CASE 
-    WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') THEN grand_total
-        ELSE 0 END), 0),
-
-    COALESCE(SUM(CASE 
-        WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') 
-        THEN GREATEST(grand_total - paid_amount, 0)
-        ELSE 0 END), 0),
-
-    COALESCE(SUM(CASE 
-        WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') AND payment_method = 'CASH'
-        THEN LEAST(paid_amount, grand_total)
-        ELSE 0 END), 0),
-
-    COALESCE(SUM(CASE 
-        WHEN status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED') AND payment_method = 'KPAY'
-        THEN LEAST(paid_amount, grand_total)
-        ELSE 0 END), 0)
-`).
-		Where("DATE(sale_date AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
-		Row().Scan(
-		&summary.TotalSale,
-		&summary.TotalNewDebt,
-		&summary.TotalCashSales,
-		&summary.TotalKPaySales,
-	)
-
-	// 3. PURCHASES
-	r.db.Model(&models.Purchase{}).
-		Select("COALESCE(SUM(grand_total), 0)").
-		Where("DATE(purchase_date) = ?", todayStr).
-		Scan(&summary.TotalPurchase)
-		// 4. CASHBOOK MOVEMENTS (Separating Cash vs KPay)
-	// 4. CASHBOOK MOVEMENTS (Separated for clarity)
-	var cashRefunds int64
-	r.db.Model(&models.Cashbook{}).
-		Select(`
-        COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'EXPENSE' THEN credit ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
-    `).
-		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
-		Row().Scan(
-		&summary.TotalDebtCollected,
-		&summary.TotalKPayCollected,
-		&summary.TotalWithdrawals, // Now will be 0 based on your data
-		&summary.TotalExpenses,    // Now will be 1500 (500 + 1000)
-		&cashRefunds,
-	)
-
-	// 5. CURRENT DRAWER BALANCE
-	// Subtract both Withdrawals AND Expenses to get the correct drawer total
-	summary.CurrentDrawerBalance = summary.OpeningBalance +
-		summary.TotalCashSales +
-		summary.TotalDebtCollected -
-		summary.TotalWithdrawals -
-		summary.TotalExpenses - // Added this
-		cashRefunds
-
-	// 6. CALCULATED METRICS
-	// Total Cash Inflow (Money that actually entered the business today, regardless of drawer)
-	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
-
-	// Summary Closing Balance (Usually matches drawer)
-	summary.ClosingBalance = summary.CurrentDrawerBalance
-
-	// 7. GLOBAL STATS
-	r.db.Model(&models.Sale{}).
-		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
-		Where("payment_status NOT IN ?", []string{"PAID", "FULLY PAID"}).
-		Scan(&summary.TotalReceivables)
-
-	r.db.Model(&models.Purchase{}).
-		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
-		Where("payment_status != ?", "PAID").
-		Scan(&summary.TotalPayables)
-
-	return &summary, nil
-}
-
 func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	loc, _ := time.LoadLocation("Asia/Yangon")
 	today := time.Now().In(loc)
 	todayStr := today.Format("2006-01-02")
 	var summary DashboardSummary
 
-	// 1. OPENING BALANCE (Unchanged)
-	r.db.Model(&models.DailySummaries{}).
-		Select("COALESCE(closing_balance, 5000)").
-		Where("summary_date < ?", todayStr).
-		Order("summary_date DESC").
+	// 1. OPENING BALANCE (Previous day's last balance)
+	// We look for the last entry BEFORE today
+	r.db.Model(&models.Cashbook{}).
+		Select("COALESCE(balance, 5000)").
+		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') < ?", todayStr).
+		Order("transaction_date DESC, id DESC").
 		Limit(1).Scan(&summary.OpeningBalance)
 
-	// 2. SALES METRICS (Fixed: Now includes PARTIAL_RETURN and RETURNED statuses)
+	// 2. SALES METRICS (Excluding Debt Payments to prevent double-counting)
+	// We only want money that came in via the SALE itself, not later collection.
 	r.db.Model(&models.Sale{}).
 		Select(`
             COALESCE(SUM(grand_total), 0),
-            COALESCE(SUM(CASE 
-                WHEN payment_status NOT IN ('PAID', 'FULLY PAID') 
-                THEN (grand_total - paid_amount) 
-                ELSE 0 END), 0),
-            COALESCE(SUM(CASE 
-                WHEN payment_method = 'CASH' 
-                THEN LEAST(paid_amount, grand_total) 
-                ELSE 0 END), 0),
-            COALESCE(SUM(CASE 
-                WHEN payment_method = 'KPAY' 
-                THEN LEAST(paid_amount, grand_total) 
-                ELSE 0 END), 0)
+            COALESCE(SUM(balance_amount), 0),
+            COALESCE(SUM(CASE WHEN payment_method = 'CASH' THEN (grand_total - balance_amount) ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN payment_method = 'KPAY' THEN (grand_total - balance_amount) ELSE 0 END), 0)
         `).
-		Where("DATE(sale_date AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
-		// Removed the "NORMAL" status filter to include returns
+		Where("DATE(sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
 		Where("status IN ('NORMAL', 'PARTIAL_RETURN', 'RETURNED')").
 		Row().Scan(
 		&summary.TotalSale,
 		&summary.TotalNewDebt,
-		&summary.TotalCashSales,
+		&summary.TotalCashSales, // This is now 'Cash collected AT TIME OF SALE'
 		&summary.TotalKPaySales,
 	)
 
-	// 3. PURCHASES (Unchanged)
-	r.db.Model(&models.Purchase{}).
-		Select("COALESCE(SUM(grand_total), 0)").
-		Where("DATE(purchase_date) = ?", todayStr).
-		Scan(&summary.TotalPurchase)
-
-	// 4. CASHBOOK MOVEMENTS
+	// 3. CASHBOOK MOVEMENTS & CURRENT BALANCE
+	// We fetch the very last balance recorded in the ledger for today.
 	var cashRefunds int64
 	r.db.Model(&models.Cashbook{}).
 		Select(`
@@ -528,8 +511,11 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
             COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'KPAY' THEN debit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN transaction_type = 'EXPENSE' THEN credit ELSE 0 END), 0),
-            COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0)
-        `).
+            COALESCE(SUM(CASE WHEN transaction_type = 'SALE_RETURN' THEN credit ELSE 0 END), 0),
+            (SELECT balance FROM cashbooks 
+             WHERE DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') <= ? 
+             ORDER BY transaction_date DESC, id DESC LIMIT 1)
+        `, todayStr).
 		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
 		Row().Scan(
 		&summary.TotalDebtCollected,
@@ -537,28 +523,39 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 		&summary.TotalWithdrawals,
 		&summary.TotalExpenses,
 		&cashRefunds,
+		&summary.CurrentDrawerBalance, // TRUST THE LEDGER
 	)
 
-	// 5. CURRENT DRAWER BALANCE
-	// Formula: Opening + (Cash Sales + Debt Collected) - (Withdrawals + Expenses + Returns)
-	summary.CurrentDrawerBalance = summary.OpeningBalance +
-		summary.TotalCashSales +
-		summary.TotalDebtCollected -
-		summary.TotalWithdrawals -
-		summary.TotalExpenses -
-		cashRefunds
+	// // 4. PURCHASES (Daily)
+	// r.db.Model(&models.Purchase{}).
+	// 	Select("COALESCE(SUM(grand_total), 0)").
+	// 	Where("DATE(purchase_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
+	// 	Scan(&summary.TotalPurchase)
 
+	// // 5. FINAL TOTALS & RECEIVABLES
+	// summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
+
+	// Replace your Section 4 logic with this:
+	r.db.Model(&models.Cashbook{}).
+		Select(`
+        COALESCE(SUM(CASE WHEN transaction_type = 'SALE' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'DEBT_PAYMENT' AND payment_method = 'CASH' THEN debit ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN transaction_type = 'OWNER_WITHDRAWAL' THEN credit ELSE 0 END), 0)
+    `).
+		Where("DATE(transaction_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Yangon') = ?", todayStr).
+		Row().Scan(&summary.TotalCashSales, &summary.TotalDebtCollected, &summary.TotalWithdrawals)
+
+	// Total Cash Inflow should now be a clean sum of these two distinct Cashbook categories
 	summary.TotalCashInflow = summary.TotalCashSales + summary.TotalDebtCollected
 	summary.ClosingBalance = summary.CurrentDrawerBalance
 
-	// 6. GLOBAL RECEIVABLES/PAYABLES
 	r.db.Model(&models.Sale{}).
-		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
+		Select("COALESCE(SUM(balance_amount), 0)").
 		Where("payment_status NOT IN ?", []string{"PAID", "FULLY PAID"}).
 		Scan(&summary.TotalReceivables)
 
 	r.db.Model(&models.Purchase{}).
-		Select("COALESCE(SUM(grand_total - paid_amount), 0)").
+		Select("COALESCE(SUM(balance_amount), 0)").
 		Where("payment_status != ?", "PAID").
 		Scan(&summary.TotalPayables)
 

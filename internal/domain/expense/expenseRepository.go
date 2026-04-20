@@ -44,7 +44,7 @@ func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, erro
 		}
 
 		expenseAmount := int64(input.Amount)
-		todayStr := input.ExpenseDate.Format("2006-01-02")
+		// todayStr := input.ExpenseDate.Format("2006-01-02")
 
 		// 2. Fetch the Current Balance with a LOCK to check for Auto-Injection
 		// We use the specialized repo to ensure we get the absolute latest state
@@ -95,11 +95,11 @@ func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, erro
 		// 5. UPDATE DAILY SUMMARY (Non-balance metrics)
 		// ==========================================
 		// CreateEntry handled 'closing_balance'. We just increment 'expense_total'.
-		if err := tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ?", todayStr).
-			Update("expense_total", gorm.Expr("expense_total + ?", expenseAmount)).Error; err != nil {
-			return fmt.Errorf("failed to update daily expense total: %v", err)
-		}
+		// if err := tx.Model(&models.DailySummaries{}).
+		// 	Where("DATE(summary_date) = ?", todayStr).
+		// 	Update("expense_total", gorm.Expr("expense_total + ?", expenseAmount)).Error; err != nil {
+		// 	return fmt.Errorf("failed to update daily expense total: %v", err)
+		// }
 
 		return nil
 	})
