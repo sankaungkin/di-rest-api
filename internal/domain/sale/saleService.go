@@ -28,7 +28,8 @@ type SaleServiceInterface interface {
 	GetHistoricalProfitData() ([]ResponseMonthlyProfitDataDTO, error)
 
 	GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWithPrice, error)
-	ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
+	// ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error)
+	ReturnSaleItems(dto SaleReturnDTO) (string, error)
 	CollectDebt(payment *models.PaymentRecord, saleID string) error
 	GetPaymentHistory(saleID string) ([]models.PaymentRecord, error)
 }
@@ -113,8 +114,12 @@ func (s *SaleService) GetTodaySaleList() ([]models.Sale, error) {
 	return s.repo.GetTodaySaleList()
 }
 
-func (s *SaleService) ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error) {
-	return s.repo.ReturnSaleItems(returnItem)
+// func (s *SaleService) ReturnSaleItems(returnItem SaleReturnDTO) (*models.SaleReturn, error) {
+// 	return s.repo.ReturnSaleItems(returnItem)
+// }
+
+func (s *SaleService) ReturnSaleItems(dto SaleReturnDTO) (string, error) {
+	return s.repo.ReturnSaleItems(dto)
 }
 
 func (s *SaleService) CollectDebt(payment *models.PaymentRecord, saleID string) error {

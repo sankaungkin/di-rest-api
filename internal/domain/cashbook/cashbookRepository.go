@@ -24,7 +24,8 @@ type CashbookRepositoryInterface interface {
 	GetAll(startDate, endDate string) ([]models.Cashbook, error)
 	GetLedger(startDate, endDate string) ([]models.Cashbook, error)
 	CloseDay(today time.Time) error
-	CreateEntry(tx *gorm.DB, entry *models.Cashbook) error
+	// CreateEntry(tx *gorm.DB, entry *models.Cashbook) error
+	CreateEntry(entry *models.Cashbook) error
 	GetSettlementReport(month int, year int) ([]SettlementReport, error)
 	GetDashboardSummary() (*DashboardSummary, error)
 	GetPastSummaries() ([]models.DailySummaries, error)
@@ -126,7 +127,7 @@ func (r *CashbookRepository) GetAll(startDate, endDate string) ([]models.Cashboo
 }
 
 // GetLedger returns today's transactions primarily
-func (r *CashbookRepository) GetLedger(startDate, endDate string) ([]models.Cashbook, error) {
+func (r *CashbookRepository) GetLedgerOLD(startDate, endDate string) ([]models.Cashbook, error) {
 	var entries []models.Cashbook
 
 	query := r.db.Order("id desc")
@@ -144,62 +145,16 @@ func (r *CashbookRepository) GetLedger(startDate, endDate string) ([]models.Cash
 	return entries, err
 }
 
-func (r *CashbookRepository) CloseDayOld(today time.Time) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		todayStr := today.Format("2006-01-02")
-		tomorrowStr := today.AddDate(0, 0, 1).Format("2006-01-02")
+func (r *CashbookRepository) GetLedger(startDate, endDate string) ([]models.Cashbook, error) {
+	var entries []models.Cashbook
 
-		// 1. Get the True Final Balance of the day with a lock
-		var lastEntry models.Cashbook
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Order("id desc").First(&lastEntry).Error; err != nil {
-			return fmt.Errorf("ledger empty, nothing to close: %v", err)
-		}
+	// Postgres handles the "if empty" logic now
+	err := r.db.Raw("SELECT * FROM get_cashbook_ledger(?, ?)", startDate, endDate).Scan(&entries).Error
 
-		// 2. Calculate the "Take Home" (Everything above 5000)
-		currentBalance := lastEntry.Balance
-		amountToWithdraw := currentBalance - 5000
-
-		// 3. Record the Withdrawal ONLY if there is surplus cash
-		if amountToWithdraw > 0 {
-			sweep := models.Cashbook{
-				TransactionDate: time.Now(),
-				TransactionType: "OWNER_WITHDRAWAL",
-				PaymentMethod:   "CASH",
-				ReferenceID:     "EOD-" + todayStr,
-				Description:     fmt.Sprintf("End of Day Reset: Owner took %d", amountToWithdraw),
-				Credit:          amountToWithdraw,
-				Balance:         5000, // Force the ledger back to 5000
-			}
-			if err := tx.Create(&sweep).Error; err != nil {
-				return err
-			}
-		}
-
-		// 4. Finalize Today's Summary
-		// We set is_closed = true so no more entries can be added to this date
-		if err := tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ?", todayStr).
-			Updates(map[string]interface{}{
-				"closing_balance": 5000,
-				"is_closed":       true,
-			}).Error; err != nil {
-			return err
-		}
-
-		// 5. Prepare Tomorrow's Opening
-		// This ensures when the first sale happens tomorrow, the starting point is 5000
-		return tx.Where("DATE(summary_date) = ?", tomorrowStr).
-			FirstOrCreate(&models.DailySummaries{
-				SummaryDate:    today.AddDate(0, 0, 1),
-				OpeningBalance: 5000,
-				ClosingBalance: 5000,
-				IsClosed:       false,
-			}).Error
-	})
+	return entries, err
 }
 
-func (r *CashbookRepository) CloseDay(today time.Time) error {
+func (r *CashbookRepository) CloseDayOld(today time.Time) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		loc, _ := time.LoadLocation("Asia/Yangon")
 		// Use the passed 'today' but ensure we are looking at the YMD part correctly
@@ -227,7 +182,7 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 				TransactionType:   "OWNER_WITHDRAWAL",
 				PaymentMethod:     "CASH",
 				ReferenceID:       "EOD-" + todayStr,
-				Description:       fmt.Sprintf("End of Day Reset (Float: 5000)"),
+				Description:       "End of Day Reset (Float: 5000)",
 				Debit:             0,
 				Credit:            amountToWithdraw,
 				Balance:           5000,
@@ -261,60 +216,12 @@ func (r *CashbookRepository) CloseDay(today time.Time) error {
 	})
 }
 
-func (r *CashbookRepository) CreateEntryOLD(tx *gorm.DB, entry *models.Cashbook) error {
-
-	db := tx
-	if db == nil {
-		db = r.db
-	}
-	return tx.Transaction(func(subTx *gorm.DB) error {
-		var lastEntry models.Cashbook
-
-		// 1. Get the latest balance.
-		// IMPORTANT: We lock the row to prevent other sales from cutting in line.
-		err := subTx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Order("id desc").
-			First(&lastEntry).Error
-
-		var currentBalance int64
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				currentBalance = 5000 // Your safety floor
-			} else {
-				return err
-			}
-		} else {
-			currentBalance = lastEntry.Balance
-		}
-		// 2. Math Logic
-		if entry.PaymentMethod == "CASH" {
-			// New Balance = Old + In - Out
-			entry.Balance = currentBalance + entry.Debit - entry.Credit
-		} else {
-			// If KPAY or DEBT, the physical drawer balance doesn't change
-			entry.Balance = currentBalance
-		}
-
-		// 3. Forced update of timestamps
-		entry.CreatedAt = time.Now()
-		if entry.TransactionDate.IsZero() {
-			entry.TransactionDate = time.Now()
-		}
-
-		// 4. Create the record
-		if err := subTx.Create(entry).Error; err != nil {
-			return err
-		}
-
-		// 5. Update Daily Summary
-		todayStr := entry.TransactionDate.Format("2006-01-02")
-		return subTx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ?", todayStr).
-			Update("closing_balance", entry.Balance).Error
-	})
+func (r *CashbookRepository) CloseDay(today time.Time) error {
+	// Just pass the time; Postgres handles the Yangon conversion and the logic
+	return r.db.Exec("SELECT close_day(?)", today).Error
 }
 
-func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) error {
+func (r *CashbookRepository) CreateEntryOLD(tx *gorm.DB, entry *models.Cashbook) error {
 	return tx.Transaction(func(subTx *gorm.DB) error {
 		// 1. Find the balance as of the MOMENT BEFORE this transaction date
 		// Use a row-level lock to prevent race conditions during simultaneous sales
@@ -377,6 +284,17 @@ func (r *CashbookRepository) CreateEntry(tx *gorm.DB, entry *models.Cashbook) er
 		// This ensures the Dashboard JSON reflects the changes immediately
 		return r.syncDailySummaries(subTx, entry.TransactionDate)
 	})
+}
+
+func (r *CashbookRepository) CreateEntry(entry *models.Cashbook) error {
+	return r.db.Exec("SELECT create_cashbook_entry(?, ?, ?, ?, ?, ?)",
+		entry.TransactionDate,
+		entry.TransactionType,
+		entry.PaymentMethod,
+		entry.Debit,
+		entry.Credit,
+		entry.Description,
+	).Error
 }
 
 func (r *CashbookRepository) syncDailySummaries(tx *gorm.DB, transactionDate time.Time) error {
@@ -470,7 +388,7 @@ func (r *CashbookRepository) GetSettlementReport(month int, year int) ([]Settlem
 	return reports, err
 }
 
-func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
+func (r *CashbookRepository) GetDashboardSummaryOLD() (*DashboardSummary, error) {
 	loc, _ := time.LoadLocation("Asia/Yangon")
 	today := time.Now().In(loc)
 	todayStr := today.Format("2006-01-02")
@@ -562,6 +480,17 @@ func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
 	return &summary, nil
 }
 
+func (r *CashbookRepository) GetDashboardSummary() (*DashboardSummary, error) {
+	var summary DashboardSummary
+	// GORM can scan the custom type directly into your struct
+	// as long as the struct fields match the type property names.
+	err := r.db.Raw("SELECT * FROM get_dashboard_summary()").Scan(&summary).Error
+	if err != nil {
+		return nil, err
+	}
+	return &summary, nil
+}
+
 func (r *CashbookRepository) GetPastSummaries() ([]models.DailySummaries, error) {
 	var summaries []models.DailySummaries
 
@@ -615,30 +544,6 @@ func (r *CashbookRepository) ReconcileToday() ([]map[string]interface{}, error) 
 
 func (r *CashbookRepository) RecordOwnerWithdrawalOLD(amount int64, description string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		// 1. Prepare the Cashbook Entry
-		entry := &models.Cashbook{
-			TransactionType: "OWNER_WITHDRAWAL",
-			Description:     description,
-			Debit:           0,
-			Credit:          amount,
-			PaymentMethod:   "CASH",
-		}
-
-		// 2. Use your existing CreateEntry logic to save and update running balance
-		if err := r.CreateEntry(tx, entry); err != nil {
-			return err
-		}
-
-		// 3. Update Daily Summary (Critical for Dashboard accuracy)
-		today := time.Now().Format("2006-01-02")
-		return tx.Model(&models.DailySummaries{}).
-			Where("DATE(summary_date) = ? AND is_closed = ?", today, false).
-			Update("closing_balance", gorm.Expr("closing_balance - ?", amount)).Error
-	})
-}
-
-func (r *CashbookRepository) RecordOwnerWithdrawal(amount int64, description string) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Prepare the Entry
 		// This will trigger your CreateEntry logic which handles the
 		// clause.Locking{Strength: "UPDATE"} to prevent math errors
@@ -653,12 +558,18 @@ func (r *CashbookRepository) RecordOwnerWithdrawal(amount int64, description str
 		}
 
 		// 2. CreateEntry handles the "Running Balance" calculation
-		if err := r.CreateEntry(tx, entry); err != nil {
+		if err := r.CreateEntry(entry); err != nil {
 			return err
 		}
 
 		return nil
 	})
+}
+
+func (r *CashbookRepository) RecordOwnerWithdrawal(amount int64, description string) error {
+	// We no longer need the Go-level transaction or the complex struct building.
+	// The DB handles the timestamp and the business rules.
+	return r.db.Exec("SELECT record_owner_withdrawal(?, ?)", amount, description).Error
 }
 
 func (r *CashbookRepository) GetEntriesByDateAndType(date time.Time, transType string) ([]models.Cashbook, error) {

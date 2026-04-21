@@ -69,7 +69,7 @@ func (s *CashbookService) CloseDay(today time.Time) error {
 func (s *CashbookService) CreateEntry(entry *models.Cashbook) error {
 	// Start a transaction here
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		return s.repo.CreateEntry(tx, entry)
+		return s.repo.CreateEntry(entry)
 	})
 }
 

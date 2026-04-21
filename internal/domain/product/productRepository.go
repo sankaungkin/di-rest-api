@@ -1,6 +1,7 @@
 package product
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -65,7 +66,7 @@ func NewProductRepository(db *gorm.DB) ProductRepositoryInterface {
 	return repoInstance
 }
 
-func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error) {
+func (s *ProductRepository) CreateProductWithDetailsOLD(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error) {
 	tx := s.db.Begin()
 	if tx.Error != nil {
 		return nil, tx.Error
@@ -164,6 +165,32 @@ func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitCon
 	// Commit
 	if err := tx.Commit().Error; err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return dto, nil
+}
+
+func (s *ProductRepository) CreateProductWithDetails(dto *Create_Product_UnitConversion_Stock_Price_DTO) (*Create_Product_UnitConversion_Stock_Price_DTO, error) {
+	// Marshal the nested slices to JSON
+	unitsJSON, _ := json.Marshal(dto.ProductUnits)
+	pricesJSON, _ := json.Marshal(dto.ProductPrices)
+
+	err := s.db.Exec(`
+        SELECT create_product_full(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		dto.ID,
+		dto.ProductName,
+		dto.CategoryId,
+		dto.BrandName,
+		dto.IsActive,
+		dto.DeriveUnitId,
+		dto.Qty,
+		dto.ReorderLvl,
+		unitsJSON,
+		pricesJSON,
+	).Error
+
+	if err != nil {
+		return nil, err
 	}
 
 	return dto, nil
@@ -391,7 +418,7 @@ func (r *ProductRepository) GetProductUnitByProductId(id string) ([]models.Produ
 	return results, nil
 }
 
-func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
+func (r *ProductRepository) UpdateOLD(input UpdateProductRequstDTO) (*models.Product, error) {
 	// 1. Validate required fields immediately to save DB calls
 	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
 		return nil, errors.New("missing required fields")
@@ -455,6 +482,37 @@ func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Produc
 	var finalProduct models.Product
 	r.db.Preload("ProductUnits").Where("id = ?", input.ProductId).First(&finalProduct)
 	return &finalProduct, nil
+}
+
+func (r *ProductRepository) Update(input UpdateProductRequstDTO) (*models.Product, error) {
+	// 1. Quick Validation
+	if input.BrandName == "" || input.ProductName == "" || input.CategoryId == 0 {
+		return nil, errors.New("missing required fields")
+	}
+
+	// 2. Execute the DB Function
+	err := r.db.Exec(`
+        SELECT update_product_basic(?, ?, ?, ?, ?)`,
+		input.ProductId,
+		input.ProductName,
+		input.BrandName,
+		input.CategoryId,
+		input.IsActive,
+	).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Reload and Return
+	// Even though we didn't update units, we still Preload them
+	// so the returned object is complete for the frontend.
+	var finalProduct models.Product
+	err = r.db.Preload("ProductUnits").
+		Where("id = ?", input.ProductId).
+		First(&finalProduct).Error
+
+	return &finalProduct, err
 }
 
 func (r *ProductRepository) UpdateProductUnit(input UpdateProductUnitDTO) (*models.Product, error) {

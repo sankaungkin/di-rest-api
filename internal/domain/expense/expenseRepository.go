@@ -69,7 +69,7 @@ func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, erro
 				Debit:           injectionAmt,
 			}
 			// Use CreateEntry to update balance and summary
-			if err := r.cashRepo.CreateEntry(tx, injection); err != nil {
+			if err := r.cashRepo.CreateEntry(injection); err != nil {
 				return fmt.Errorf("auto-injection failed: %v", err)
 			}
 		}
@@ -87,7 +87,7 @@ func (r *ExpenseRepository) Create(input *models.Expense) (*models.Expense, erro
 		}
 
 		// This handles the math (Balance - expenseAmount) and updates the summary
-		if err := r.cashRepo.CreateEntry(tx, cashbookEntry); err != nil {
+		if err := r.cashRepo.CreateEntry(cashbookEntry); err != nil {
 			return fmt.Errorf("cashbook expense entry failed: %v", err)
 		}
 

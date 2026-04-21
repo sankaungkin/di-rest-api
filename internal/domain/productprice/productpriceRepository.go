@@ -156,7 +156,7 @@ func (r *ProductPriceRepository) GetAllNew() ([]models.ProductPrice, error) {
 	return productPrices, nil
 }
 
-func (r *ProductPriceRepository) GetAllWithStock() ([]ProductPriceResponseDTO, error) {
+func (r *ProductPriceRepository) GetAllWithStockOLD() ([]ProductPriceResponseDTO, error) {
 	var results []ProductPriceResponseDTO
 
 	err := r.db.
@@ -167,6 +167,24 @@ func (r *ProductPriceRepository) GetAllWithStock() ([]ProductPriceResponseDTO, e
 		Joins("JOIN product_stocks AS ps ON ps.product_id = pp.product_id").
 		Where("ps.base_qty > ps.reorder_lvl").
 		Order("pp.id DESC").
+		Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(results) == 0 {
+		return nil, errors.New("no records found")
+	}
+
+	return results, nil
+}
+func (r *ProductPriceRepository) GetAllWithStock() ([]ProductPriceResponseDTO, error) {
+	var results []ProductPriceResponseDTO
+
+	// We can now use GORM's standard Table() method to query the view
+	err := r.db.Table("v_product_prices_with_healthy_stock").
+		Order("id DESC").
 		Scan(&results).Error
 
 	if err != nil {

@@ -306,7 +306,7 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 				Description:     fmt.Sprintf("Inventory Received on Credit: %s", input.ID),
 				PaymentMethod:   "DEBT",
 			}
-			if err := r.cashRepo.CreateEntry(tx, debtEntry); err != nil {
+			if err := r.cashRepo.CreateEntry(debtEntry); err != nil {
 				return err
 			}
 		} else {
@@ -319,7 +319,7 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 					Description:     fmt.Sprintf("Owner Funding for Purchase %s", input.ID),
 					Debit:           input.AmountFromOwner, // Cash entering the business
 				}
-				if err := r.cashRepo.CreateEntry(tx, injectionEntry); err != nil {
+				if err := r.cashRepo.CreateEntry(injectionEntry); err != nil {
 					return err
 				}
 			}
@@ -335,7 +335,7 @@ func (r *PurchaseRepository) Create(input *models.Purchase) (*models.Purchase, e
 					PaymentMethod:     input.PaymentSource,
 					TransactionStatus: input.PaymentStatus,
 				}
-				if err := r.cashRepo.CreateEntry(tx, outflowEntry); err != nil {
+				if err := r.cashRepo.CreateEntry(outflowEntry); err != nil {
 					return err
 				}
 			}
@@ -800,7 +800,7 @@ func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) erro
 				Description:     fmt.Sprintf("Owner Injection to pay Debt: %s", po.ID),
 				Debit:           paymentData.Amount, // Money into business
 			}
-			if err := r.cashRepo.CreateEntry(tx, injection); err != nil {
+			if err := r.cashRepo.CreateEntry(injection); err != nil {
 				return err
 			}
 		}
@@ -818,7 +818,7 @@ func (r *PurchaseRepository) PayOffPurchaseDebt(paymentData PaymentRequest) erro
 		}
 
 		// CreateEntry handles all locking and DailySummary balance updates
-		if err := r.cashRepo.CreateEntry(tx, paymentEntry); err != nil {
+		if err := r.cashRepo.CreateEntry(paymentEntry); err != nil {
 			return err
 		}
 
