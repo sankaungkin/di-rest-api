@@ -128,8 +128,8 @@ func (r *SaleRepository) GetSaleStockItemWithPrice() ([]ResponseSaleStockItemWit
 	return result, err
 }
 
-// DONE
-func (r *SaleRepository) CreateOLD(input *models.Sale) (*models.Sale, error) {
+// TODO : error is postgres function
+func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		// --- 1. CORE FINANCIAL LOGIC ---
 		input.NetTotal = input.GrandTotal
@@ -208,33 +208,6 @@ func (r *SaleRepository) CreateOLD(input *models.Sale) (*models.Sale, error) {
 	})
 
 	return input, err
-}
-
-func (r *SaleRepository) Create(input *models.Sale) (*models.Sale, error) {
-	// Convert SaleDetails to JSON for Postgres
-	detailsJSON, err := json.Marshal(input.SaleDetails)
-	if err != nil {
-		return nil, err
-	}
-
-	var saleID string
-	// Execute the function
-	err = r.db.Raw(`
-        SELECT create_sale(?, ?, ?, ?, ?, ?)`,
-		input.CustomerId,
-		input.SaleDate,
-		input.GrandTotal,
-		input.PaidAmount,
-		input.PaymentMethod,
-		detailsJSON,
-	).Scan(&saleID).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	input.ID = saleID
-	return input, nil
 }
 
 // DONE
@@ -552,7 +525,6 @@ func (r *SaleRepository) GetSalesWithReceivablesOld() ([]models.Sale, error) {
 	return sales, nil
 }
 
-// DONE
 func (r *SaleRepository) GetSalesWithReceivables() ([]models.Sale, error) {
 	var sales []models.Sale
 
